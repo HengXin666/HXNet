@@ -1,0 +1,151 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "HXJson",
+					"jsonFile" : "directory-HXJson-Debug-a8d6a85705f22f49b7a1.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "HXJson",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "HXprint",
+					"jsonFile" : "directory-HXprint-Debug-45b495d1fe6483a8501a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "HXprint",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "HXCodeTest",
+					"jsonFile" : "directory-HXCodeTest-Debug-5baf341de90a555a1580.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "HXCodeTest",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						3
+					],
+					"name" : "HXNet",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "HXJson",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "HXprint",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "HXCodeTest::@bd54e6b771223d056ef1",
+					"jsonFile" : "target-HXCodeTest-Debug-c54b5047976d9c380ba1.json",
+					"name" : "HXCodeTest",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "HXJson::@76ae096f8d8a57000611",
+					"jsonFile" : "target-HXJson-Debug-1d8963c5f8b182c3663e.json",
+					"name" : "HXJson",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "HXprint::@36cb312362a2cb447cbc",
+					"jsonFile" : "target-HXprint-Debug-31de1933ba15bdfa1bb8.json",
+					"name" : "HXprint",
+					"projectIndex" : 2
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/Heng_Xin/HXcode/HXNet/build",
+		"source" : "/home/Heng_Xin/HXcode/HXNet"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
