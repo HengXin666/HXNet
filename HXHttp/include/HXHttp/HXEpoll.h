@@ -20,49 +20,67 @@
 #ifndef _HX_HXEPOLL_H_
 #define _HX_HXEPOLL_H_
 
-#include <sys/socket.h>
-#include <sys/epoll.h>
-#include <cstring>
-#include <cerrno>
-
-#include <HXprint/HXprint.h>
-#include <HXJson/HXJson.h>
+#include <sys/epoll.h>  // Epoll
 
 namespace HXHttp {
 
-struct SocketAddrBuilderBase {
-    int _port;       // 端口
-    int _maxQueue;   // 最大排队数
-    int _maxConnect; // 最大连接数
-};
-
-template<bool Ready = false>
-struct [[nodiscard]] SocketAddrBuilder : SocketAddrBuilderBase {
-    [[nodiscard]] SocketAddrBuilder<true> &&withPort(int port) && {
-        _port = port;
-        // 建立socket套接字
-        if ((_epollFd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-            LOG_ERROR("socket Error: %s (errno: %d)", strerror(errno), errno);
-        }
-        return static_cast<SocketAddrBuilder<true> &&>(static_cast<SocketAddrBuilder &&>(*this));
-    }
-
-private:
-    int _epollFd;          // epoll实例文件描述符
-    struct epoll_event ev; // epoll实例 事件
-};
-
 class HXEpoll {
-    int maxConnect; // 最大连接数
+    int _epollFd;                  // epoll实例文件描述符
+    int _maxConnect;               // 最大连接数
+    int _serverFd;                 // 服务器套接字
+    struct ::epoll_event _ev;      // epoll实例 事件
+    struct ::epoll_event *_events; // 用户的 epoll 事件
+
+    // epoll_wait
+    /**
+     * @brief 返回就绪事件的信息数量
+     * @param timeOut 等待的时间;
+     *          -1 阻塞等待;
+     *          0  立即返回;
+     *          正数 阻塞等待的最长时间(单位: 毫秒)
+     * @return 失败时返回 -1，并设置 errno 错误码 ;
+     *        == 0 无消息;
+     *         > 0 有对应的消息数量
+     */
+    int wait(int timeOut);
+
+    // add
+    /**
+     * @brief 添加事件到epoll红黑树中
+     * @param fd 文件操作符
+     * @param ev 指向 epoll_event 结构体的指针，用于指定事件类型和数据
+     * @return 成功时返回 0；失败时返回 -1，并设置 errno 错误码 
+     */
+    int ctl_add(int fd);
+
+    // del
+    /**
+     * @brief 删除epoll红黑树中的事件
+     * @param fd 文件操作符
+     * @param ev 指向 epoll_event 结构体的指针，用于指定事件类型和数据
+     * @return 成功时返回 0；失败时返回 -1，并设置 errno 错误码 
+     */
+    int ctl_del(int fd);
+
+    // mod (Modify)
+    /**
+     * @brief 修改epoll红黑树中的事件
+     * @param fd 文件操作符
+     * @param ev 指向 epoll_event 结构体的指针，用于指定事件类型和数据
+     * @return 成功时返回 0；失败时返回 -1，并设置 errno 错误码 
+     */
+    int ctl_mod(int fd);
 
 public:
     /**
      * @brief 初始化服务器参数, 以本机作为服务器终端(监听来自本机和公网的全部信息)
      * @param port 端口
      * @param maxQueue 最大排队数 
-     * @param maxConnect 最大连接数
+     * @param maxConnect 最大连接数 | 只是一个提示, 实际上, 内核会根据需要动态调整大小
      */
-    explicit HXEpoll();
+    explicit HXEpoll(int port = 28205, int maxQueue = 512, int maxConnect = 1);
+
+    ~HXEpoll();
 };
 
 } // namespace HXHttp

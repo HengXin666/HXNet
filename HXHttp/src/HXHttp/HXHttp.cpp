@@ -49,7 +49,21 @@ void handleClient(int client_socket) {
     close(client_socket);
 }
 
+#include <iostream>
+
+void printClickableLink(const std::string& text, const std::string& url) {
+    // ANSI escape sequence for clickable hyperlink
+    std::cout << "\033]8;;" << url << "\033\\" << text << "\033]8;;\033\\" << std::endl;
+}
+
 int main() {
+    printClickableLink("OpenAI", "https://www.openai.com");
+    printClickableLink("Google", "https://www.google.com");
+    return 0;
+}
+
+
+int _main() {
     int server_fd, new_socket, epoll_fd;
     struct sockaddr_in address;
     int opt = 1;
