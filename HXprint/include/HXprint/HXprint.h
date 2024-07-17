@@ -21,6 +21,7 @@
 #define _HX_HXPRINT_H_
 
 #include <iostream>
+#include <iomanip>
 #include <tuple>
 #include <map>
 #include <unordered_map>
@@ -66,13 +67,38 @@ concept PrintClassType = requires(T t) {
     t.print();
 };
 
+// 概念: 如果这个类型和str沾边, 那么使用""包裹, 注: 普通的const char * 是不会包裹的qwq
+template <typename T>
+concept StringType = std::is_same_v<T, std::string> ||
+                     std::is_same_v<T, std::string_view>;
+
+// 概念: 如果这个类型和wstr沾边, 那么使用""包裹 [不支持...]
+// template <typename T>
+// concept WStringType = std::is_same_v<T, const wchar_t *> ||
+//                      std::is_same_v<T, std::wstring_view> ||
+//                      std::is_same_v<T, std::wstring>;
+
 /////////////////////////////////////////////////////////
 
-// === 事先声明 ===
+// === 事先声明 === \\ 
+
+// 显式重载
+static void print(const std::nullptr_t& t);
+static void print(const std::nullopt_t& t);
+static void print(const std::monostate& t);
+static void print(bool t);
 
 // 基础类型
 template<typename T>
 static void print(const T& t);
+
+// std::optional
+template<typename... Ts>
+static void print(const std::optional<Ts...>& t);
+
+// str相关的类型
+template<StringType ST>
+static void print(const ST& t);
 
 // std::pair
 template<PairContainer Container>
@@ -92,14 +118,46 @@ static void print(const std::variant<Ts...>& t);
 
 /////////////////////////////////////////////////////////
 
+static void print(const std::nullptr_t& t) { // 普通指针不行
+    print("nullptr");
+}
+
+static void print(const std::nullopt_t& t) {
+    print("nullopt");
+}
+
+static void print(const std::monostate& t) {
+    print("monostate");
+}
+
+static void print(bool t) {
+    if (t)
+        print("true");
+    else
+        print("false");
+}
+
 template<typename T>
 static void print(const T& t) {
     std::cout << t;
 }
 
+template<StringType ST>
+static void print(const ST& t) {
+    std::cout << std::quoted(t);
+}
+
+template<typename... Ts>
+static void print(const std::optional<Ts...>& t) {
+    if (t.has_value())
+        print(*t);
+    else
+        print(std::nullopt);
+}
+
 template<typename... Ts>
 static void print(const std::variant<Ts...>& t) {
-    std::visit([] (auto const &v) {
+    std::visit([] (const auto &v) -> void { // 访问者模式
         print(v);
     }, t);
 }

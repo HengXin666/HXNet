@@ -38,5 +38,15 @@ int main() {
 })Json";
     auto [obj, eaten] = parse(str);
     print(obj);
+    print("\n只是字符串");
+    optional<string> x;
+    x = "字符串啦";
+    print(x);
+    print(NULL);
+    print(nullptr);
+    print(true);
+    print('\n');
+    vector<int> *p = NULL;
+    print(p);
     return 0;
 }
