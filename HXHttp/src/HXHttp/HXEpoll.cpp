@@ -59,7 +59,7 @@ HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect) : _maxConnect(maxConnec
         // --- 初始化信息到类 ---
         _events = new struct ::epoll_event[maxConnect];
 
-        LOG_INFO("====== Epoll已启动: \033]8;;http://localhost:%d/\033\\http://localhost:%d/\033]8;;\033\\ ======", port, port);
+        LOG_INFO("====== Epoll已启动: \033[33m\033]8;;http://localhost:%d/\033\\http://localhost:%d/\033]8;;\033\\\033[0m\033[1;32m ======", port, port);
         return;
     } while (0);
     exit(-1); // 错误处理

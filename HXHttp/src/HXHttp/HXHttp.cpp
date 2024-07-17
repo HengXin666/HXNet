@@ -50,6 +50,7 @@ void handleClient(int client_socket) {
 }
 
 #include <iostream>
+#include <HXHttp/HXEpoll.h>
 
 void printClickableLink(const std::string& text, const std::string& url) {
     // ANSI escape sequence for clickable hyperlink
@@ -59,6 +60,7 @@ void printClickableLink(const std::string& text, const std::string& url) {
 int main() {
     printClickableLink("OpenAI", "https://www.openai.com");
     printClickableLink("Google", "https://www.google.com");
+    HXHttp::HXEpoll {};
     return 0;
 }
 
