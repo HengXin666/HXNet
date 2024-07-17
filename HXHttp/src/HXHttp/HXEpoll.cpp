@@ -1,5 +1,5 @@
 #include <HXHttp/HXEpoll.h>
 
-namespace HXEpoll {
+namespace HXHttp {
 
-} // namespace HXEpoll
+} // namespace HXHttp

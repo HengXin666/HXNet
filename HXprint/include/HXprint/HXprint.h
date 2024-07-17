@@ -40,10 +40,52 @@
 
 namespace HXprint { // C++20
 
-#ifdef __cpp_lib_concepts // C++ >= 20 && concepts
-
 // 内部使用的命名空间啊喂!
 namespace _ {
+/////////////////////////////////////////////////////////
+
+// === 仅DEBUG编译期(未发布)有的日志打印 === \\ 
+
+#ifdef _HX_DEBUG_
+
+#include <cstdio>
+#include <cstdarg>
+
+enum LogLevel {
+    LOG_ERROR,
+    LOG_WARNING,
+    LOG_INFO,
+};
+
+void logMessage(LogLevel level, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    switch (level) {
+        case LOG_ERROR:
+            printf("\033[0m\033[1;31m");
+            break;
+        case LOG_WARNING:
+            printf("\033[0m\033[1;33m");
+            break;
+        case LOG_INFO:
+            printf("\033[0m\033[1;32m");
+            break;
+    }
+    vprintf(format, args);
+    printf("\033[0m\n");
+    va_end(args);
+}
+
+#define LOG_ERROR(...) logMessage(HXprint::_::LOG_ERROR, __VA_ARGS__)
+#define LOG_WARNING(...) logMessage(HXprint::_::LOG_WARNING, __VA_ARGS__)
+#define LOG_INFO(...) logMessage(HXprint::_::LOG_INFO, __VA_ARGS__)
+
+#endif
+
+/////////////////////////////////////////////////////////
+
+#ifdef __cpp_lib_concepts // C++ >= 20 && concepts
+
 // 概念: 判断类型 T 是否是键值对的关联容器
 template <typename T>
 concept KeyValueContainer = requires(T t) {
@@ -53,13 +95,13 @@ concept KeyValueContainer = requires(T t) {
 
 // 概念: 判断类型 T 是否是单元素容器
 template <typename T>
-concept SingleElementContainer = std::is_same_v<T, std::set<typename T::value_type>> ||
-                                 std::is_same_v<T, std::multiset<typename T::value_type>> ||
-                                 std::is_same_v<T, std::vector<typename T::value_type>> ||
-                                 std::is_same_v<T, std::list<typename T::value_type>> ||
-                                 std::is_same_v<T, std::deque<typename T::value_type>> ||
-                                 std::is_same_v<T, std::unordered_multiset<typename T::value_type>> ||
-                                 std::is_same_v<T, std::unordered_set<typename T::value_type>>;
+concept SingleElementContainer = ::std::is_same_v<T, ::std::set<typename T::value_type>> ||
+                                 ::std::is_same_v<T, ::std::multiset<typename T::value_type>> ||
+                                 ::std::is_same_v<T, ::std::vector<typename T::value_type>> ||
+                                 ::std::is_same_v<T, ::std::list<typename T::value_type>> ||
+                                 ::std::is_same_v<T, ::std::deque<typename T::value_type>> ||
+                                 ::std::is_same_v<T, ::std::unordered_multiset<typename T::value_type>> ||
+                                 ::std::is_same_v<T, ::std::unordered_set<typename T::value_type>>;
 template <typename T>
 concept PairContainer = requires(T t) {
     typename T::first_type;
@@ -74,64 +116,64 @@ concept PrintClassType = requires(T t) {
 
 // 概念: 如果这个类型和str沾边, 那么使用""包裹, 注: 普通的const char * 是不会包裹的qwq
 template <typename T>
-concept StringType = std::is_same_v<T, std::string> ||
-                     std::is_same_v<T, std::string_view>;
+concept StringType = ::std::is_same_v<T, ::std::string> ||
+                     ::std::is_same_v<T, ::std::string_view>;
 
 // 概念: 如果这个类型和wstr沾边, 那么使用""包裹 [不支持...]
 // template <typename T>
-// concept WStringType = std::is_same_v<T, const wchar_t *> ||
-//                      std::is_same_v<T, std::wstring_view> ||
-//                      std::is_same_v<T, std::wstring>;
+// concept WStringType = ::std::is_same_v<T, const wchar_t *> ||
+//                      ::std::is_same_v<T, ::std::wstring_view> ||
+//                      ::std::is_same_v<T, ::std::wstring>;
 
 /////////////////////////////////////////////////////////
 
 // === 事先声明 === \\ 
 
 // 显式重载
-static void _HXprint(const std::nullptr_t& t);
-static void _HXprint(const std::nullopt_t& t);
-static void _HXprint(const std::monostate& t);
+static void _HXprint(const ::std::nullptr_t& t);
+static void _HXprint(const ::std::nullopt_t& t);
+static void _HXprint(const ::std::monostate& t);
 static void _HXprint(bool t);
 
 // 基础类型
 template<typename T>
 static void _HXprint(const T& t);
 
-// std::optional
+// ::std::optional
 template<typename... Ts>
-static void _HXprint(const std::optional<Ts...>& t);
+static void _HXprint(const ::std::optional<Ts...>& t);
 
 // str相关的类型
 template<StringType ST>
 static void _HXprint(const ST& t);
 
-// std::pair
+// ::std::pair
 template<PairContainer Container>
 static void _HXprint(const Container& p);
 
-// std::的常见的支持迭代器的单元素容器
+// ::std::的常见的支持迭代器的单元素容器
 template<SingleElementContainer Container>
 static void _HXprint(const Container& sc);
 
-// std::的常见的支持迭代器的键值对容器
+// ::std::的常见的支持迭代器的键值对容器
 template <KeyValueContainer Container>
 static void _HXprint(const Container& map);
 
-// std::variant 现代共用体
+// ::std::variant 现代共用体
 template<typename... Ts>
-static void _HXprint(const std::variant<Ts...>& t);
+static void _HXprint(const ::std::variant<Ts...>& t);
 
 /////////////////////////////////////////////////////////
 
-static void _HXprint(const std::nullptr_t& t) { // 普通指针不行
+static void _HXprint(const ::std::nullptr_t& t) { // 普通指针不行
     _HXprint("nullptr");
 }
 
-static void _HXprint(const std::nullopt_t& t) {
+static void _HXprint(const ::std::nullopt_t& t) {
     _HXprint("nullopt");
 }
 
-static void _HXprint(const std::monostate& t) {
+static void _HXprint(const ::std::monostate& t) {
     _HXprint("monostate");
 }
 
@@ -144,25 +186,25 @@ static void _HXprint(bool t) {
 
 template<typename T>
 static void _HXprint(const T& t) {
-    std::cout << t;
+    ::std::cout << t;
 }
 
 template<StringType ST>
 static void _HXprint(const ST& t) {
-    std::cout << std::quoted(t);
+    ::std::cout << ::std::quoted(t);
 }
 
 template<typename... Ts>
-static void _HXprint(const std::optional<Ts...>& t) {
+static void _HXprint(const ::std::optional<Ts...>& t) {
     if (t.has_value())
         _HXprint(*t);
     else
-        _HXprint(std::nullopt);
+        _HXprint(::std::nullopt);
 }
 
 template<typename... Ts>
-static void _HXprint(const std::variant<Ts...>& t) {
-    std::visit([] (const auto &v) -> void { // 访问者模式
+static void _HXprint(const ::std::variant<Ts...>& t) {
+    ::std::visit([] (const auto &v) -> void { // 访问者模式
         _HXprint(v);
     }, t);
 }
@@ -175,27 +217,27 @@ static void _HXprint(const T& t) {
 template<PairContainer Container>
 static void _HXprint(const Container& p) {
     _HXprint('(');
-    _HXprint(std::get<0>(p));
+    _HXprint(::std::get<0>(p));
     _HXprint(", ");
-    _HXprint(std::get<1>(p));
+    _HXprint(::std::get<1>(p));
     _HXprint(')');
 }
 
 // 递归打印tuple
-template <std::size_t I = 0, typename... Ts>
-static void _print(const std::tuple<Ts...>& tup) {
+template <::std::size_t I = 0, typename... Ts>
+static void _print(const ::std::tuple<Ts...>& tup) {
     if constexpr (I == sizeof...(Ts)) { // 因为 I 从 0 开始
         return;
     } else {
         if constexpr (I > 0)
             _HXprint(", ");
-        _HXprint(std::get<I>(tup));
+        _HXprint(::std::get<I>(tup));
         _print<I + 1>(tup);
     }
 }
 
-template <std::size_t I = 0, typename... Ts>
-static void _HXprint(const std::tuple<Ts...>& tup) {
+template <::std::size_t I = 0, typename... Ts>
+static void _HXprint(const ::std::tuple<Ts...>& tup) {
     _HXprint('(');
     _print(tup);
     _HXprint(')');
@@ -231,7 +273,7 @@ static void _HXprint(const Container& sc) {
     _HXprint(']');
 }
 
-}
+} // namespace _
 
 /**
  * @brief 打印带'\\n'的对象, 多个则使用 ' ' 空格分开.
@@ -239,8 +281,8 @@ static void _HXprint(const Container& sc) {
 template <class T0, class ...Ts>
 void print(T0 const &t0, Ts const &...ts) {
     _::_HXprint(t0);
-    ((std::cout << " ", _::_HXprint(ts)), ...);
-    std::cout << "\n";
+    ((::std::cout << " ", _::_HXprint(ts)), ...);
+    ::std::cout << "\n";
 }
 
 /**
@@ -249,12 +291,12 @@ void print(T0 const &t0, Ts const &...ts) {
 template <class T0, class ...Ts>
 void printnl(T0 const &t0, Ts const &...ts) {
     _::_HXprint(t0);
-    ((std::cout << " ", _::_HXprint(ts)), ...);
+    ((::std::cout << " ", _::_HXprint(ts)), ...);
 }
 // 注: 建议鸭子类型使用printnl!
 
 #endif // __cpp_lib_concepts
 
-}
+} // namespace HXprint
 
 #endif // _HX_HXPRINT_H_

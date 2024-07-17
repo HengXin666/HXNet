@@ -20,12 +20,51 @@
 #ifndef _HX_HXEPOLL_H_
 #define _HX_HXEPOLL_H_
 
-namespace HXEpoll {
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <cstring>
+#include <cerrno>
 
-class HXEpoll {
-    
+#include <HXprint/HXprint.h>
+#include <HXJson/HXJson.h>
+
+namespace HXHttp {
+
+struct SocketAddrBuilderBase {
+    int _port;       // 端口
+    int _maxQueue;   // 最大排队数
+    int _maxConnect; // 最大连接数
 };
 
-} // namespace HXEpoll
+template<bool Ready = false>
+struct [[nodiscard]] SocketAddrBuilder : SocketAddrBuilderBase {
+    [[nodiscard]] SocketAddrBuilder<true> &&withPort(int port) && {
+        _port = port;
+        // 建立socket套接字
+        if ((_epollFd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+            LOG_ERROR("socket Error: %s (errno: %d)", strerror(errno), errno);
+        }
+        return static_cast<SocketAddrBuilder<true> &&>(static_cast<SocketAddrBuilder &&>(*this));
+    }
+
+private:
+    int _epollFd;          // epoll实例文件描述符
+    struct epoll_event ev; // epoll实例 事件
+};
+
+class HXEpoll {
+    int maxConnect; // 最大连接数
+
+public:
+    /**
+     * @brief 初始化服务器参数, 以本机作为服务器终端(监听来自本机和公网的全部信息)
+     * @param port 端口
+     * @param maxQueue 最大排队数 
+     * @param maxConnect 最大连接数
+     */
+    explicit HXEpoll();
+};
+
+} // namespace HXHttp
 
 #endif // _HX_HXEPOLL_H_

@@ -4,7 +4,7 @@
 namespace HXJson {
 
 void JsonObject::print() const {
-    HXprint::printnl(inner);
+    HXprint::printnl(_inner);
 }
 
 char unescaped_char(char c) {
@@ -31,4 +31,4 @@ std::size_t skipTail(std::string_view json, std::size_t i, char ch) {
     return 0;
 }
 
-}
+} // namespace HXJson

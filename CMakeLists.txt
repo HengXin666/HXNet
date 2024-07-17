@@ -7,6 +7,11 @@ project(HXNet LANGUAGES CXX)
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
+    message("=-=-=-=-=-=-=当前是 [Release] 模式=-=-=-=-=-=-=")
+else()
+    message("=-=-=-=-=-=-=当前是 [DEBUG] 模式=-=-=-=-=-=-=")
+    add_definitions(-D_HX_DEBUG_) # 添加一个 _HX_DEBUG_ 宏
+    message("已添加宏: _HX_DEBUG_")
 endif()
 
 set(CMAKE_CXX_STANDARD 20) # 设置C++标准为C++20

@@ -50,12 +50,12 @@ struct JsonObject {
     , JsonDict        // {"hello": 985, "world": 211}
     >;
 
-    JsonData inner;
+    JsonData _inner;
 
-    explicit JsonObject() : inner(std::nullptr_t{})
+    explicit JsonObject() : _inner(std::nullptr_t{})
     {}
 
-    explicit JsonObject(JsonData&& data) : inner(data) 
+    explicit JsonObject(JsonData&& data) : _inner(data) 
     {}
 
     // 鸭子
@@ -63,12 +63,12 @@ struct JsonObject {
 
     template<class T>
     const T& get() const {
-        return std::get<T>(inner);
+        return std::get<T>(_inner);
     }
 
     template <class T>
     T &get() {
-        return std::get<T>(inner);
+        return std::get<T>(_inner);
     }
 };
 
@@ -176,7 +176,7 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
                 break;
             }
             i += keyEaten;
-            if (!std::holds_alternative<std::string>(key.inner)) {
+            if (!std::holds_alternative<std::string>(key._inner)) {
                 i = 0;
                 break;
             }
