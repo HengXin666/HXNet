@@ -10,7 +10,7 @@ using namespace std;
 using namespace HXJson;
 using namespace HXprint;
 
-int main() {
-    print("张三", "历史", '\n', true);
-    return 0;
-}
+// int main() {
+//     print("张三", "历史", '\n', true);
+//     return 0;
+// }

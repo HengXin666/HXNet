@@ -11,10 +11,10 @@ include_directories(${ROOT_PATH}/HXprint/include)
 include_directories(${ROOT_PATH}/HXJson/include)
 
 # # 创建静态库: HXCodeTest
-# add_library(HXCodeTest STATIC ${srcs})
+add_library(HXCodeTest STATIC ${srcs})
 
 # 编译可执行文件
-add_executable (${appName} ${srcs})
+# add_executable (${appName} ${srcs})
 
 # add_subdirectory(HXprint)
 target_link_libraries(HXCodeTest HXprint)

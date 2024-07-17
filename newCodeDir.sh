@@ -114,11 +114,11 @@ file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
 add_library($name STATIC \${srcs})
 
 # 编译可执行文件
-add_executable (${appName} ${srcs})
+# add_executable (\${appName} \${srcs})
 
 # 将include目录添加到$name库的公共包含目录中
 target_include_directories($name PUBLIC include)
 EOL
 
 print_formatted_message "${GREEN}" "${YELLOW}" "项目 $name($camelCaseName) 创建完成! 请及时添加到根目录CMake!"
-print_formatted_message "${GREEN}" "${BLUE};${UNDERLINE}" "add_subdirectory(\"$name\")\033[0m \033[5;32m# 添加这个"
+print_formatted_message "${GREEN}" "${BLUE};${UNDERLINE}" "add_subdirectory($name)\033[0m \033[5;32m# 添加这个"
