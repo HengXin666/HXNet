@@ -20,3 +20,10 @@
 |-- build
 `-- newCodeDir.sh
 ```
+
+## 工具
+我提供了以下的`.sh`脚本, 方便快速构建项目: ~~(我觉得下面的代码还可以复用一下qwq...)~~
+
+- `newCodeDir.sh`: 构建子模块, 默认为静态库, 并且会创建一对cpp/h
+
+- `newCodeHCPP.sh`: 构建子模块的cpp和h, 在上面的基础上创建一对cpp/h
