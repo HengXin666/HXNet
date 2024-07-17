@@ -21,15 +21,17 @@
 #define _HX_HXPRINT_H_
 
 #include <iostream>
+#include <tuple>
 #include <map>
 #include <unordered_map>
+#include <optional>
+#include <variant>
+#include <vector>
+#include <deque>
 #include <list>
 #include <set>
 #include <unordered_set>
-#include <vector>
 #include <string>
-#include <deque>
-#include <tuple>
 #include <string_view>
 #include <type_traits>
 #include <concepts>
@@ -58,27 +60,53 @@ concept PairContainer = requires(T t) {
     typename T::second_type;
 };
 
+// 概念: 鸭子类型: 只需要满足有一个成员函数是print的, 即可
+template <typename T>
+concept PrintClassType = requires(T t) {
+    t.print();
+};
+
 /////////////////////////////////////////////////////////
 
 // === 事先声明 ===
 
+// 基础类型
 template<typename T>
 static void print(const T& t);
 
+// std::pair
 template<PairContainer Container>
 static void print(const Container& p);
 
+// std::的常见的支持迭代器的单元素容器
 template<SingleElementContainer Container>
 static void print(const Container& sc);
 
+// std::的常见的支持迭代器的键值对容器
 template <KeyValueContainer Container>
 static void print(const Container& map);
+
+// std::variant 现代共用体
+template<typename... Ts>
+static void print(const std::variant<Ts...>& t);
 
 /////////////////////////////////////////////////////////
 
 template<typename T>
 static void print(const T& t) {
     std::cout << t;
+}
+
+template<typename... Ts>
+static void print(const std::variant<Ts...>& t) {
+    std::visit([] (auto const &v) {
+        print(v);
+    }, t);
+}
+
+template<PrintClassType T>
+static void print(const T& t) {
+    t.print();
 }
 
 template<PairContainer Container>
