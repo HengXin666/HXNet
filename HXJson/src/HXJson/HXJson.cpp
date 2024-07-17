@@ -4,7 +4,7 @@
 namespace HXJson {
 
 void JsonObject::print() const {
-    HXprint::print(inner);
+    HXprint::printnl(inner);
 }
 
 char unescaped_char(char c) {

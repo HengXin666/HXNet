@@ -21,6 +21,7 @@
 #define _HX_HXPRINT_H_
 
 #include <iostream>
+#include <format>
 #include <iomanip>
 #include <tuple>
 #include <map>
@@ -41,6 +42,8 @@ namespace HXprint { // C++20
 
 #ifdef __cpp_lib_concepts // C++ >= 20 && concepts
 
+// 内部使用的命名空间啊喂!
+namespace _ {
 // 概念: 判断类型 T 是否是键值对的关联容器
 template <typename T>
 concept KeyValueContainer = requires(T t) {
@@ -51,9 +54,11 @@ concept KeyValueContainer = requires(T t) {
 // 概念: 判断类型 T 是否是单元素容器
 template <typename T>
 concept SingleElementContainer = std::is_same_v<T, std::set<typename T::value_type>> ||
+                                 std::is_same_v<T, std::multiset<typename T::value_type>> ||
                                  std::is_same_v<T, std::vector<typename T::value_type>> ||
                                  std::is_same_v<T, std::list<typename T::value_type>> ||
                                  std::is_same_v<T, std::deque<typename T::value_type>> ||
+                                 std::is_same_v<T, std::unordered_multiset<typename T::value_type>> ||
                                  std::is_same_v<T, std::unordered_set<typename T::value_type>>;
 template <typename T>
 concept PairContainer = requires(T t) {
@@ -83,97 +88,97 @@ concept StringType = std::is_same_v<T, std::string> ||
 // === 事先声明 === \\ 
 
 // 显式重载
-static void print(const std::nullptr_t& t);
-static void print(const std::nullopt_t& t);
-static void print(const std::monostate& t);
-static void print(bool t);
+static void _HXprint(const std::nullptr_t& t);
+static void _HXprint(const std::nullopt_t& t);
+static void _HXprint(const std::monostate& t);
+static void _HXprint(bool t);
 
 // 基础类型
 template<typename T>
-static void print(const T& t);
+static void _HXprint(const T& t);
 
 // std::optional
 template<typename... Ts>
-static void print(const std::optional<Ts...>& t);
+static void _HXprint(const std::optional<Ts...>& t);
 
 // str相关的类型
 template<StringType ST>
-static void print(const ST& t);
+static void _HXprint(const ST& t);
 
 // std::pair
 template<PairContainer Container>
-static void print(const Container& p);
+static void _HXprint(const Container& p);
 
 // std::的常见的支持迭代器的单元素容器
 template<SingleElementContainer Container>
-static void print(const Container& sc);
+static void _HXprint(const Container& sc);
 
 // std::的常见的支持迭代器的键值对容器
 template <KeyValueContainer Container>
-static void print(const Container& map);
+static void _HXprint(const Container& map);
 
 // std::variant 现代共用体
 template<typename... Ts>
-static void print(const std::variant<Ts...>& t);
+static void _HXprint(const std::variant<Ts...>& t);
 
 /////////////////////////////////////////////////////////
 
-static void print(const std::nullptr_t& t) { // 普通指针不行
-    print("nullptr");
+static void _HXprint(const std::nullptr_t& t) { // 普通指针不行
+    _HXprint("nullptr");
 }
 
-static void print(const std::nullopt_t& t) {
-    print("nullopt");
+static void _HXprint(const std::nullopt_t& t) {
+    _HXprint("nullopt");
 }
 
-static void print(const std::monostate& t) {
-    print("monostate");
+static void _HXprint(const std::monostate& t) {
+    _HXprint("monostate");
 }
 
-static void print(bool t) {
+static void _HXprint(bool t) {
     if (t)
-        print("true");
+        _HXprint("true");
     else
-        print("false");
+        _HXprint("false");
 }
 
 template<typename T>
-static void print(const T& t) {
+static void _HXprint(const T& t) {
     std::cout << t;
 }
 
 template<StringType ST>
-static void print(const ST& t) {
+static void _HXprint(const ST& t) {
     std::cout << std::quoted(t);
 }
 
 template<typename... Ts>
-static void print(const std::optional<Ts...>& t) {
+static void _HXprint(const std::optional<Ts...>& t) {
     if (t.has_value())
-        print(*t);
+        _HXprint(*t);
     else
-        print(std::nullopt);
+        _HXprint(std::nullopt);
 }
 
 template<typename... Ts>
-static void print(const std::variant<Ts...>& t) {
+static void _HXprint(const std::variant<Ts...>& t) {
     std::visit([] (const auto &v) -> void { // 访问者模式
-        print(v);
+        _HXprint(v);
     }, t);
 }
 
 template<PrintClassType T>
-static void print(const T& t) {
+static void _HXprint(const T& t) {
     t.print();
 }
 
 template<PairContainer Container>
-static void print(const Container& p) {
-    print('(');
-    print(std::get<0>(p));
-    print(", ");
-    print(std::get<1>(p));
-    print(')');
+static void _HXprint(const Container& p) {
+    _HXprint('(');
+    _HXprint(std::get<0>(p));
+    _HXprint(", ");
+    _HXprint(std::get<1>(p));
+    _HXprint(')');
 }
 
 // 递归打印tuple
@@ -183,48 +188,70 @@ static void _print(const std::tuple<Ts...>& tup) {
         return;
     } else {
         if constexpr (I > 0)
-            print(", ");
-        print(std::get<I>(tup));
+            _HXprint(", ");
+        _HXprint(std::get<I>(tup));
         _print<I + 1>(tup);
     }
 }
 
 template <std::size_t I = 0, typename... Ts>
-static void print(const std::tuple<Ts...>& tup) {
-    print('(');
+static void _HXprint(const std::tuple<Ts...>& tup) {
+    _HXprint('(');
     _print(tup);
-    print(')');
+    _HXprint(')');
 }
 
 template <KeyValueContainer Container>
-static void print(const Container& map) {
-    print('{');
+static void _HXprint(const Container& map) {
+    _HXprint('{');
     bool once = false;
     for (const auto& [k, v] : map) {
         if (once)
-            print(", ");
+            _HXprint(", ");
         else
             once = true;
-        print(k);
-        print(": ");
-        print(v);
+        _HXprint(k);
+        _HXprint(": ");
+        _HXprint(v);
     }
-    print('}');
+    _HXprint('}');
 }
 
 template<SingleElementContainer Container>
-static void print(const Container& sc) {
-    print('[');
+static void _HXprint(const Container& sc) {
+    _HXprint('[');
     bool once = false;
     for (const auto& it : sc) {
         if (once)
-            print(", ");
+            _HXprint(", ");
         else
             once = true;
-        print(it);
+        _HXprint(it);
     }
-    print(']');
+    _HXprint(']');
 }
+
+}
+
+/**
+ * @brief 打印带'\\n'的对象, 多个则使用 ' ' 空格分开.
+ */
+template <class T0, class ...Ts>
+void print(T0 const &t0, Ts const &...ts) {
+    _::_HXprint(t0);
+    ((std::cout << " ", _::_HXprint(ts)), ...);
+    std::cout << "\n";
+}
+
+/**
+ * @brief 打印不带'\\n'的对象, 多个则使用 ' ' 空格分开.
+ */
+template <class T0, class ...Ts>
+void printnl(T0 const &t0, Ts const &...ts) {
+    _::_HXprint(t0);
+    ((std::cout << " ", _::_HXprint(ts)), ...);
+}
+// 注: 建议鸭子类型使用printnl!
 
 #endif // __cpp_lib_concepts
 
