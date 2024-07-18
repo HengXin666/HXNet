@@ -58,13 +58,16 @@ void printClickableLink(const std::string& text, const std::string& url) {
     std::cout << "\033]8;;" << url << "\033\\" << text << "\033]8;;\033\\" << std::endl;
 }
 
+// 全局变量: 是否退出
+bool isAllowServerRun = true;
+
 int main() {
     printClickableLink("OpenAI", "https://www.openai.com");
     printClickableLink("Google", "https://www.google.com");
 
     // 绑定交互信号监听（Ctrl + C）
     signal(SIGINT, [](int signum) {
-		
+		isAllowServerRun = false;
 	});
 
     HXHttp::HXEpoll epoll{};
@@ -75,9 +78,7 @@ int main() {
 
     }).setNewUserBreakCallback([](int fd){
 
-    }).run();
-
-
+    }).run(-1, [&](){ return isAllowServerRun; });
     
     return 0;
 }

@@ -13,6 +13,8 @@
 if (funName) \
     funName(__VA_ARGS__)
 
+#define MAX_BUFFER_SIZE 4096
+
 namespace HXHttp {
 
 HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect) 
@@ -90,6 +92,11 @@ HXEpoll::~HXEpoll() {
     ::close(_epollFd);
 	::close(_serverFd);
     delete[] _events;
+
+    _condition.notify_all();
+    for (auto&& it : _threads)
+        it.join();
+
     LOG_INFO("====== Epoll已关闭: True ======");
 }
 
@@ -128,7 +135,7 @@ void HXEpoll::workerThread() {
             _tasks.pop();
         }
 
-        char buffer[4096] = {0};
+        char buffer[MAX_BUFFER_SIZE] = {0};
         ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0) { // 断开连接
             if (bytesRead == 0 || !(errno == EWOULDBLOCK || errno == EAGAIN)) {
@@ -155,6 +162,12 @@ void HXEpoll::run(int timeOut /*= -1*/, std::function<bool()> conditional /*= nu
 
         int nfds = wait(timeOut);
         if (nfds == -1) {
+            if (errno == EINTR) { // 屏蔽进程捕获信号而中断的错误
+                LOG_WARNING("捕获到退出信号!");
+                if (conditional)
+                    _running = conditional();
+                continue;
+            }
             LOG_ERROR("wait Error: %s (errno: %d)", strerror(errno), errno);
             doError();
         }
@@ -169,7 +182,7 @@ void HXEpoll::run(int timeOut /*= -1*/, std::function<bool()> conditional /*= nu
                     LOG_ERROR("添加时候出现错误! %s (errno: %d)", strerror(errno), errno);
                     ::close(newClientFd);
                 } else {
-                    LOG_INFO("[INFO]: 欢迎新的客户机连接! id = %d", newClientFd);
+                    LOG_INFO("新的客户机连接! id = %d", newClientFd);
                     ATTEMPT_TO_CALL(_newConnectCallbackFunc, newClientFd); // 回调
                 }
             } else { // 处理新来的信息
