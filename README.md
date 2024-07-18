@@ -1,5 +1,7 @@
 # HXNet
-学习现代Cpp的代码存放库, Json解析, 万用print等
+学习现代Cpp的代码存放库, 多线程epoll, http解析, Json解析, 万用print等
+
+> 目标是写一个基于epoll + 多线程的 Web Http 后端
 
 ## 构建要求
 
@@ -15,6 +17,7 @@
 |-- HXCodeTest # 测试代码
 |-- HXJson     # Json解析库
 |-- HXprint    # 万能print
+|-- HXHttp     # web/http 相关的库, 如epoll
 |-- LICENSE
 |-- README.md
 |-- build
