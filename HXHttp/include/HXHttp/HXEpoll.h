@@ -21,6 +21,12 @@
 #define _HX_HXEPOLL_H_
 
 #include <sys/epoll.h> // Epoll
+#include <thread>
+#include <vector>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <functional>
 
 namespace HXHttp {
 
@@ -30,6 +36,23 @@ class HXEpoll {
     int _maxConnect;               // 最大连接数
     struct ::epoll_event _ev;      // epoll实例 事件
     struct ::epoll_event *_events; // 用户的 epoll 事件
+
+    // --- 多线程相关 ---
+    std::vector<std::thread> _threads;  // 线程
+    std::queue<int> _tasks;             // 存放有消息的 fd 文件描述符
+    std::mutex _queueMutex;             // 锁
+    std::condition_variable _condition; // 条件变量
+
+    // --- 回调函数 ---
+    std::function<void(int)> _newConnectCallbackFunc;                  // 有新连接的回调函数, {客户端fd}
+    std::function<void(int, char *, std::size_t)> _newMsgCallbackFunc; // 有新消息的回调函数, {客户端fd, msg, msgLen}
+    std::function<void(int)> _newUserBreakCallbackFunc;                // 用户断开连接的回调函数, {客户端fd}
+    bool _running; // 这个不用原子吧?
+
+    /**
+     * @brief 任务线程函数
+     */
+    void workerThread();
 
     /**
      * @brief 报错, 并且释放Fd
@@ -85,7 +108,42 @@ public:
      */
     explicit HXEpoll(int port = 28205, int maxQueue = 512, int maxConnect = 1);
 
-    void run();
+    /**
+     * @brief 设置有新连接的回调函数
+     * @param func 回调函数: {int : 客户端fd}
+     */
+    [[nodiscard]] HXEpoll& setNewConnectCallback(std::function<void(int)> func) {
+        _newConnectCallbackFunc = func;
+        return *this;
+    }
+
+    /**
+     * @brief 设置有新消息的回调函数
+     * @param func 回调函数: {int : 客户端fd, char* : msgStr, size_t : msgStrLen} -> void;
+     */
+    [[nodiscard]] HXEpoll& setNewMsgCallback(std::function<void(int, char*, std::size_t)> func) {
+        _newMsgCallbackFunc = func;
+        return *this;
+    }
+
+    /**
+     * @brief 设置用户断开连接的回调函数
+     * @param func 回调函数: {int : 客户端fd}
+     */
+    [[nodiscard]] HXEpoll& setNewUserBreakCallback(std::function<void(int)> func) {
+        _newUserBreakCallbackFunc = func;
+        return *this;
+    }
+
+    /**
+     * @brief 启动Epoll
+     * @param timeOut 等待的时间,
+     *          -1 阻塞等待;
+     *           0 立即返回;
+     *          正数 阻塞等待的最长时间(单位: 毫秒)
+     * @param conditional 每次主循环迭代时调用的函数, 用于检查服务器是否应继续运行, 返回true让服务器继续运行, 返回false关闭服务器
+     */
+    void run(int timeOut = -1, std::function<bool()> conditional = nullptr);
 
     ~HXEpoll();
 };

@@ -51,6 +51,7 @@ void handleClient(int client_socket) {
 
 #include <iostream>
 #include <HXHttp/HXEpoll.h>
+#include <csignal>
 
 void printClickableLink(const std::string& text, const std::string& url) {
     // ANSI escape sequence for clickable hyperlink
@@ -60,7 +61,24 @@ void printClickableLink(const std::string& text, const std::string& url) {
 int main() {
     printClickableLink("OpenAI", "https://www.openai.com");
     printClickableLink("Google", "https://www.google.com");
-    HXHttp::HXEpoll {};
+
+    // 绑定交互信号监听（Ctrl + C）
+    signal(SIGINT, [](int signum) {
+		
+	});
+
+    HXHttp::HXEpoll epoll{};
+    
+    epoll.setNewConnectCallback([](int fd) {
+
+    }).setNewMsgCallback([](int fd, char *str, std::size_t strLen) {
+
+    }).setNewUserBreakCallback([](int fd){
+
+    }).run();
+
+
+    
     return 0;
 }
 

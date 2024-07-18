@@ -9,9 +9,21 @@
 #include <HXprint/HXprint.h>
 #include <HXJson/HXJson.h>
 
+#define ATTEMPT_TO_CALL(funName, ...) \
+if (funName) \
+    funName(__VA_ARGS__)
+
 namespace HXHttp {
 
-HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect) : _maxConnect(maxConnect) {
+HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect) 
+    : _maxConnect(maxConnect)
+    , _running(false)
+    , _tasks()
+    , _queueMutex()
+    , _condition()
+    , _newConnectCallbackFunc(nullptr)
+    , _newMsgCallbackFunc(nullptr)
+    , _newUserBreakCallbackFunc(nullptr)  {
     do {
         // 建立socket套接字
         if ((_serverFd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -101,37 +113,69 @@ int HXEpoll::ctlMod(int fd) {
     return ::epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &_ev);
 }
 
-void HXEpoll::run() {
-    while (1) {
-        int nfds = wait(-1);
+void HXEpoll::workerThread() {
+    while (_running) {
+        int clientFd;
+        {
+            std::unique_lock<std::mutex> lock(_queueMutex);
+            _condition.wait(lock, [this] { return !_tasks.empty() || !_running; });
+
+            if (!_running) {
+                break;
+            }
+
+            clientFd = _tasks.front();
+            _tasks.pop();
+        }
+
+        char buffer[4096] = {0};
+        ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+        if (bytesRead <= 0) { // 断开连接
+            if (bytesRead == 0 || !(errno == EWOULDBLOCK || errno == EAGAIN)) {
+                ctlDel(clientFd);
+                ::close(clientFd);
+            }
+            ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
+        } else { // 处理收到的数据
+            ATTEMPT_TO_CALL(_newMsgCallbackFunc, clientFd, buffer, sizeof(buffer));
+        }
+    }
+}
+
+void HXEpoll::run(int timeOut /*= -1*/, std::function<bool()> conditional /*= nullptr*/) {
+    _running = true;
+
+    for (std::size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {
+        _threads.emplace_back(&HXEpoll::workerThread, this);
+    }
+
+    while (_running) {
+        if (conditional)
+            _running = conditional();
+
+        int nfds = wait(timeOut);
         if (nfds == -1) {
             LOG_ERROR("wait Error: %s (errno: %d)", strerror(errno), errno);
             doError();
         }
 
-        for (int i = 0; i < nfds; ++i) {
+        for (std::size_t i = 0; i < nfds; ++i) {
             int tmpFd = _events[i].data.fd;
             if (tmpFd == _serverFd) { // 新连接
                 int newClientFd = ::accept(_serverFd, (struct sockaddr *)NULL, NULL);
                 if (newClientFd < 0) {
                     LOG_ERROR("连接新客户端出错! %s (errno: %d)", strerror(errno), errno);
+                } else if (ctlAdd(newClientFd) < 0) {
+                    LOG_ERROR("添加时候出现错误! %s (errno: %d)", strerror(errno), errno);
+                    ::close(newClientFd);
                 } else {
                     LOG_INFO("[INFO]: 欢迎新的客户机连接! id = %d", newClientFd);
-
-                    if (ctlAdd(newClientFd) < 0) {
-                        LOG_ERROR("添加时候出现错误! %s (errno: %d)", strerror(errno), errno);
-                        ::close(newClientFd);
-                    }
+                    ATTEMPT_TO_CALL(_newConnectCallbackFunc, newClientFd); // 回调
                 }
             } else { // 处理新来的信息
-                int strLen = ::recv(tmpFd, msg, MAX_SIZE, 0);
-                if (strLen < 0) {
-                    LOG_ERROR("接收客户端[%d]消息出错: Error: %s (errno: %d)", tmpFd, strerror(errno), errno);
-                } else if (strLen == 0 && !(errno == EWOULDBLOCK || errno == EAGAIN)) {
-                    // 断开
-                    ctlDel(tmpFd);
-                    ::close(tmpFd);
-                }
+                std::unique_lock<std::mutex> lock(_queueMutex);
+                _tasks.push(tmpFd);
+                _condition.notify_one();
             }
         }
     }
