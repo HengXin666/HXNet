@@ -20,16 +20,21 @@
 #ifndef _HX_HXEPOLL_H_
 #define _HX_HXEPOLL_H_
 
-#include <sys/epoll.h>  // Epoll
+#include <sys/epoll.h> // Epoll
 
 namespace HXHttp {
 
 class HXEpoll {
-    int _epollFd;                  // epoll实例文件描述符
+    int _epollFd {-1};             // epoll实例文件描述符
+    int _serverFd {-1};            // 服务器套接字
     int _maxConnect;               // 最大连接数
-    int _serverFd;                 // 服务器套接字
     struct ::epoll_event _ev;      // epoll实例 事件
     struct ::epoll_event *_events; // 用户的 epoll 事件
+
+    /**
+     * @brief 报错, 并且释放Fd
+     */
+    void doError();
 
     // epoll_wait
     /**
@@ -38,8 +43,8 @@ class HXEpoll {
      *          -1 阻塞等待;
      *          0  立即返回;
      *          正数 阻塞等待的最长时间(单位: 毫秒)
-     * @return 失败时返回 -1，并设置 errno 错误码 ;
-     *        == 0 无消息;
+     * @return 失败时返回 -1, 并设置 errno 错误码;
+     *         == 0 无消息;
      *         > 0 有对应的消息数量
      */
     int wait(int timeOut);
@@ -48,28 +53,28 @@ class HXEpoll {
     /**
      * @brief 添加事件到epoll红黑树中
      * @param fd 文件操作符
-     * @param ev 指向 epoll_event 结构体的指针，用于指定事件类型和数据
-     * @return 成功时返回 0；失败时返回 -1，并设置 errno 错误码 
+     * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
+     * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
-    int ctl_add(int fd);
+    int ctlAdd(int fd);
 
     // del
     /**
      * @brief 删除epoll红黑树中的事件
      * @param fd 文件操作符
-     * @param ev 指向 epoll_event 结构体的指针，用于指定事件类型和数据
-     * @return 成功时返回 0；失败时返回 -1，并设置 errno 错误码 
+     * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
+     * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
-    int ctl_del(int fd);
+    int ctlDel(int fd);
 
     // mod (Modify)
     /**
      * @brief 修改epoll红黑树中的事件
      * @param fd 文件操作符
-     * @param ev 指向 epoll_event 结构体的指针，用于指定事件类型和数据
-     * @return 成功时返回 0；失败时返回 -1，并设置 errno 错误码 
+     * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
+     * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
-    int ctl_mod(int fd);
+    int ctlMod(int fd);
 
 public:
     /**
@@ -79,6 +84,8 @@ public:
      * @param maxConnect 最大连接数 | 只是一个提示, 实际上, 内核会根据需要动态调整大小
      */
     explicit HXEpoll(int port = 28205, int maxQueue = 512, int maxConnect = 1);
+
+    void run();
 
     ~HXEpoll();
 };
