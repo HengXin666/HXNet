@@ -1,6 +1,7 @@
 #include <HXHttp/HXEpoll.h>
 
 #include <netinet/in.h> // INADDR_ANY等宏的数据
+#include <fcntl.h>      // Linux I/O
 #include <sys/socket.h> // 套接字
 #include <cstring>      // 错误码 to 错误码对应原因
 #include <cerrno>       // 错误码
@@ -63,7 +64,7 @@ HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect)
         }
 
         // --- 将监听套接字添加到 epoll 实例中 ---
-        _ev.events = EPOLLIN;
+        _ev.events = EPOLLIN | EPOLLET; // EPOLLET 模式
         _ev.data.fd = _serverFd;
         if (::epoll_ctl(_epollFd, EPOLL_CTL_ADD, _serverFd, &_ev) < 0) {
             LOG_ERROR("epoll_ctl Error: %s (errno: %d)", strerror(errno), errno);
@@ -105,8 +106,8 @@ int HXEpoll::wait(int timeOut) {
 }
 
 int HXEpoll::ctlAdd(int fd) {
-    // --- 默认模式 --- | 那个高速模式我还不会?
-    _ev.events = EPOLLIN;
+    // EPOLLET 模式
+    _ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
     _ev.data.fd = fd;
     return ::epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev);
 }
@@ -116,8 +117,19 @@ int HXEpoll::ctlDel(int fd) {
 }
 
 int HXEpoll::ctlMod(int fd) {
-    // --- 封装不确定 ---
     return ::epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &_ev);
+}
+
+bool HXEpoll::setNonBlocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) { // 获取文件描述符标志
+        return true;
+    }
+    flags |= O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) == -1) { // 设置文件状态标志为非阻塞
+        return true;
+    }
+    return false;
 }
 
 void HXEpoll::workerThread() {
@@ -136,6 +148,7 @@ void HXEpoll::workerThread() {
         }
 
         char buffer[MAX_BUFFER_SIZE] = {0};
+        LOG_INFO("[%llu] 读取中... {", std::this_thread::get_id());
         ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0) { // 断开连接
             if (bytesRead == 0 || !(errno == EWOULDBLOCK || errno == EAGAIN)) {
@@ -146,6 +159,7 @@ void HXEpoll::workerThread() {
         } else { // 处理收到的数据
             ATTEMPT_TO_CALL(_newMsgCallbackFunc, clientFd, buffer, sizeof(buffer));
         }
+        LOG_INFO("} // [%llu] 读取完毕并输出", std::this_thread::get_id());
     }
 }
 
@@ -178,6 +192,9 @@ void HXEpoll::run(int timeOut /*= -1*/, std::function<bool()> conditional /*= nu
                 int newClientFd = ::accept(_serverFd, (struct sockaddr *)NULL, NULL);
                 if (newClientFd < 0) {
                     LOG_ERROR("连接新客户端出错! %s (errno: %d)", strerror(errno), errno);
+                } else if (setNonBlocking(newClientFd)) {
+                    LOG_ERROR("设置fd为非阻塞时出错! %s (errno: %d)", strerror(errno), errno);
+                    ::close(newClientFd);
                 } else if (ctlAdd(newClientFd) < 0) {
                     LOG_ERROR("添加时候出现错误! %s (errno: %d)", strerror(errno), errno);
                     ::close(newClientFd);
@@ -186,12 +203,15 @@ void HXEpoll::run(int timeOut /*= -1*/, std::function<bool()> conditional /*= nu
                     ATTEMPT_TO_CALL(_newConnectCallbackFunc, newClientFd); // 回调
                 }
             } else { // 处理新来的信息
+                LOG_WARNING("新信息=======================================");
                 std::unique_lock<std::mutex> lock(_queueMutex);
                 _tasks.push(tmpFd);
                 _condition.notify_one();
             }
         }
+        LOG_WARNING("for out =======================================");
     }
+    LOG_INFO("run out!");
 }
 
 } // namespace HXHttp

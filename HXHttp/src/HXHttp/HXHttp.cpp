@@ -49,35 +49,32 @@ void handleClient(int client_socket) {
     close(client_socket);
 }
 
-#include <iostream>
 #include <HXHttp/HXEpoll.h>
-#include <csignal>
+#include <HXHttp/HXRouter.h>
 
-void printClickableLink(const std::string& text, const std::string& url) {
-    // ANSI escape sequence for clickable hyperlink
-    std::cout << "\033]8;;" << url << "\033\\" << text << "\033]8;;\033\\" << std::endl;
-}
+#include <iostream>
+#include <csignal>
 
 // 全局变量: 是否退出
 bool isAllowServerRun = true;
 
 int main() {
-    printClickableLink("OpenAI", "https://www.openai.com");
-    printClickableLink("Google", "https://www.google.com");
-
     // 绑定交互信号监听（Ctrl + C）
     signal(SIGINT, [](int signum) {
 		isAllowServerRun = false;
 	});
 
+    HXHttp::HXRouter::getSingleton();
+
     HXHttp::HXEpoll epoll{};
     
-    epoll.setNewConnectCallback([](int fd) {
+    epoll.setNewConnectCallback([](int fd) { // 新连接
 
-    }).setNewMsgCallback([](int fd, char *str, std::size_t strLen) {
-
-    }).setNewUserBreakCallback([](int fd){
-
+    }).setNewMsgCallback([](int fd, char *str, std::size_t strLen) { // 处理
+        printf("%s\n", str);
+        // ::close(fd); // http 是无感应的, 不是 WebSocket
+    }).setNewUserBreakCallback([](int fd){ // 请求断开
+        printf("没有东西\n");
     }).run(-1, [&](){ return isAllowServerRun; });
     
     return 0;

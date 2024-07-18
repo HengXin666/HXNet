@@ -21,7 +21,6 @@
 |-- LICENSE
 |-- README.md
 |-- build
-`-- newCodeDir.sh
 ```
 
 ## 工具

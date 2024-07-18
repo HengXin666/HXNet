@@ -99,6 +99,12 @@ class HXEpoll {
      */
     int ctlMod(int fd);
 
+    /**
+     * @brief 设置fd为非阻塞
+     * @return 错误为真, 正常为假
+     */
+    bool setNonBlocking(int fd);
+
 public:
     /**
      * @brief 初始化服务器参数, 以本机作为服务器终端(监听来自本机和公网的全部信息)
