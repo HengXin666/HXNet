@@ -22,6 +22,8 @@
 
 #include <HXHttp/HXRouter.h>
 
+#include <string_view>
+
 namespace HXHttp {
 
 /**
@@ -33,7 +35,12 @@ class HXController {
 
 /// @brief 测试使用的
 class MyWebController : HXController {
-
+    // 请求类型, URL, 端点名称, 请求数据...(可变参数)
+    int fun(std::string_view requestType, const std::unordered_map<std::string, std::string>& requestHead) {
+        if (requestType == "GET")
+            return -1;
+        // 内部的 requestHead 处理, 需要的
+    }
 };
 
 } // namespace HXHttp

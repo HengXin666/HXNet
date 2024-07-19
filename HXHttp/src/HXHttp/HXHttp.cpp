@@ -56,7 +56,7 @@ int main() {
 
     }).setNewMsgCallback([](int fd, char *str, std::size_t strLen) -> bool { // 处理
         // printf("%s", str);
-
+        printf("%s", str);
         // Http 第一行是请求类型和 协议版本
         // 剩下的是键值对
         char *tmp = NULL;
