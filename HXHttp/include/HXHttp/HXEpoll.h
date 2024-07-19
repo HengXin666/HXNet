@@ -163,7 +163,7 @@ public:
      *          正数 阻塞等待的最长时间(单位: 毫秒)
      * @param conditional 每次主循环迭代时调用的函数, 用于检查服务器是否应继续运行, 返回true让服务器继续运行, 返回false关闭服务器
      */
-    void run(int timeOut = -1, std::function<bool()> conditional = nullptr);
+    void run(int timeOut = -1, const std::function<bool()>& conditional = nullptr);
 
     ~HXEpoll();
 };

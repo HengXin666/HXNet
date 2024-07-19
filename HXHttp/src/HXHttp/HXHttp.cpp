@@ -43,7 +43,7 @@ void handleClient(int client_socket) {
 bool isAllowServerRun = true;
 
 int main() {
-    // 绑定交互信号监听（Ctrl + C）
+    // 绑定交互信号监听 (Ctrl + C)
     signal(SIGINT, [](int signum) {
 		isAllowServerRun = false;
 	});
@@ -84,7 +84,7 @@ Host: localhost:28205 # 从头开始, 寻找第一个`:`
                 requestHead.insert(p);
                 printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
             }
-        } else {  // 处理错误：请求行不存在
+        } else {  // 处理错误: 请求行不存在
 
         }
         return true; // http 是无感应的, 不是 WebSocket

@@ -149,7 +149,7 @@ void HXEpoll::workerThread() {
     }
 }
 
-void HXEpoll::run(int timeOut /*= -1*/, std::function<bool()> conditional /*= nullptr*/) {
+void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional /*= nullptr*/) {
     _running = true;
 
     for (std::size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {

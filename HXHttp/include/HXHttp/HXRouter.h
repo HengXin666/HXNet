@@ -23,6 +23,7 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
+#include <functional>
 
 namespace HXHttp {
 
@@ -32,7 +33,12 @@ class HXController;
  * @brief 路由类: 懒汉单例
  */
 class HXRouter {
-    std::unordered_map<std::string, std::shared_ptr<HXController>> _routerMap; // URL - 控制器 路由映射
+    /**
+     * don't use a char * as a key
+     * std::string keys are never your bottleneck
+     * the performance difference between a char * and a std::string is a myth.
+     */
+    std::unordered_map<std::string, std::function<void()>> _routerMap; // URL - 端点函数 路由映射
 
     explicit HXRouter() : _routerMap()
     {}
@@ -47,6 +53,16 @@ public:
     [[nodiscard]] static HXRouter& getSingleton() {
         static HXRouter router{};
         return router;
+    }
+
+    /**
+     * @brief 添加控制器
+     * @param path 挂载的PTAH, 如`"/home/%d"`, 尾部不要`/`
+     * @param controller 控制器
+     * @return 是否添加成功
+     */
+    bool addController(const std::string& path, const std::function<void()>& fun) {
+        return _routerMap.emplace(path, fun).second;
     }
 };
 
