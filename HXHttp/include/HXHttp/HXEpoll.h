@@ -45,7 +45,7 @@ class HXEpoll {
 
     // --- 回调函数 ---
     std::function<void(int)> _newConnectCallbackFunc;                  // 有新连接的回调函数, {客户端fd}
-    std::function<void(int, char *, std::size_t)> _newMsgCallbackFunc; // 有新消息的回调函数, {客户端fd, msg, msgLen}
+    std::function<int(int, char *, std::size_t)> _newMsgCallbackFunc;  // 有新消息的回调函数, {客户端fd, msg, msgLen} -> bool: 是否释放该fd
     std::function<void(int)> _newUserBreakCallbackFunc;                // 用户断开连接的回调函数, {客户端fd}
     bool _running; // 这个不用原子吧?
 
@@ -70,7 +70,9 @@ class HXEpoll {
      *         == 0 无消息;
      *         > 0 有对应的消息数量
      */
-    int wait(int timeOut);
+    int wait(int timeOut) {
+        return ::epoll_wait(_epollFd, _events, _maxConnect, timeOut);
+    }
 
     // add
     /**
@@ -79,7 +81,12 @@ class HXEpoll {
      * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
      * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
-    int ctlAdd(int fd);
+    int ctlAdd(int fd)  {
+        // EPOLLET 模式
+        _ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+        _ev.data.fd = fd;
+        return ::epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev);
+    }
 
     // del
     /**
@@ -88,7 +95,9 @@ class HXEpoll {
      * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
      * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
-    int ctlDel(int fd);
+    int ctlDel(int fd) {
+        return ::epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL);
+    }
 
     // mod (Modify)
     /**
@@ -97,7 +106,9 @@ class HXEpoll {
      * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
      * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
-    int ctlMod(int fd);
+    int ctlMod(int fd) {
+        return ::epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &_ev);
+    }
 
     /**
      * @brief 设置fd为非阻塞
@@ -117,6 +128,7 @@ public:
     /**
      * @brief 设置有新连接的回调函数
      * @param func 回调函数: {int : 客户端fd}
+     * @return *this 可链式调用
      */
     [[nodiscard]] HXEpoll& setNewConnectCallback(std::function<void(int)> func) {
         _newConnectCallbackFunc = func;
@@ -125,9 +137,10 @@ public:
 
     /**
      * @brief 设置有新消息的回调函数
-     * @param func 回调函数: {int : 客户端fd, char* : msgStr, size_t : msgStrLen} -> void;
+     * @param func 回调函数: {int : 客户端fd, char* : msgStr, size_t : msgStrLen} -> bool(true: 删除该fd, false: 不做处理);
+     * @return *this 可链式调用
      */
-    [[nodiscard]] HXEpoll& setNewMsgCallback(std::function<void(int, char*, std::size_t)> func) {
+    [[nodiscard]] HXEpoll& setNewMsgCallback(std::function<int(int, char*, std::size_t)> func) {
         _newMsgCallbackFunc = func;
         return *this;
     }
@@ -135,6 +148,7 @@ public:
     /**
      * @brief 设置用户断开连接的回调函数
      * @param func 回调函数: {int : 客户端fd}
+     * @return *this 可链式调用
      */
     [[nodiscard]] HXEpoll& setNewUserBreakCallback(std::function<void(int)> func) {
         _newUserBreakCallbackFunc = func;

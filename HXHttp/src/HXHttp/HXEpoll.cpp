@@ -10,10 +10,12 @@
 #include <HXprint/HXprint.h>
 #include <HXJson/HXJson.h>
 
+// 如果这个function<...>!=nullptr, 则调用
 #define ATTEMPT_TO_CALL(funName, ...) \
 if (funName) \
     funName(__VA_ARGS__)
 
+// 解析缓冲区大小
 #define MAX_BUFFER_SIZE 4096
 
 namespace HXHttp {
@@ -101,25 +103,6 @@ HXEpoll::~HXEpoll() {
     LOG_INFO("====== Epoll已关闭: True ======");
 }
 
-int HXEpoll::wait(int timeOut) {
-    return ::epoll_wait(_epollFd, _events, _maxConnect, timeOut);
-}
-
-int HXEpoll::ctlAdd(int fd) {
-    // EPOLLET 模式
-    _ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    _ev.data.fd = fd;
-    return ::epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev);
-}
-
-int HXEpoll::ctlDel(int fd) {
-    return ::epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL);
-}
-
-int HXEpoll::ctlMod(int fd) {
-    return ::epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &_ev);
-}
-
 bool HXEpoll::setNonBlocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1) { // 获取文件描述符标志
@@ -157,7 +140,10 @@ void HXEpoll::workerThread() {
             }
             ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
         } else { // 处理收到的数据
-            ATTEMPT_TO_CALL(_newMsgCallbackFunc, clientFd, buffer, sizeof(buffer));
+            if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {
+                ctlDel(clientFd);
+                ::close(clientFd);
+            }
         }
         LOG_INFO("} // [%llu] 读取完毕并输出", std::this_thread::get_id());
     }

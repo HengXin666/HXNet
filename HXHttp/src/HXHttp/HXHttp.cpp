@@ -7,31 +7,12 @@ namespace HXHttp {
 #define PORT 8080
 #define MAX_EVENTS 10
 
-std::vector<std::string> split(const std::string &str, char delimiter) {
-    std::vector<std::string> res;
-    if (str == "")
-        return res;
-	// 在字符串末尾也加入分隔符，方便截取最后一段
-	std::string strs = str + delimiter;
-	size_t pos = strs.find(delimiter);
- 
-	// 若找不到内容则字符串搜索函数返回 npos
-	while (pos != strs.npos) {
-		std::string temp = strs.substr(0, pos);
-		res.push_back(temp);
-		// 去掉已分割的字符串,在剩下的字符串中进行分割
-		strs = strs.substr(pos + 1, strs.size());
-		pos = strs.find(delimiter);
-	}
-    return res;
-}
-
 void handleClient(int client_socket) {
     char buffer[1024] = {0};
     read(client_socket, buffer, 1024);
 
     std::string request(buffer);
-    std::vector<std::string> lines = split(request, '\n');
+    std::vector<std::string> lines;// = split(request, '\n');
 
     std::cout << "Request received:" << std::endl;
     for (const auto &line : lines) {
@@ -51,9 +32,12 @@ void handleClient(int client_socket) {
 
 #include <HXHttp/HXEpoll.h>
 #include <HXHttp/HXRouter.h>
+#include <HXHttp/HXHttpTools.h>
 
 #include <iostream>
+#include <unordered_map>
 #include <csignal>
+#include <cstring>
 
 // 全局变量: 是否退出
 bool isAllowServerRun = true;
@@ -64,15 +48,46 @@ int main() {
 		isAllowServerRun = false;
 	});
 
-    HXHttp::HXRouter::getSingleton();
+    // HXHttp::HXRouter::getSingleton();
 
     HXHttp::HXEpoll epoll{};
     
     epoll.setNewConnectCallback([](int fd) { // 新连接
 
-    }).setNewMsgCallback([](int fd, char *str, std::size_t strLen) { // 处理
-        printf("%s\n", str);
-        // ::close(fd); // http 是无感应的, 不是 WebSocket
+    }).setNewMsgCallback([](int fd, char *str, std::size_t strLen) -> bool { // 处理
+        // printf("%s", str);
+
+        // Http 第一行是请求类型和 协议版本
+        // 剩下的是键值对
+        char *tmp = NULL;
+        char *line = ::strtok_r(str, "\r\n", &tmp); // 线程安全
+        /*
+请求格式
+GET /PTAH HTTP/1.1 # 可以确定, http协议的第一行, 必需是这个
+Host: localhost:28205 # 从头开始, 寻找第一个`:`
+         */
+        if (line) { // 解析请求头
+            // GET /PTAH HTTP/1.1
+            auto requestLine = HXHttp::HXStringUtil::split(line, " ");
+            std::unordered_map<std::string, std::string> requestHead;
+            // requestLine[0] 请求类型
+            // requestLine[1] 请求PTAH
+            // requestLine[2] 请求协议
+            printf("请求类型: [%s], 请求PTAH: [%s], 请求协议: [%s]\n",
+                requestLine[0].c_str(),
+                requestLine[1].c_str(),
+                requestLine[2].c_str()
+            );
+
+            while ((line = ::strtok_r(NULL, "\r\n", &tmp))) { // 解析 请求行
+                auto p = HXHttp::HXStringUtil::splitAtFirst(line, ": ");
+                requestHead.insert(p);
+                printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
+            }
+        } else {  // 处理错误：请求行不存在
+
+        }
+        return true; // http 是无感应的, 不是 WebSocket
     }).setNewUserBreakCallback([](int fd){ // 请求断开
         printf("没有东西\n");
     }).run(-1, [&](){ return isAllowServerRun; });
