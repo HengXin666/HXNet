@@ -42,10 +42,20 @@ struct HXStringUtil final {
      * @brief 将字符串按从左到右第一个`delimiter`分割为两半
      * @param str 需要分割的字符串
      * @param delimiter 分割字符
-     * @return 分割后的数组
+     * @return 分割后的数组, 失败返回: `{"", ""}`
      */
     static std::pair<std::string, std::string> splitAtFirst(std::string_view str, std::string_view delim);
 
+    /**
+     * @brief 将字符串转为小写字母
+     * @param str [in, out] 待处理字符串
+     */
+    static void toSmallLetter(std::string& str) {
+        std::size_t n = str.size();
+        for (std::size_t i = 0; i < n; ++i)
+            if ('A' <= str[i] && str[i] <= 'Z')
+                str[i] ^= ' ';
+    }
 };
 
 } // namespace HXHttp

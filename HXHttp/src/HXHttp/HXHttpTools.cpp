@@ -49,8 +49,7 @@ std::pair<std::string, std::string> HXStringUtil::splitAtFirst(std::string_view 
         res.first = str.substr(0, pos);
         res.second = str.substr(pos + delim.size());
     } else {
-        res.first = str;
-        res.second = "";
+        res.first = res.second = "";
     }
     return res;
 }

@@ -1,5 +1,15 @@
 #include <HXHttp/HXHttp.h>
 
+#include <iostream>
+#include <iosfwd>
+#include <string>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <cstring>
+#include <vector>
+
 namespace HXHttp {
 
 } // namespace HXHttp
@@ -68,6 +78,7 @@ Host: localhost:28205 # 从头开始, 寻找第一个`:`
          */
         if (line) { // 解析请求头
             // GET /PTAH HTTP/1.1
+            bool isBody = false;
             auto requestLine = HXHttp::HXStringUtil::split(line, " ");
             std::unordered_map<std::string, std::string> requestHead;
             // requestLine[0] 请求类型
@@ -79,10 +90,16 @@ Host: localhost:28205 # 从头开始, 寻找第一个`:`
                 requestLine[2].c_str()
             );
 
+            // 如果有多个"\r\n"会直接跳过
             while ((line = ::strtok_r(NULL, "\r\n", &tmp))) { // 解析 请求行
                 auto p = HXHttp::HXStringUtil::splitAtFirst(line, ": ");
+                HXHttp::HXStringUtil::toSmallLetter(p.first);
                 requestHead.insert(p);
                 printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
+            }
+
+            if (isBody) {
+                printf("%s", tmp);
             }
         } else {  // 处理错误: 请求行不存在
 

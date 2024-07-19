@@ -20,15 +20,7 @@
 #ifndef _HX_HXHTTP_H_
 #define _HX_HXHTTP_H_
 
-#include <iostream>
-#include <iosfwd>
-#include <string>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/epoll.h>
-#include <cstring>
-#include <vector>
+
 
 namespace HXHttp {
 
