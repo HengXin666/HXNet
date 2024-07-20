@@ -28,11 +28,20 @@
 namespace HXHttp {
 
 /**
- * @brief 客户端请求(Request)
+ * @brief 客户端请求类(Request)
  */
 class HXRequest {
+    /**
+     * @brief 请求行数据分类
+     */
+    enum RequestLineDataType {
+        RequestType = 0,        // 请求类型
+        RequestPath = 1,        // 请求路径
+        ProtocolVersion = 2,    // 协议版本
+    };
+
     std::vector<std::string> _requestLine; // 请求行
-    std::unordered_map<std::string, std::string> _requestHead; // 请求头
+    std::unordered_map<std::string, std::string> _requestHeaders; // 请求头
 
     // 请求体
     // bool _haveBody = false;
@@ -50,7 +59,7 @@ public:
     };
 
     explicit HXRequest() : _requestLine()
-                         , _requestHead()
+                         , _requestHeaders()
                          , _body(std::nullopt)
     {}
 
@@ -59,9 +68,36 @@ public:
      * @param fd 客户端套接字
      * @param str 待解析字符串
      * @param strLen sizeof(str)
-     * @return 
+     * @return `HXHttp::HXRequest::ParseStatus` 解析状态
      */
     int resolutionRequest(int fd, char *str, std::size_t strLen);
+
+    /**
+     * @brief 获取请求类型
+     * @return 请求类型 (如: "GET", "POST"...)
+     * @warning 需要保证`resolutionRequest`为`ParseSuccessful`
+     */
+    std::string getRequesType() const {
+        return _requestLine[RequestLineDataType::RequestType];
+    }
+
+    /**
+     * @brief 获取请求PATH
+     * @return 请求PATH (如: "/", "/home?loli=watasi"...)
+     * @warning 需要保证`resolutionRequest`为`ParseSuccessful`
+     */
+    std::string getRequesPath() const {
+        return _requestLine[RequestLineDataType::RequestPath];
+    }
+
+    /**
+     * @brief 获取请求协议版本
+     * @return 请求协议版本 (如: "HTTP/1.1", "HTTP/2.0"...)
+     * @warning 需要保证`resolutionRequest`为`ParseSuccessful`
+     */
+    std::string getRequesProtocolVersion() const {
+        return _requestLine[RequestLineDataType::ProtocolVersion];
+    }
 };
 
 } // namespace HXHttp

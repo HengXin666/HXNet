@@ -20,8 +20,6 @@
 #ifndef _HX_HXHTTP_H_
 #define _HX_HXHTTP_H_
 
-
-
 namespace HXHttp {
 
 

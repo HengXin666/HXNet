@@ -152,7 +152,8 @@ int main() {
         do {
             // 初步解析完毕, 路由映射跳转
             HXHttp::HXRequest req;
-            req.resolutionRequest(fd, str, strLen);
+            if (req.resolutionRequest(fd, str, strLen) != HXHttp::HXRequest::ParseStatus::ParseSuccessful)
+                break;
             return true; // http 是无感应的, 不是 WebSocket
             // if (auto fun = HXHttp::HXRouter::getSingleton().getEndpointFunByURL(requestLine[1])) {
             //     printf("NO!");

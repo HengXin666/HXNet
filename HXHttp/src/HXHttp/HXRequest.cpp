@@ -39,19 +39,21 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
         }
         HXHttp::HXStringUtil::toSmallLetter(p.first);
         p.second.pop_back(); // 去掉 '\r'
-        _requestHead.insert(p);
+        _requestHeaders.insert(p);
         printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
     }
 
-    if (_requestHead.count("content-length")) { // 存在请求体
+    if (_requestHeaders.count("content-length")) { // 存在请求体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
-        int bodyLen = stoi(_requestHead["content-length"]) - strlen(tmp);
+        int bodyLen = stoi(_requestHeaders["content-length"]) - strlen(tmp);
         _body = std::string {tmp};
         while (bodyLen > 0) {
             int cvLen = ::recv(fd, str, strLen, 0);
             if (cvLen <= 0) {
-                if (bodyLen == 0 || !(errno == EWOULDBLOCK || errno == EAGAIN)) // 这个存在疑问qwq..
+                if (bodyLen == 0) // 这个存在疑问qwq..
                     return HXRequest::ParseStatus::ClientOut;
+                else if (!(errno == EWOULDBLOCK || errno == EAGAIN))
+                    return HXRequest::ParseStatus::RecvError;
                 break;
             }
             _body->append(str, cvLen);
