@@ -39,11 +39,28 @@ class HXRequest {
     // char *_bodyStr = NULL;
     std::optional<std::string> _body;
 public:
+    /**
+     * @brief 解析状态
+     */
+    enum ParseStatus {
+        RecvError = -2,      // ::recv的时候出现错误
+        NotHttp = -1,        // 无法以Http协议解析
+        ClientOut = 0,       // 客户端断开
+        ParseSuccessful = 1, // 解析成功
+    };
+
     explicit HXRequest() : _requestLine()
                          , _requestHead()
                          , _body(std::nullopt)
     {}
 
+    /**
+     * @brief 解析请求, 如果没有读取完毕, 则会继续`::recv(fd)`直到读取完毕
+     * @param fd 客户端套接字
+     * @param str 待解析字符串
+     * @param strLen sizeof(str)
+     * @return 
+     */
     int resolutionRequest(int fd, char *str, std::size_t strLen);
 };
 

@@ -10,11 +10,10 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
     char *tmp = NULL;
     char *line = ::strtok_r(str, "\r\n", &tmp); // 线程安全
     if (!line)
-        return -1;
-    bool haveBody = false;
+        return HXRequest::ParseStatus::NotHttp;
     _requestLine = HXHttp::HXStringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
     if (_requestLine.size() != 3)
-        return -1;
+        return HXRequest::ParseStatus::NotHttp;
     // requestLine[0] 请求类型
     // requestLine[1] 请求PTAH
     // requestLine[2] 请求协议
@@ -33,6 +32,7 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
      * \r\n (空行) | 只会解析到 \r
      * 请求体
      */
+    bool haveBody = false;
     while ((line = ::strtok_r(NULL, "\n", &tmp))) { // 解析 请求行
         auto p = HXHttp::HXStringUtil::splitAtFirst(line, ": ");
         if (p.first == "") { // 解析失败, 说明当前是空行
@@ -52,7 +52,8 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
         while (bodyLen > 0) {
             int cvLen = ::recv(fd, str, strLen, 0);
             if (cvLen <= 0) {
-                // 还错?
+                if (bodyLen == 0 || !(errno == EWOULDBLOCK || errno == EAGAIN)) // 这个存在疑问qwq..
+                    return HXRequest::ParseStatus::ClientOut;
                 break;
             }
             _body->append(str, cvLen);
@@ -60,7 +61,7 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
         }
         printf("%s", _body->c_str());
     }
-    return 0;
+    return HXRequest::ParseStatus::ParseSuccessful;
 }
 
 } // namespace HXHttp
