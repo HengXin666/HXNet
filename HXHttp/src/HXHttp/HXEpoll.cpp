@@ -134,10 +134,13 @@ void HXEpoll::workerThread() {
         LOG_INFO("[%llu] 读取中... {", std::this_thread::get_id());
         ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0) { // 断开连接
-            if (bytesRead == 0 || !(errno == EWOULDBLOCK || errno == EAGAIN)) {
-                ctlDel(clientFd);
-                ::close(clientFd);
+            // if (bytesRead == 0) {} // 对端关闭连接
+            if (!(errno == EWOULDBLOCK || errno == EAGAIN)) { // 其他错误
+                LOG_ERROR("读取客户端信息时出现错误: %s (errno: %d)", strerror(errno), errno);
             }
+            // 无论如何, 都会关闭连接
+            ctlDel(clientFd);
+            ::close(clientFd);
             ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
         } else { // 处理收到的数据
             if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {

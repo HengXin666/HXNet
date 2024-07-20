@@ -32,11 +32,9 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
      * \r\n (空行) | 只会解析到 \r
      * 请求体
      */
-    bool haveBody = false;
     while ((line = ::strtok_r(NULL, "\n", &tmp))) { // 解析 请求行
         auto p = HXHttp::HXStringUtil::splitAtFirst(line, ": ");
         if (p.first == "") { // 解析失败, 说明当前是空行
-            haveBody = true;
             break;
         }
         HXHttp::HXStringUtil::toSmallLetter(p.first);
@@ -45,7 +43,7 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
         printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
     }
 
-    if (haveBody) { // 存在请求体
+    if (_requestHead.count("content-length")) { // 存在请求体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
         int bodyLen = stoi(_requestHead["content-length"]) - strlen(tmp);
         _body = std::string {tmp};
