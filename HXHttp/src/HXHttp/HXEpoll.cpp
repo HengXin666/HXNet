@@ -88,7 +88,7 @@ void HXEpoll::doError() {
     if (_epollFd != -1)
         ::close(_epollFd);
     LOG_ERROR("Repeat: Error: %s (errno: %d)", strerror(errno), errno);
-    exit(EXIT_FAILURE); // 错误处理
+    ::exit(EXIT_FAILURE); // 错误处理
 }
 
 HXEpoll::~HXEpoll() {
@@ -104,12 +104,12 @@ HXEpoll::~HXEpoll() {
 }
 
 bool HXEpoll::setNonBlocking(int fd) {
-    int flags = fcntl(fd, F_GETFL, 0);
+    int flags = ::fcntl(fd, F_GETFL, 0);
     if (flags == -1) { // 获取文件描述符标志
         return true;
     }
     flags |= O_NONBLOCK;
-    if (fcntl(fd, F_SETFL, flags) == -1) { // 设置文件状态标志为非阻塞
+    if (::fcntl(fd, F_SETFL, flags) == -1) { // 设置文件状态标志为非阻塞
         return true;
     }
     return false;

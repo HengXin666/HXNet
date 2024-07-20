@@ -64,6 +64,18 @@ public:
     bool addController(const std::string& path, const std::function<void()>& fun) {
         return _routerMap.emplace(path, fun).second;
     }
+
+    /**
+     * @brief 获取该URL(PTAH)对于绑定的端点函数
+     * @param url 访问的目标地址, 如`"/home/%d"`, 尾部不要`/`
+     * @return 存在则返回, 否则为`nullptr`
+     */
+    std::function<void()> getEndpointFunByURL(const std::string& url) const {
+        auto it = _routerMap.find(url);
+        if (it != _routerMap.end())
+            return it->second;
+        return nullptr;
+    }
 };
 
 } // namespace HXHttp

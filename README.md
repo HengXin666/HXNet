@@ -44,6 +44,54 @@
 ## 开发计划/日志
 - [ ] 开发控制层, 封装简易可使用的端点
 - [ ] 处理TCP粘包问题 ~~(我连怎么检测出来都不知道...)~~
-- [ ] 解析请求体 (通过`\r\n\r\n`)区分 (得造轮子了吗?)
+    - 一般是解析超大请求体才有的问题?!
+- [x] 解析请求体 (通过`\r\n\r\n`)区分 (得造轮子了吗?)
 - [ ] 请求类(得存放解析的内容吧?)
 - [x] 修复问题: HTTP Headers 不区分大小写, 应该通用一下(使用小写)
+
+- [ ] 路由映射的前置任务:
+    - [ ] 支持解析Http的请求行/头/体
+    - [ ] 支持解析`Query`参数/`PATH`路径
+        - [ ] 朴素指定: `/?loli=kawaii&imouto=takusann`
+        - [ ] 通配指定: `/%d/%s`, 即支持任意如: `/114514/str` 格式
+        - [ ] 骂人指定: `/fxxk/**`, 支持所有的如: `/fxxk/csdn`
+    - [ ] 支持解析`Body`请求体
+        - [ ] none: 没有请求体
+        - [ ] form-data: 格式如下:
+```http
+Content-Type: multipart/form-data; boundary=--------------------------004625337498508003962705
+Content-Length: 167
+
+----------------------------004625337498508003962705
+Content-Disposition: form-data; name="awa"
+
+hello Heng_Xin
+----------------------------004625337498508003962705--
+```
+-   -   - [ ] urlencoded: 格式如下
+```http
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 91
+
+awa=%E6%92%92%E5%A4%A7%E5%A3%B0%E5%9C%B0&qwq=%E6%81%AD%E5%96%9C%E5%8F%91%E8%B4%A2&0.0=hello
+```
+-   -   - [ ] raw: json/xml/html/...格式如下
+```http
+Content-Length: 186
+content-type: application/json
+
+{
+    "sites": [
+        HX_Github : "https://github.com/HengXin666/HXNet/tree/main"
+    ]
+}
+```
+-   - [ ] 解析凭证: (怎么搞? 在哪里? 饼干吗? 在请求头`Authorization`似乎可以)
+
+-   - [ ] 响应
+        - [ ] 响应码
+        - [ ] 响应头/行
+        - [ ] 响应体
+
+-   - 确定好以上解析出来的内容格式做参数, 才方便写`控制层端点`?
+        - 通过`const Type name = [this]() {来绑定函数?!??!?!???!?!}`

@@ -23,6 +23,7 @@
 #include <HXHttp/HXRouter.h>
 
 #include <string_view>
+#include <list>
 
 namespace HXHttp {
 
@@ -30,17 +31,33 @@ namespace HXHttp {
  * @brief 控制器类
  */
 class HXController {
+protected:
+    // std::list<std::string, std::function<void()>> _endpoints;
+public:
+    // explicit HXController() : _endpoints()
+    // {}
 
+    // std::list<std::string, std::function<void()>>&& getEndpoints() {
+    //     // return std::move(_endpoints);
+    // }
+
+    // 注册端点函数
+    // void addEndpoint(const std::string& url, const std::function<void()>& func) {
+    //     // _endpoints.emplace_back(url, func);
+    // }
 };
 
 /// @brief 测试使用的
 class MyWebController : HXController {
     // 请求类型, URL, 端点名称, 请求数据...(可变参数)
-    int fun(std::string_view requestType, const std::unordered_map<std::string, std::string>& requestHead) {
+    int fun(std::string_view requestType = "", 
+            const std::unordered_map<std::string, std::string>& requestHead = {}) {
         if (requestType == "GET")
             return -1;
         // 内部的 requestHead 处理, 需要的
     }
+
+    const int x = fun();
 };
 
 } // namespace HXHttp
