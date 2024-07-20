@@ -130,7 +130,7 @@ void HXEpoll::workerThread() {
             _tasks.pop();
         }
 
-        char buffer[512] = {0};
+        char buffer[MAX_BUFFER_SIZE] = {0};
         LOG_INFO("[%llu] 读取中... {", std::this_thread::get_id());
         ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0) { // 断开连接
