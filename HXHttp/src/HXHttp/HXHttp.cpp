@@ -78,7 +78,7 @@ Host: localhost:28205 # 从头开始, 寻找第一个`:`
          */
         if (line) { // 解析请求头
             // GET /PTAH HTTP/1.1
-            bool isBody = false;
+            bool haveBody = false;
             auto requestLine = HXHttp::HXStringUtil::split(line, " ");
             std::unordered_map<std::string, std::string> requestHead;
             // requestLine[0] 请求类型
@@ -90,15 +90,28 @@ Host: localhost:28205 # 从头开始, 寻找第一个`:`
                 requestLine[2].c_str()
             );
 
-            // 如果有多个"\r\n"会直接跳过
-            while ((line = ::strtok_r(NULL, "\r\n", &tmp))) { // 解析 请求行
+            /// TOOD 如果有多个"\r\n"会直接跳过
+            /**
+             * @brief 解析请求头和请求体
+             * 解析请求报文算法:
+             * 请求行\r\n  | 我们按 \r\n 分割
+             * 请求头\r\n  | 按照 \n 分割, 这样每一个line的后面都会有\r残留, 需要pop掉
+             * \r\n (空行) | 只会解析到 \r
+             * 请求体
+             */
+            while ((line = ::strtok_r(NULL, "\n", &tmp))) { // 解析 请求行
                 auto p = HXHttp::HXStringUtil::splitAtFirst(line, ": ");
+                if (p.first == "") { // 解析失败, 说明当前是空行
+                    haveBody = true;
+                    break;
+                }
                 HXHttp::HXStringUtil::toSmallLetter(p.first);
+                p.second.pop_back(); // 去掉 '\r'
                 requestHead.insert(p);
                 printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
             }
 
-            if (isBody) {
+            if (haveBody) { // 存在请求体
                 printf("%s", tmp);
             }
         } else {  // 处理错误: 请求行不存在
