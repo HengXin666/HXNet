@@ -45,7 +45,7 @@ class HXEpoll {
 
     // --- 回调函数 ---
     std::function<void(int)> _newConnectCallbackFunc;                  // 有新连接的回调函数, {客户端fd}
-    std::function<int(int, char *, std::size_t)> _newMsgCallbackFunc;  // 有新消息的回调函数, {客户端fd, msg, msgLen} -> bool: 是否释放该fd
+    std::function<int(int, char *, const std::size_t)> _newMsgCallbackFunc;  // 有新消息的回调函数, {客户端fd, msg, msgLen} -> bool: 是否释放该fd
     std::function<void(int)> _newUserBreakCallbackFunc;                // 用户断开连接的回调函数, {客户端fd}
     bool _running; // 这个不用原子吧?
 
@@ -140,7 +140,7 @@ public:
      * @param func 回调函数: {int : 客户端fd, char* : msgStr, size_t : msgStrLen} -> bool(true: 删除该fd, false: 不做处理);
      * @return *this 可链式调用
      */
-    [[nodiscard]] HXEpoll& setNewMsgCallback(std::function<int(int, char*, std::size_t)> func) {
+    [[nodiscard]] HXEpoll& setNewMsgCallback(std::function<int(int, char*, const std::size_t)> func) {
         _newMsgCallbackFunc = func;
         return *this;
     }

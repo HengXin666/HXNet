@@ -76,7 +76,7 @@ public:
     }
 };
 
-int main() {
+int _main() {
     MyController controller;
 
     // 注册端点
@@ -124,6 +124,7 @@ void handleClient(int client_socket) {
 #include <HXHttp/HXEpoll.h>
 #include <HXHttp/HXRouter.h>
 #include <HXHttp/HXHttpTools.h>
+#include <HXHttp/HXRequest.h>
 
 #include <iostream>
 #include <unordered_map>
@@ -133,7 +134,7 @@ void handleClient(int client_socket) {
 // 全局变量: 是否退出
 bool isAllowServerRun = true;
 
-int _main() {
+int main() {
     // 绑定交互信号监听 (Ctrl + C)
     signal(SIGINT, [](int signum) {
 		isAllowServerRun = false;
@@ -145,59 +146,18 @@ int _main() {
     
     epoll.setNewConnectCallback([](int fd) { // 新连接
 
-    }).setNewMsgCallback([](int fd, char *str, std::size_t strLen) -> bool { // 处理
+    }).setNewMsgCallback([](int fd, char *str, const std::size_t strLen) -> bool { // 处理
         // Http 第一行是请求类型和 协议版本
         // 剩下的是键值对
-        char *tmp = NULL;
-        char *line = ::strtok_r(str, "\r\n", &tmp); // 线程安全
         do {
-            if (!line)
-                break;
-            bool haveBody = false;
-            auto requestLine = HXHttp::HXStringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
-            if (requestLine.size() != 3)
-                break;
-            std::unordered_map<std::string, std::string> requestHead;
-            // requestLine[0] 请求类型
-            // requestLine[1] 请求PTAH
-            // requestLine[2] 请求协议
-            printf("请求类型: [%s], 请求PTAH: [%s], 请求协议: [%s]\n",
-                requestLine[0].c_str(),
-                requestLine[1].c_str(),
-                requestLine[2].c_str()
-            );
-
-            /// TOOD 如果有多个"\r\n"会直接跳过
-            /**
-             * @brief 解析请求头和请求体
-             * 解析请求报文算法:
-             * 请求行\r\n  | 我们按 \r\n 分割
-             * 请求头\r\n  | 按照 \n 分割, 这样每一个line的后面都会有\r残留, 需要pop掉
-             * \r\n (空行) | 只会解析到 \r
-             * 请求体
-             */
-            while ((line = ::strtok_r(NULL, "\n", &tmp))) { // 解析 请求行
-                auto p = HXHttp::HXStringUtil::splitAtFirst(line, ": ");
-                if (p.first == "") { // 解析失败, 说明当前是空行
-                    haveBody = true;
-                    break;
-                }
-                HXHttp::HXStringUtil::toSmallLetter(p.first);
-                p.second.pop_back(); // 去掉 '\r'
-                requestHead.insert(p);
-                printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
-            }
-
-            if (haveBody) { // 存在请求体
-                printf("%s", tmp);
-            }
-
             // 初步解析完毕, 路由映射跳转
+            HXHttp::HXRequest req;
+            req.resolutionRequest(fd, str, strLen);
             return true; // http 是无感应的, 不是 WebSocket
-            if (auto fun = HXHttp::HXRouter::getSingleton().getEndpointFunByURL(requestLine[1])) {
-                printf("NO!");
-                fun();
-            }
+            // if (auto fun = HXHttp::HXRouter::getSingleton().getEndpointFunByURL(requestLine[1])) {
+            //     printf("NO!");
+            //     fun();
+            // }
         } while(0);  // 处理错误: 请求行不存在
 
         return true;
