@@ -15,7 +15,7 @@
 /* =-=-=-=-= DEBUG 宏定义区 =-=-=-=-= */
 
 // 打印epoll连接状态日志
-#define PRINT_EPOLL_STATE
+// #define PRINT_EPOLL_STATE
 
 ///////////////////////////////////////
 
@@ -157,9 +157,8 @@ void HXEpoll::workerThread() {
                     // std::unique_lock<std::mutex> lock(_queueMutex); // 线程独占, 可以注释!
                     if (ctlDel(clientFd) == -1)
                         LOG_ERROR("1出现错误: %s (errno: %d) now fd: %d", strerror(errno), errno, clientFd);
-                    if (::close(clientFd) == -1) {
+                    if (::close(clientFd) == -1)
                         LOG_ERROR("2出现错误: %s (errno: %d)", strerror(errno), errno);
-                    }
                     clientFd = -1;
                 }
                 ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
@@ -168,9 +167,8 @@ void HXEpoll::workerThread() {
                     // std::unique_lock<std::mutex> lock(_queueMutex); // 线程独占, 可以注释!
                     if (ctlDel(clientFd) == -1)
                         LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
-                    if (::close(clientFd) == -1) {
+                    if (::close(clientFd) == -1)
                         LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
-                    }
                     clientFd = -1;
                 }
             }
