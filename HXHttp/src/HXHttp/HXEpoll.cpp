@@ -29,8 +29,8 @@ if (funName) \
 
 namespace HXHttp {
 
-HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect) 
-    : _maxConnect(maxConnect)
+HXEpoll::HXEpoll(int port /*= 28205*/, int evSize /*= 1024*/, int maxQueue /*= 64*/, int maxConnect /*= 20*/) 
+    : _epollEventsSize(evSize)
     , _running(false)
     , _tasks()
     , _queueMutex()
@@ -75,7 +75,7 @@ HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect)
         }
 
         // --- 将监听套接字添加到 epoll 实例中 ---
-        _ev.events = EPOLLIN;    // EPOLLET 模式, 检测lfd读读缓冲区是否有数据
+        _ev.events = EPOLLIN; // EPOLLET 模式, 检测读缓冲区是否有数据
         _ev.data.fd = _serverFd;
         if (::epoll_ctl(_epollFd, EPOLL_CTL_ADD, _serverFd, &_ev) < 0) {
             LOG_ERROR("epoll_ctl Error: %s (errno: %d)", strerror(errno), errno);
@@ -83,7 +83,7 @@ HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect)
         }
         
         // --- 初始化信息到类 ---
-        _events = new struct ::epoll_event[maxConnect];
+        _events = new struct ::epoll_event[evSize];
 
         LOG_INFO("====== Epoll已启动: \033[33m\033]8;;http://localhost:%d/\033\\http://localhost:%d/\033]8;;\033\\\033[0m\033[1;32m ======", port, port);
         return;
@@ -154,7 +154,7 @@ void HXEpoll::workerThread() {
                 }
 
                 {   // 终止连接
-                    std::unique_lock<std::mutex> lock(_queueMutex);
+                    // std::unique_lock<std::mutex> lock(_queueMutex); // 线程独占, 可以注释!
                     if (ctlDel(clientFd) == -1)
                         LOG_ERROR("1出现错误: %s (errno: %d) now fd: %d", strerror(errno), errno, clientFd);
                     if (::close(clientFd) == -1) {
@@ -165,7 +165,7 @@ void HXEpoll::workerThread() {
                 ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
             } else { // 处理收到的数据
                 if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {
-                    std::unique_lock<std::mutex> lock(_queueMutex);
+                    // std::unique_lock<std::mutex> lock(_queueMutex); // 线程独占, 可以注释!
                     if (ctlDel(clientFd) == -1)
                         LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
                     if (::close(clientFd) == -1) {

@@ -33,7 +33,7 @@ namespace HXHttp {
 class HXEpoll {
     int _epollFd {-1};             // epoll实例文件描述符
     int _serverFd {-1};            // 服务器套接字
-    int _maxConnect;               // 最大连接数
+    int _epollEventsSize;          // sizeof(_events)
     struct ::epoll_event _ev;      // epoll实例 事件
     struct ::epoll_event *_events; // 用户的 epoll 事件
 
@@ -71,19 +71,18 @@ class HXEpoll {
      *         > 0 有对应的消息数量
      */
     int wait(int timeOut) {
-        return ::epoll_wait(_epollFd, _events, _maxConnect, timeOut);
+        return ::epoll_wait(_epollFd, _events, _epollEventsSize, timeOut);
     }
 
     // add
     /**
      * @brief 添加事件到epoll红黑树中
      * @param fd 文件操作符
-     * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
      * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
     int ctlAdd(int fd)  {
-        // EPOLLET 模式
-        _ev.events = EPOLLIN | EPOLLET; // 读缓冲区是否有数据
+        // 检测读缓冲区是否有数据, 并且将文件描述符设置为边沿模式
+        _ev.events = EPOLLIN | EPOLLET;
         _ev.data.fd = fd;
         return ::epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev);
     }
@@ -92,7 +91,6 @@ class HXEpoll {
     /**
      * @brief 删除epoll红黑树中的事件
      * @param fd 文件操作符
-     * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
      * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
     int ctlDel(int fd) {
@@ -103,7 +101,6 @@ class HXEpoll {
     /**
      * @brief 修改epoll红黑树中的事件
      * @param fd 文件操作符
-     * @param ev 指向 epoll_event 结构体的指针, 用于指定事件类型和数据
      * @return 成功时返回 0; 失败时返回 -1, 并设置 errno 错误码 
      */
     int ctlMod(int fd) {
@@ -120,10 +117,11 @@ public:
     /**
      * @brief 初始化服务器参数, 以本机作为服务器终端(监听来自本机和公网的全部信息)
      * @param port 端口
-     * @param maxQueue 最大排队数 
+     * @param evSize wait就绪列表长度, 如果epoll实例的红黑树中已就绪的文件描述符很多, 并且evs数组无法将这些信息全部传出, 那么这些信息会在下一次`epoll_wait()`函数返回的时候被传出
+     * @param maxQueue 最大排队数
      * @param maxConnect 最大连接数 | 只是一个提示, 实际上, 内核会根据需要动态调整大小
      */
-    explicit HXEpoll(int port = 28205, int maxQueue = 512, int maxConnect = 1024);
+    explicit HXEpoll(int port = 28205, int evSize = 1024, int maxQueue = 64, int maxConnect = 20);
 
     /**
      * @brief 设置有新连接的回调函数
