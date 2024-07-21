@@ -146,7 +146,7 @@ void HXEpoll::workerThread() {
 
         // 需要确保每个文件描述符在任何时刻只被一个线程管理和使用
         char buffer[MAX_BUFFER_SIZE] = {0};
-        int retryCount = 6;
+        // int retryCount = 6;
 /*
 [INFO]: [139773392795328] 读取中 (fd = 6)... {
 [ERROR]: 1出现错误: Bad file descriptor (errno: 9) now fd: 6
@@ -170,14 +170,14 @@ void HXEpoll::workerThread() {
 
 观察上面日志, 我给出 # 的注解
 */
-        while (--retryCount) {
+        while (_running) {
             LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
             ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
             if (bytesRead <= 0) { // 断开连接
                 if (bytesRead && (errno == EAGAIN || errno == EINTR)) { // 需要再次调用 ::recv
                     using namespace std::chrono;
                     LOG_ERROR("[%llu] 0[!重新读取!]出现错误: %s (errno: %d)", std::this_thread::get_id(), strerror(errno), errno);
-                    // std::this_thread::sleep_for(100ms);
+                    // std::this_thread::sleep_for(10ms);
                     continue;
                 }
                 // if (bytesRead == 0) {} // 对端关闭连接

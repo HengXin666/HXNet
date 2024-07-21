@@ -54,7 +54,7 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
                     return HXRequest::ParseStatus::ClientOut;
                 else if (!(errno == EWOULDBLOCK || errno == EAGAIN))
                     return HXRequest::ParseStatus::RecvError;
-                break;
+                continue;
             }
             _body->append(str, cvLen);
             bodyLen -= cvLen;
