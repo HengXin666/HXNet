@@ -27,6 +27,7 @@ HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect)
     , _tasks()
     , _queueMutex()
     , _condition()
+    , _processingFds()
     , _newConnectCallbackFunc(nullptr)
     , _newMsgCallbackFunc(nullptr)
     , _newUserBreakCallbackFunc(nullptr)  {
@@ -117,9 +118,21 @@ bool HXEpoll::setNonBlocking(int fd) {
 }
 
 void HXEpoll::workerThread() {
+    int clientFd = -1;
     while (_running) {
-        int clientFd = -1;
-        {
+        if (clientFd != -1) {
+            // 判断是否还有该 fd 的任务
+            std::unique_lock<std::mutex> lock(_queueMutex);
+            if (auto&& it = _processingFds[clientFd]; it > 1) {
+                --_processingFds[clientFd];
+                LOG_WARNING("=== 仍然处理: %d ===", clientFd);
+            } else { // <= 1
+                _processingFds.erase(clientFd);
+                clientFd = -1;
+                continue;
+            }
+        } else {
+            // 执行新的 fd 任务
             std::unique_lock<std::mutex> lock(_queueMutex);
             _condition.wait(lock, [this] { return !_tasks.empty() || !_running; });
 
@@ -133,26 +146,77 @@ void HXEpoll::workerThread() {
 
         // 需要确保每个文件描述符在任何时刻只被一个线程管理和使用
         char buffer[MAX_BUFFER_SIZE] = {0};
-        LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
-        ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
-        if (bytesRead <= 0) { // 断开连接
-            // if (bytesRead == 0) {} // 对端关闭连接
-            if (!(errno == EWOULDBLOCK || errno == EAGAIN)) { // 其他错误
-                LOG_ERROR("读取客户端信息时出现错误: %s (errno: %d)", strerror(errno), errno);
+        int retryCount = 6;
+/*
+[INFO]: [139773392795328] 读取中 (fd = 6)... {
+[ERROR]: 1出现错误: Bad file descriptor (errno: 9) now fd: 6
+[ERROR]: 2出现错误: Bad file descriptor (errno: 9)
+# 这一瞬间, 断开 fd = 6
+
+# 这一瞬间, 很快啊, 就插进来了
+[INFO]: 新的客户机连接! id = 6
+[WARNING]: for out =======================================
+[WARNING]: 新信息=======================================
+# 尝试添加进入线程:
+"""
+情况BUG: !_processingFds.count(tmpFd) 说 有
+        不加
+        然后 _processingFds[tmpFd] 又被删除了
+直接丢失了 这个 fd
+"""
+[WARNING]: for out =======================================
+没有东西
+[INFO]: } // [139773392795328] 读取完毕并输出 (fd = -1)
+
+观察上面日志, 我给出 # 的注解
+*/
+        while (--retryCount) {
+            LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
+            ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
+            if (bytesRead <= 0) { // 断开连接
+                if (bytesRead && (errno == EAGAIN || errno == EINTR)) { // 需要再次调用 ::recv
+                    using namespace std::chrono;
+                    LOG_ERROR("[%llu] 0[!重新读取!]出现错误: %s (errno: %d)", std::this_thread::get_id(), strerror(errno), errno);
+                    // std::this_thread::sleep_for(100ms);
+                    continue;
+                }
+                // if (bytesRead == 0) {} // 对端关闭连接
+                // 其他错误
+
+                // 无论如何, 都会关闭连接
+                {
+                    std::unique_lock<std::mutex> lock(_queueMutex);
+                    if (ctlDel(clientFd) == -1)
+                        LOG_ERROR("1出现错误: %s (errno: %d) now fd: %d", strerror(errno), errno, clientFd);
+                    if (::close(clientFd) == -1) {
+                        LOG_ERROR("2出现错误: %s (errno: %d)", strerror(errno), errno);
+                        using namespace std::chrono;
+                        // std::this_thread::sleep_for(0.5s);
+                    }
+
+                    _processingFds.erase(clientFd);
+                    clientFd = -1;
+                }
+                ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
+            } else { // 处理收到的数据
+                if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {
+                    std::unique_lock<std::mutex> lock(_queueMutex);
+                    if (_processingFds[clientFd] <= 1) {
+                        if (ctlDel(clientFd) == -1)
+                            LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
+                        if (::close(clientFd) == -1) {
+                            LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
+                            using namespace std::chrono;
+                            // std::this_thread::sleep_for(0.5s);
+                        } // else {
+                            // LOG_ERROR("4 没有问题, 请忽略!");
+                        // }
+                        _processingFds.erase(clientFd);
+                        clientFd = -1;
+                    }
+                }
             }
-            // 无论如何, 都会关闭连接
-            if (ctlDel(clientFd) == -1)
-                LOG_ERROR("1出现错误: %s (errno: %d)", strerror(errno), errno);
-            if (::close(clientFd) == -1)
-                LOG_ERROR("2出现错误: %s (errno: %d)", strerror(errno), errno);
-            ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
-        } else { // 处理收到的数据
-            if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {
-                if (ctlDel(clientFd) == -1)
-                    LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
-                if (::close(clientFd) == -1)
-                    LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
-            }
+            break;
         }
         LOG_INFO("} // [%llu] 读取完毕并输出 (fd = %d)", std::this_thread::get_id(), clientFd);
     }
@@ -205,8 +269,15 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
             } else { // 处理新来的信息
                 LOG_WARNING("新信息=======================================");
                 std::unique_lock<std::mutex> lock(_queueMutex);
-                _tasks.push(tmpFd);
-                _condition.notify_one();
+                // 多个 HTTP 请求可能会通过同一个 fd 进行通信
+                if (!_processingFds.count(tmpFd)) {
+                    _tasks.push(tmpFd);
+                    _processingFds[tmpFd] = 1;
+                    _condition.notify_one();
+                } else {
+                    // 此处让那个线程继续处理同一个客户端的新的请求
+                    ++_processingFds[tmpFd];
+                }
             }
         }
         LOG_WARNING("for out =======================================");
