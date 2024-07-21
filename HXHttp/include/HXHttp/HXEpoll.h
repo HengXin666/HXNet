@@ -84,7 +84,7 @@ class HXEpoll {
      */
     int ctlAdd(int fd)  {
         // EPOLLET 模式
-        _ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+        _ev.events = EPOLLIN | EPOLLET; // 读缓冲区是否有数据
         _ev.data.fd = fd;
         return ::epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev);
     }

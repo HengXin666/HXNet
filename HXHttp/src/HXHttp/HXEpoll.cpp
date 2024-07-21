@@ -68,7 +68,7 @@ HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect)
         }
 
         // --- 将监听套接字添加到 epoll 实例中 ---
-        _ev.events = EPOLLIN | EPOLLET; // EPOLLET 模式
+        _ev.events = EPOLLIN;    // EPOLLET 模式, 检测lfd读读缓冲区是否有数据
         _ev.data.fd = _serverFd;
         if (::epoll_ctl(_epollFd, EPOLL_CTL_ADD, _serverFd, &_ev) < 0) {
             LOG_ERROR("epoll_ctl Error: %s (errno: %d)", strerror(errno), errno);
@@ -148,7 +148,6 @@ void HXEpoll::workerThread() {
 
         // 需要确保每个文件描述符在任何时刻只被一个线程管理和使用
         char buffer[MAX_BUFFER_SIZE] = {0};
-        int retryCount = 16;
 /*
 [INFO]: [139773392795328] 读取中 (fd = 6)... {
 [ERROR]: 1出现错误: Bad file descriptor (errno: 9) now fd: 6
@@ -173,26 +172,29 @@ void HXEpoll::workerThread() {
 观察上面日志, 我给出 # 的注解
 */
         LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
-        while (retryCount) {
+        while (_running) {
             ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
             if (bytesRead <= 0) { // 断开连接
-                if (bytesRead < 0 && (errno == EAGAIN || errno == EINTR)) { // 需要再次调用 ::recv
-                    using namespace std::chrono;
+                if (bytesRead == -1 && errno == EAGAIN) { // 需要再次调用 ::recv
+                    std::unique_lock<std::mutex> lock(_queueMutex);
+                    _processingFds.erase(clientFd);
+                    clientFd = -1;
+                    break; // 数据读完了
+                }
+                    // using namespace std::chrono;
                     // LOG_ERROR("[%llu] 0[!重新读取!]出现错误: %s (errno: %d)", std::this_thread::get_id(), strerror(errno), errno);
                     // std::this_thread::sleep_for(100ms);
-                    if (--retryCount == 0) {
-                        std::unique_lock<std::mutex> lock(_queueMutex);
-                        if (ctlDel(clientFd) == -1)
-                            LOG_ERROR("33出现错误: %s (errno: %d)", strerror(errno), errno);
-                        if (::close(clientFd) == -1) {
-                            LOG_ERROR("44出现错误: %s (errno: %d)", strerror(errno), errno);
-                        }
-                        LOG_WARNING("44 >>>>>>>>>>>>>>直接关闭 (fd = %d)!", clientFd);
-                        _processingFds.erase(clientFd);
-                        clientFd = -1;
-                    }
-                    continue;
-                }
+                // else {
+                //     std::unique_lock<std::mutex> lock(_queueMutex);
+                //     if (ctlDel(clientFd) == -1)
+                //         LOG_ERROR("33出现错误: %s (errno: %d)", strerror(errno), errno);
+                //     if (::close(clientFd) == -1) {
+                //         LOG_ERROR("44出现错误: %s (errno: %d)", strerror(errno), errno);
+                //     }
+                //     LOG_WARNING("44 >>>>>>>>>>>>>>直接关闭 (fd = %d)!", clientFd);
+                    
+                // }
+
                 // if (bytesRead == 0) {} // 对端关闭连接
                 // 其他错误
 
@@ -260,7 +262,7 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
         for (std::size_t i = 0; i < nfds; ++i) {
             int tmpFd = _events[i].data.fd;
             if (tmpFd == _serverFd) { // 新连接
-                int newClientFd = ::accept(_serverFd, (struct sockaddr *)NULL, NULL);
+                int newClientFd = ::accept(tmpFd, (struct sockaddr *)NULL, NULL);
                 if (newClientFd < 0) {
                     LOG_ERROR("连接新客户端出错! %s (errno: %d)", strerror(errno), errno);
                 } else if (setNonBlocking(newClientFd)) {
