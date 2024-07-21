@@ -42,7 +42,6 @@ class HXEpoll {
     std::queue<int> _tasks;             // 存放有消息的 fd 文件描述符
     std::mutex _queueMutex;             // 锁
     std::condition_variable _condition; // 条件变量
-    std::unordered_map<int, int> _processingFds; // 处理中的Fd (保证: 一个fd 对应一个线程)
 
     // --- 回调函数 ---
     std::function<void(int)> _newConnectCallbackFunc;                       // 有新连接的回调函数, {客户端fd}

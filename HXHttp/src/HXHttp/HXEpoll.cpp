@@ -11,6 +11,14 @@
 #include <HXprint/HXprint.h>
 #include <HXJson/HXJson.h>
 
+////////////////////////////////////////
+/* =-=-=-=-= DEBUG 宏定义区 =-=-=-=-= */
+
+// 打印epoll连接状态日志
+#define PRINT_EPOLL_STATE
+
+///////////////////////////////////////
+
 // 如果这个function<...>!=nullptr, 则调用
 #define ATTEMPT_TO_CALL(funName, ...) \
 if (funName) \
@@ -27,7 +35,6 @@ HXEpoll::HXEpoll(int port, int maxQueue, int maxConnect)
     , _tasks()
     , _queueMutex()
     , _condition()
-    , _processingFds()
     , _newConnectCallbackFunc(nullptr)
     , _newMsgCallbackFunc(nullptr)
     , _newUserBreakCallbackFunc(nullptr)  {
@@ -131,20 +138,17 @@ void HXEpoll::workerThread() {
 
             clientFd = _tasks.front();
             _tasks.pop();
-        } else {
-            LOG_ERROR("\n\n\t===========继续处理===========\n");
-            _running = false;
         }
 
         // 需要确保每个文件描述符在任何时刻只被一个线程管理和使用
         char buffer[MAX_BUFFER_SIZE] = {0};
+#ifdef PRINT_EPOLL_STATE
         LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
+#endif
         while (_running) {
             ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
             if (bytesRead <= 0) { // 断开连接
                 if (bytesRead == -1 && errno == EAGAIN) { // 需要再次调用 ::recv
-                    std::unique_lock<std::mutex> lock(_queueMutex);
-                    _processingFds.erase(clientFd);
                     clientFd = -1;
                     break; // 数据读完了
                 }
@@ -156,29 +160,25 @@ void HXEpoll::workerThread() {
                     if (::close(clientFd) == -1) {
                         LOG_ERROR("2出现错误: %s (errno: %d)", strerror(errno), errno);
                     }
-                    _processingFds.erase(clientFd);
                     clientFd = -1;
                 }
                 ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
             } else { // 处理收到的数据
                 if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {
                     std::unique_lock<std::mutex> lock(_queueMutex);
-                    if (_processingFds[clientFd] <= 0) {
-                        if (ctlDel(clientFd) == -1)
-                            LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
-                        if (::close(clientFd) == -1) {
-                            LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
-                        }
-                        _processingFds.erase(clientFd);
-                        clientFd = -1;
-                    } else {
-                        --_processingFds[clientFd];
+                    if (ctlDel(clientFd) == -1)
+                        LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
+                    if (::close(clientFd) == -1) {
+                        LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
                     }
+                    clientFd = -1;
                 }
             }
             break;
         }
+#ifdef PRINT_EPOLL_STATE
         LOG_INFO("} // [%llu] 读取完毕并输出 (fd = %d)", std::this_thread::get_id(), clientFd);
+#endif
     }
 }
 
@@ -218,20 +218,16 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
                     LOG_ERROR("添加时候出现错误! %s (errno: %d)", strerror(errno), errno);
                     ::close(newClientFd);
                 } else {
+#ifdef PRINT_EPOLL_STATE
                     LOG_INFO("新的客户机连接! id = %d", newClientFd);
+#endif
                     ATTEMPT_TO_CALL(_newConnectCallbackFunc, newClientFd); // 回调
                 }
             } else { // 处理新来的信息
                 std::unique_lock<std::mutex> lock(_queueMutex);
                 // 多个 HTTP 请求可能会通过同一个 fd 进行通信
-                if (!_processingFds.count(tmpFd)) {
-                    _tasks.push(tmpFd);
-                    _processingFds[tmpFd] = 0;
-                    _condition.notify_one();
-                } else {
-                    // 此处让那个线程继续处理同一个客户端的新的请求
-                    ++_processingFds[tmpFd];
-                }
+                _tasks.push(tmpFd);
+                _condition.notify_one();
             }
         }
     }

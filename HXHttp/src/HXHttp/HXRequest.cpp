@@ -17,11 +17,11 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
     // requestLine[0] 请求类型
     // requestLine[1] 请求PTAH
     // requestLine[2] 请求协议
-    printf("请求类型: [%s], 请求PTAH: [%s], 请求协议: [%s]\n",
-        _requestLine[0].c_str(),
-        _requestLine[1].c_str(),
-        _requestLine[2].c_str()
-    );
+    // printf("请求类型: [%s], 请求PTAH: [%s], 请求协议: [%s]\n",
+    //     _requestLine[0].c_str(),
+    //     _requestLine[1].c_str(),
+    //     _requestLine[2].c_str()
+    // );
 
     /// TOOD 如果有多个"\r\n"会直接跳过
     /**
@@ -40,7 +40,7 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
         HXHttp::HXStringUtil::toSmallLetter(p.first);
         p.second.pop_back(); // 去掉 '\r'
         _requestHeaders.insert(p);
-        printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
+        // printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
     }
 
     if (_requestHeaders.count("content-length")) { // 存在请求体
@@ -59,7 +59,7 @@ int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
             _body->append(str, cvLen);
             bodyLen -= cvLen;
         }
-        printf("%s", _body->c_str());
+        // printf("%s", _body->c_str());
     }
     return HXRequest::ParseStatus::ParseSuccessful;
 }
