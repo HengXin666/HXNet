@@ -120,20 +120,7 @@ bool HXEpoll::setNonBlocking(int fd) {
 void HXEpoll::workerThread() {
     int clientFd = -1;
     while (_running) {
-        if (clientFd != -1) {
-            // 判断是否还有该 fd 的任务
-            std::unique_lock<std::mutex> lock(_queueMutex);
-            if (auto&& it = _processingFds[clientFd]; it >= 0) {
-                ;
-                LOG_WARNING("=== 仍然处理: %d (cnt = %d)===", clientFd, _processingFds[clientFd]);
-            } 
-            // else { // <= 1
-            //     LOG_ERROR(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>=== 删除: %d ===", clientFd);
-            //     _processingFds.erase(clientFd);
-            //     clientFd = -1;
-            //     continue;
-            // }
-        } else {
+        if (clientFd == -1) {
             // 执行新的 fd 任务
             std::unique_lock<std::mutex> lock(_queueMutex);
             _condition.wait(lock, [this] { return !_tasks.empty() || !_running; });
@@ -144,33 +131,13 @@ void HXEpoll::workerThread() {
 
             clientFd = _tasks.front();
             _tasks.pop();
+        } else {
+            LOG_ERROR("\n\n\t===========继续处理===========\n");
+            _running = false;
         }
 
         // 需要确保每个文件描述符在任何时刻只被一个线程管理和使用
         char buffer[MAX_BUFFER_SIZE] = {0};
-/*
-[INFO]: [139773392795328] 读取中 (fd = 6)... {
-[ERROR]: 1出现错误: Bad file descriptor (errno: 9) now fd: 6
-[ERROR]: 2出现错误: Bad file descriptor (errno: 9)
-# 这一瞬间, 断开 fd = 6
-
-# 这一瞬间, 很快啊, 就插进来了
-[INFO]: 新的客户机连接! id = 6
-[WARNING]: for out =======================================
-[WARNING]: 新信息=======================================
-# 尝试添加进入线程:
-"""
-情况BUG: !_processingFds.count(tmpFd) 说 有
-        不加
-        然后 _processingFds[tmpFd] 又被删除了
-直接丢失了 这个 fd
-"""
-[WARNING]: for out =======================================
-没有东西
-[INFO]: } // [139773392795328] 读取完毕并输出 (fd = -1)
-
-观察上面日志, 我给出 # 的注解
-*/
         LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
         while (_running) {
             ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
@@ -181,34 +148,14 @@ void HXEpoll::workerThread() {
                     clientFd = -1;
                     break; // 数据读完了
                 }
-                    // using namespace std::chrono;
-                    // LOG_ERROR("[%llu] 0[!重新读取!]出现错误: %s (errno: %d)", std::this_thread::get_id(), strerror(errno), errno);
-                    // std::this_thread::sleep_for(100ms);
-                // else {
-                //     std::unique_lock<std::mutex> lock(_queueMutex);
-                //     if (ctlDel(clientFd) == -1)
-                //         LOG_ERROR("33出现错误: %s (errno: %d)", strerror(errno), errno);
-                //     if (::close(clientFd) == -1) {
-                //         LOG_ERROR("44出现错误: %s (errno: %d)", strerror(errno), errno);
-                //     }
-                //     LOG_WARNING("44 >>>>>>>>>>>>>>直接关闭 (fd = %d)!", clientFd);
-                    
-                // }
 
-                // if (bytesRead == 0) {} // 对端关闭连接
-                // 其他错误
-
-                // 无论如何, 都会关闭连接
-                {
+                {   // 终止连接
                     std::unique_lock<std::mutex> lock(_queueMutex);
                     if (ctlDel(clientFd) == -1)
                         LOG_ERROR("1出现错误: %s (errno: %d) now fd: %d", strerror(errno), errno, clientFd);
                     if (::close(clientFd) == -1) {
                         LOG_ERROR("2出现错误: %s (errno: %d)", strerror(errno), errno);
-                        using namespace std::chrono;
-                        // std::this_thread::sleep_for(0.5s);
                     }
-
                     _processingFds.erase(clientFd);
                     clientFd = -1;
                 }
@@ -222,7 +169,6 @@ void HXEpoll::workerThread() {
                         if (::close(clientFd) == -1) {
                             LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
                         }
-                        LOG_WARNING("4 >>>>>>>>>>>>>>直接关闭 (fd = %d)!", clientFd);
                         _processingFds.erase(clientFd);
                         clientFd = -1;
                     } else {
@@ -267,21 +213,15 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
                     LOG_ERROR("连接新客户端出错! %s (errno: %d)", strerror(errno), errno);
                 } else if (setNonBlocking(newClientFd)) {
                     LOG_ERROR("设置fd为非阻塞时出错! %s (errno: %d)", strerror(errno), errno);
-                    if (::close(newClientFd) == -1)
-                        LOG_ERROR("5出现错误: %s (errno: %d)", strerror(errno), errno);
+                    ::close(newClientFd);
                 } else if (ctlAdd(newClientFd) < 0) {
                     LOG_ERROR("添加时候出现错误! %s (errno: %d)", strerror(errno), errno);
-                    if (::close(newClientFd) == -1) {
-                        LOG_ERROR("6出现错误: %s (errno: %d)", strerror(errno), errno);
-                        using namespace std::chrono;
-                        // std::this_thread::sleep_for(0.5s);
-                    }
+                    ::close(newClientFd);
                 } else {
                     LOG_INFO("新的客户机连接! id = %d", newClientFd);
                     ATTEMPT_TO_CALL(_newConnectCallbackFunc, newClientFd); // 回调
                 }
             } else { // 处理新来的信息
-                LOG_WARNING("新信息=======================================");
                 std::unique_lock<std::mutex> lock(_queueMutex);
                 // 多个 HTTP 请求可能会通过同一个 fd 进行通信
                 if (!_processingFds.count(tmpFd)) {
@@ -290,12 +230,10 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
                     _condition.notify_one();
                 } else {
                     // 此处让那个线程继续处理同一个客户端的新的请求
-                    LOG_INFO("给您加个: fd = %d, cnt = %d", tmpFd, ++_processingFds[tmpFd]);
-                    ;
+                    ++_processingFds[tmpFd];
                 }
             }
         }
-        LOG_WARNING("for out =======================================");
     }
     LOG_INFO("run out!");
 }
