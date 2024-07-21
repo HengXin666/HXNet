@@ -123,14 +123,16 @@ void HXEpoll::workerThread() {
         if (clientFd != -1) {
             // 判断是否还有该 fd 的任务
             std::unique_lock<std::mutex> lock(_queueMutex);
-            if (auto&& it = _processingFds[clientFd]; it > 1) {
-                --_processingFds[clientFd];
-                LOG_WARNING("=== 仍然处理: %d ===", clientFd);
-            } else { // <= 1
-                _processingFds.erase(clientFd);
-                clientFd = -1;
-                continue;
-            }
+            if (auto&& it = _processingFds[clientFd]; it >= 0) {
+                ;
+                LOG_WARNING("=== 仍然处理: %d (cnt = %d)===", clientFd, _processingFds[clientFd]);
+            } 
+            // else { // <= 1
+            //     LOG_ERROR(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>=== 删除: %d ===", clientFd);
+            //     _processingFds.erase(clientFd);
+            //     clientFd = -1;
+            //     continue;
+            // }
         } else {
             // 执行新的 fd 任务
             std::unique_lock<std::mutex> lock(_queueMutex);
@@ -146,7 +148,7 @@ void HXEpoll::workerThread() {
 
         // 需要确保每个文件描述符在任何时刻只被一个线程管理和使用
         char buffer[MAX_BUFFER_SIZE] = {0};
-        // int retryCount = 6;
+        int retryCount = 16;
 /*
 [INFO]: [139773392795328] 读取中 (fd = 6)... {
 [ERROR]: 1出现错误: Bad file descriptor (errno: 9) now fd: 6
@@ -170,14 +172,25 @@ void HXEpoll::workerThread() {
 
 观察上面日志, 我给出 # 的注解
 */
-        while (_running) {
-            LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
+        LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
+        while (retryCount) {
             ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
             if (bytesRead <= 0) { // 断开连接
-                if (bytesRead && (errno == EAGAIN || errno == EINTR)) { // 需要再次调用 ::recv
+                if (bytesRead < 0 && (errno == EAGAIN || errno == EINTR)) { // 需要再次调用 ::recv
                     using namespace std::chrono;
-                    LOG_ERROR("[%llu] 0[!重新读取!]出现错误: %s (errno: %d)", std::this_thread::get_id(), strerror(errno), errno);
-                    // std::this_thread::sleep_for(10ms);
+                    // LOG_ERROR("[%llu] 0[!重新读取!]出现错误: %s (errno: %d)", std::this_thread::get_id(), strerror(errno), errno);
+                    // std::this_thread::sleep_for(100ms);
+                    if (--retryCount == 0) {
+                        std::unique_lock<std::mutex> lock(_queueMutex);
+                        if (ctlDel(clientFd) == -1)
+                            LOG_ERROR("33出现错误: %s (errno: %d)", strerror(errno), errno);
+                        if (::close(clientFd) == -1) {
+                            LOG_ERROR("44出现错误: %s (errno: %d)", strerror(errno), errno);
+                        }
+                        LOG_WARNING("44 >>>>>>>>>>>>>>直接关闭 (fd = %d)!", clientFd);
+                        _processingFds.erase(clientFd);
+                        clientFd = -1;
+                    }
                     continue;
                 }
                 // if (bytesRead == 0) {} // 对端关闭连接
@@ -201,18 +214,17 @@ void HXEpoll::workerThread() {
             } else { // 处理收到的数据
                 if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {
                     std::unique_lock<std::mutex> lock(_queueMutex);
-                    if (_processingFds[clientFd] <= 1) {
+                    if (_processingFds[clientFd] <= 0) {
                         if (ctlDel(clientFd) == -1)
                             LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
                         if (::close(clientFd) == -1) {
                             LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
-                            using namespace std::chrono;
-                            // std::this_thread::sleep_for(0.5s);
-                        } // else {
-                            // LOG_ERROR("4 没有问题, 请忽略!");
-                        // }
+                        }
+                        LOG_WARNING("4 >>>>>>>>>>>>>>直接关闭 (fd = %d)!", clientFd);
                         _processingFds.erase(clientFd);
                         clientFd = -1;
+                    } else {
+                        --_processingFds[clientFd];
                     }
                 }
             }
@@ -260,7 +272,7 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
                     if (::close(newClientFd) == -1) {
                         LOG_ERROR("6出现错误: %s (errno: %d)", strerror(errno), errno);
                         using namespace std::chrono;
-                        std::this_thread::sleep_for(0.5s);
+                        // std::this_thread::sleep_for(0.5s);
                     }
                 } else {
                     LOG_INFO("新的客户机连接! id = %d", newClientFd);
@@ -272,11 +284,12 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
                 // 多个 HTTP 请求可能会通过同一个 fd 进行通信
                 if (!_processingFds.count(tmpFd)) {
                     _tasks.push(tmpFd);
-                    _processingFds[tmpFd] = 1;
+                    _processingFds[tmpFd] = 0;
                     _condition.notify_one();
                 } else {
                     // 此处让那个线程继续处理同一个客户端的新的请求
-                    ++_processingFds[tmpFd];
+                    LOG_INFO("给您加个: fd = %d, cnt = %d", tmpFd, ++_processingFds[tmpFd]);
+                    ;
                 }
             }
         }

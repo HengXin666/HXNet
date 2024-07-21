@@ -58,6 +58,26 @@ struct HXStringUtil final {
     }
 };
 
+/**
+ * @brief 时间格式工具类
+ */
+struct HXDateTimeFormat {
+    /**
+     * @brief 格式化当前时间为如: `%Y-%m-%d %H:%M:%S`的格式
+     * @param fmt 格式字符串
+     * @return 当前时间格式化都的字符串
+     */
+    static std::string format(const std::string& fmt = "%Y-%m-%d %H:%M:%S");
+
+    /**
+     * @brief 格式化当前时间为如: `%Y-%m-%d %H:%M:%S`的格式, 并且带毫秒时间获取
+     * @param fmt 格式字符串
+     * @param msDelim 毫秒与前部分的分割符，默认是空格
+     * @return 当前时间格式化都的字符串
+     */
+    static std::string formatWithMilli(const std::string& fmt = "%Y-%m-%d %H:%M:%S", const std::string msDelim = " ");
+};
+
 } // namespace HXHttp
 
 #endif // _HX_HXHTTP_TOOLS_H_

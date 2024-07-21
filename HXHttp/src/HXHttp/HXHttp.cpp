@@ -158,7 +158,7 @@ int main() {
                 break;
             HXHttp::HXResponse response {HXHttp::HXResponse::Status::CODE_200};
             if (response.setContentType("text/html", "UTF-8")
-                        .setBodyData("<h1>Hello, world!</h1>")
+                        .setBodyData("<h1>Hello, world!</h1><h2>" + HXHttp::HXDateTimeFormat::format() + "</h2>")
                         .sendResponse(fd) == -1) {
                 LOG_ERROR("发送信息时出现错误: %s (errno: %d)", strerror(errno), errno);
             }
