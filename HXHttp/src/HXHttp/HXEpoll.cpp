@@ -6,6 +6,7 @@
 #include <cstring>      // 错误码 to 错误码对应原因
 #include <cerrno>       // 错误码
 #include <unistd.h>     // 提供了 close
+#include <chrono>
 
 #include <HXprint/HXprint.h>
 #include <HXJson/HXJson.h>
@@ -117,7 +118,7 @@ bool HXEpoll::setNonBlocking(int fd) {
 
 void HXEpoll::workerThread() {
     while (_running) {
-        int clientFd;
+        int clientFd = -1;
         {
             std::unique_lock<std::mutex> lock(_queueMutex);
             _condition.wait(lock, [this] { return !_tasks.empty() || !_running; });
@@ -130,8 +131,9 @@ void HXEpoll::workerThread() {
             _tasks.pop();
         }
 
+        // 需要确保每个文件描述符在任何时刻只被一个线程管理和使用
         char buffer[MAX_BUFFER_SIZE] = {0};
-        LOG_INFO("[%llu] 读取中... {", std::this_thread::get_id());
+        LOG_INFO("[%llu] 读取中 (fd = %d)... {", std::this_thread::get_id(), clientFd);
         ssize_t bytesRead = ::recv(clientFd, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0) { // 断开连接
             // if (bytesRead == 0) {} // 对端关闭连接
@@ -139,16 +141,20 @@ void HXEpoll::workerThread() {
                 LOG_ERROR("读取客户端信息时出现错误: %s (errno: %d)", strerror(errno), errno);
             }
             // 无论如何, 都会关闭连接
-            ctlDel(clientFd);
-            ::close(clientFd);
+            if (ctlDel(clientFd) == -1)
+                LOG_ERROR("1出现错误: %s (errno: %d)", strerror(errno), errno);
+            if (::close(clientFd) == -1)
+                LOG_ERROR("2出现错误: %s (errno: %d)", strerror(errno), errno);
             ATTEMPT_TO_CALL(_newUserBreakCallbackFunc, clientFd);
         } else { // 处理收到的数据
             if (_newMsgCallbackFunc && _newMsgCallbackFunc(clientFd, buffer, sizeof(buffer))) {
-                ctlDel(clientFd);
-                ::close(clientFd);
+                if (ctlDel(clientFd) == -1)
+                    LOG_ERROR("3出现错误: %s (errno: %d)", strerror(errno), errno);
+                if (::close(clientFd) == -1)
+                    LOG_ERROR("4出现错误: %s (errno: %d)", strerror(errno), errno);
             }
         }
-        LOG_INFO("} // [%llu] 读取完毕并输出", std::this_thread::get_id());
+        LOG_INFO("} // [%llu] 读取完毕并输出 (fd = %d)", std::this_thread::get_id(), clientFd);
     }
 }
 
@@ -183,10 +189,15 @@ void HXEpoll::run(int timeOut /*= -1*/, const std::function<bool()>& conditional
                     LOG_ERROR("连接新客户端出错! %s (errno: %d)", strerror(errno), errno);
                 } else if (setNonBlocking(newClientFd)) {
                     LOG_ERROR("设置fd为非阻塞时出错! %s (errno: %d)", strerror(errno), errno);
-                    ::close(newClientFd);
+                    if (::close(newClientFd) == -1)
+                        LOG_ERROR("5出现错误: %s (errno: %d)", strerror(errno), errno);
                 } else if (ctlAdd(newClientFd) < 0) {
                     LOG_ERROR("添加时候出现错误! %s (errno: %d)", strerror(errno), errno);
-                    ::close(newClientFd);
+                    if (::close(newClientFd) == -1) {
+                        LOG_ERROR("6出现错误: %s (errno: %d)", strerror(errno), errno);
+                        using namespace std::chrono;
+                        std::this_thread::sleep_for(0.5s);
+                    }
                 } else {
                     LOG_INFO("新的客户机连接! id = %d", newClientFd);
                     ATTEMPT_TO_CALL(_newConnectCallbackFunc, newClientFd); // 回调

@@ -125,6 +125,8 @@ void handleClient(int client_socket) {
 #include <HXHttp/HXRouter.h>
 #include <HXHttp/HXHttpTools.h>
 #include <HXHttp/HXRequest.h>
+#include <HXHttp/HXResponse.h>
+#include <HXprint/HXprint.h>
 
 #include <iostream>
 #include <unordered_map>
@@ -154,6 +156,12 @@ int main() {
             HXHttp::HXRequest req;
             if (req.resolutionRequest(fd, str, strLen) != HXHttp::HXRequest::ParseStatus::ParseSuccessful)
                 break;
+            HXHttp::HXResponse response {HXHttp::HXResponse::Status::CODE_200};
+            if (response.setContentType("text/html", "UTF-8")
+                        .setBodyData("<h1>Hello, world!</h1>")
+                        .sendResponse(fd) == -1) {
+                LOG_ERROR("发送信息时出现错误: %s (errno: %d)", strerror(errno), errno);
+            }
             return true; // http 是无感应的, 不是 WebSocket
             // if (auto fun = HXHttp::HXRouter::getSingleton().getEndpointFunByURL(requestLine[1])) {
             //     printf("NO!");

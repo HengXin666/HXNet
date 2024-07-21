@@ -39,7 +39,7 @@ public:
     /**
      * @brief 响应状态码
      */
-    enum Status {
+    enum class Status : int {
         CODE_100 = 100, // Continue
         CODE_101 = 101, // Switching Protocols
         CODE_102 = 102, // Processing
@@ -115,7 +115,7 @@ public:
     /**
      * @brief 设置响应头部: 设置响应类型, 如果响应体是文本, 你需要指定字符编码(不指定则留空`""`)
      * @param type 响应类型
-     * @param encoded 字符编码 ~~(如果是图片等就可以不用指定)~~
+     * @param encoded 字符编码 如`UTF-8` ~~(如果是图片等就可以不用指定)~~
      * @return [this&] 可以链式调用
      * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
      */
@@ -123,9 +123,28 @@ public:
         if (encoded == "") // Content-Type: text/html
             _responseHeaders["Content-Type"] = type;
         else // Content-Type: text/html; charset=UTF-8
-            _responseHeaders["Content-Type"] = type + "; " + encoded;
+            _responseHeaders["Content-Type"] = type + "; charset=" + encoded;
         return *this;
     }
+
+    /**
+     * @brief 设置响应体
+     * @param data 响应体数据
+     * @return [this&] 可以链式调用
+     * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
+     */
+    HXResponse& setBodyData(const std::string& data) {
+        _responseBody = data;
+        return *this;
+    }
+
+    /**
+     * @brief 发送响应信息给 fd
+     * @param fd 客户端套接字
+     * @return 发送字节数 或 -1 (错误)
+     * @warning 内部会通过Body内容设置`Content-Length`长度, 不需要用户手动设置
+     */
+    ssize_t sendResponse(int fd) const;
 };
 
 } // namespace HXHttp

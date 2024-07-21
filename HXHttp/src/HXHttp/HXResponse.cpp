@@ -1,13 +1,17 @@
 #include <HXHttp/HXResponse.h>
 
+#include <sys/socket.h>
+
+#include <HXprint/HXprint.h>
+
 namespace HXHttp {
 
-explicit HXResponse::HXResponse(
+HXResponse::HXResponse(
     HXResponse::Status statusCode, 
     std::string_view describe /*= ""*/) : _statusLine("HTTP/1.1 ")
                                         , _responseHeaders()
                                         , _responseBody() {
-    _statusLine.append(std::to_string(statusCode) + ' ');
+    _statusLine.append(std::to_string(static_cast<int>(statusCode)) + ' ');
     if (!describe.size()) {
         switch (statusCode) {
             case HXResponse::Status::CODE_100:
@@ -202,6 +206,23 @@ explicit HXResponse::HXResponse(
     } else {
         _statusLine.append(describe);
     }
+}
+
+ssize_t HXResponse::sendResponse(int fd) const {
+    std::string res {};
+    res.append(_statusLine);
+    res.append("\r\n");
+    for (const auto& [key, val] : _responseHeaders) {
+        res.append(key);
+        res.append(": ");
+        res.append(val);
+        res.append("\r\n");
+    }
+    res.append("Content-Length: ");
+    res.append(std::to_string(_responseBody.size()));
+    res.append("\r\n\r\n");
+    res.append(_responseBody);
+    return ::send(fd, res.c_str(), res.size(), 0);
 }
 
 } // namespace HXHttp

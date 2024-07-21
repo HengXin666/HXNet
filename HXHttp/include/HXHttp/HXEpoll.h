@@ -123,7 +123,7 @@ public:
      * @param maxQueue 最大排队数 
      * @param maxConnect 最大连接数 | 只是一个提示, 实际上, 内核会根据需要动态调整大小
      */
-    explicit HXEpoll(int port = 28205, int maxQueue = 512, int maxConnect = 1);
+    explicit HXEpoll(int port = 28205, int maxQueue = 512, int maxConnect = 1024);
 
     /**
      * @brief 设置有新连接的回调函数
