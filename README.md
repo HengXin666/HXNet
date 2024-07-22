@@ -1,4 +1,29 @@
 # HXNet
+
+## 分支 [v1.0-BUG-thread-and-epoll] 说明
+
+当前分支使用的epoll是多线程(任务fd队列+工作函数)的(可能有bug, ?不理了)
+
+并发只有`2w`, 同样的环境下, 使用别人在别人机器22w并发的, 测试并发, 都有`7w`...
+
+而且别人的响应极快! 如:
+
+```sh
+╰─ wrk -c100 -d5s http://localhost:8080
+Running 5s test @ http://localhost:8080
+  2 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.30ms  297.95us  13.68ms   98.32%
+    Req/Sec    38.52k   824.29    39.56k    85.00%
+  383202 requests in 5.02s, 56.64MB read
+Requests/sec:  76355.96
+Transfer/sec:     11.29MB
+```
+
+因此, 这个是~~废弃~~备份分支, 方便我查看之前失败的代码, 新代码依旧在`main`分支, 目测采用`epoll+协程`的解决方案!
+
+---
+
 学习现代Cpp的代码存放库, 多线程epoll, http解析, Json解析, 万用print等
 
 > 目标是写一个基于epoll + 多线程的 Web Http 后端
