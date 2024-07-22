@@ -43,24 +43,9 @@
 
 ## 开发计划/日志
 
-*摊牌啦, 又有BUG?!*
+- [ ] 重构epoll为协程版本
 
-压力测试, 发现有时候会出现问题, 明天继续学习: [【C++17】小彭老师陪你从零手搓HTTP服务器](https://www.bilibili.com/video/BV1Mz421i7Fm/) 重新搞!
-
-```sh
-╰─ wrk -c100 -d3s http://localhost:28205
-Running 3s test @ http://localhost:28205
-  2 threads and 100 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     6.16ms   23.48ms 226.44ms   96.71%
-    Req/Sec    10.90k     1.46k   13.75k    66.67%
-  65064 requests in 3.04s, 8.00MB read
-  Socket errors: connect 0, read 65058, write 0, timeout 0
-Requests/sec:  21386.56
-Transfer/sec:      2.63MB
-```
-
-- [ ] 重构epoll
+---
 
 - [ ] 开发控制层, 封装简易可使用的端点
 - [x] 处理TCP粘包问题 ~~(我连怎么检测出来都不知道...)~~
