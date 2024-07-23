@@ -77,7 +77,7 @@ HXEpoll::HXEpoll(int port /*= 28205*/, int evSize /*= 1024*/, int maxQueue /*= 6
         // --- 将监听套接字添加到 epoll 实例中 ---
         _ev.events = EPOLLIN; // EPOLLET 模式, 检测读缓冲区是否有数据
         _ev.data.fd = _serverFd;
-        if (::epoll_ctl(_epollFd, EPOLL_CTL_ADD, _serverFd, &_ev) < 0) {
+        if (setNonBlocking(_serverFd) || ::epoll_ctl(_epollFd, EPOLL_CTL_ADD, _serverFd, &_ev) < 0) {
             LOG_ERROR("epoll_ctl Error: %s (errno: %d)", strerror(errno), errno);
             break;
         }
