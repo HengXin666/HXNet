@@ -27,7 +27,7 @@
 
 #include <HXprint/HXprint.h>
 
-namespace HXprint {
+namespace HXHttp {
 
 /**
  * @brief 错误处理工具类
@@ -178,7 +178,7 @@ public:
  * @param ... func 的参数
  * @return 报错就抛出异常, 如果`erron == Except`则会返回`-1`而不会终止程序, 否则只是转发`func`的`返回值`
  */
-#define CHECK_CALL_EXCEPT(except, func, ...) HXprint::HXErrorHandlingTools::checkError<except>(SOURCE_INFO() #func, func(__VA_ARGS__))
+#define CHECK_CALL_EXCEPT(except, func, ...) HXHttp::HXErrorHandlingTools::checkError<except>(SOURCE_INFO() #func, func(__VA_ARGS__))
 
 /**
  * @brief 判断是否是错误: 专门伺候Linux的系统函数(即返回`-1`代表错误, 而错误原因在`erron`)
@@ -186,8 +186,8 @@ public:
  * @param ... func 的参数
  * @return 报错就抛出异常, 否则只是转发`func`的`返回值`
  */
-#define CHECK_CALL(func, ...) HXprint::HXErrorHandlingTools::checkError(SOURCE_INFO(#func), func(__VA_ARGS__))
+#define CHECK_CALL(func, ...) HXHttp::HXErrorHandlingTools::checkError(SOURCE_INFO(#func), func(__VA_ARGS__))
 
-} // namespace HXprint
+} // namespace HXHttp
 
 #endif // _HX_HXERROR_HANDLING_TOOLS_H_

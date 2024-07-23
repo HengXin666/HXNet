@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-#include <HXprint/HXErrorHandlingTools.h>
+#include <HXHttp/HXErrorHandlingTools.h>
 
 namespace HXHttp {
 
@@ -56,7 +56,7 @@ HXAddressResolver::addressInfo HXAddressResolver::resolve(
      */
     int err = getaddrinfo(name.c_str(), service.c_str(), nullptr, &_head);
     if (err) {
-        auto ec = std::error_code(err, HXprint::HXErrorHandlingTools::gaiCategory());
+        auto ec = std::error_code(err, HXErrorHandlingTools::gaiCategory());
         throw std::system_error(ec, name + ":" + service);
     }
     return {_head};

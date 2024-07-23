@@ -1,6 +1,6 @@
-#include <HXprint/HXErrorHandlingTools.h>
+#include <HXHttp/HXErrorHandlingTools.h>
 
-namespace HXprint {
+namespace HXHttp {
 
 [[noreturn]] void HXErrorHandlingTools::_throwSystemError(const char *what) {
     auto ec = std::error_code(errno, std::system_category());
@@ -8,4 +8,4 @@ namespace HXprint {
     throw std::system_error(ec, what);
 }
 
-} // namespace HXprint
+} // namespace HXHttp

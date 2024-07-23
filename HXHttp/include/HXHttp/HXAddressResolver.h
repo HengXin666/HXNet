@@ -29,19 +29,38 @@ namespace HXHttp {
  * @brief 地址注册类
  */
 class HXAddressResolver {
+public:
     /**
      * @brief 用于保存地址引用
      */
     struct addressRef {
-        struct sockaddr *_addr; // 指向 sockaddr 结构体的指针
-        socklen_t _addrlen;     // sockaddr 结构体的长度
+        struct ::sockaddr *_addr; // 指向 sockaddr 结构体的指针
+        ::socklen_t _addrlen;     // sockaddr 结构体的长度
+    };
+
+    /**
+     * @brief 用于保存地址信息
+     */
+    struct address {
+        union {
+            struct ::sockaddr _addr;                 // sockaddr 结构体
+            struct ::sockaddr_storage _addr_storage; // 更大的结构体，适应不同的套接字地址类型
+        };
+        ::socklen_t _addrlen = sizeof(struct ::sockaddr_storage); // 初始化为 sockaddr_storage 的大小
+
+        /**
+         * @brief 类型转换操作符重载, 将 address 转换为 addressRef
+         */
+        operator addressRef() {
+            return {&_addr, _addrlen};
+        }
     };
 
     /**
      * @brief 用于处理 addrinfo 结果
      */
     struct addressInfo {
-        struct addrinfo *_curr = nullptr; // 指向当前 addrinfo 结构体的指针
+        struct ::addrinfo *_curr = nullptr; // 指向当前 addrinfo 结构体的指针
 
         /**
          * @brief 创建套接字、绑定它并监听连接
@@ -73,6 +92,7 @@ class HXAddressResolver {
         }
     };
 
+private:
     // 指向 addrinfo 链表的头部
     struct ::addrinfo* _head = nullptr;
 
