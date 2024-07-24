@@ -22,8 +22,107 @@
 
 #include <vector>
 #include <string_view>
+#include <stdexcept>
 
 namespace HXSTL {
+
+/**
+ * @brief const字节数组视图
+ */
+class HXConstBytesBufferView {
+    const char* _data;
+    std::size_t _size;
+public:
+    HXConstBytesBufferView(const char* data, std::size_t size) 
+    : _data(data)
+    , _size(size)
+    {}
+
+    char const *data() const noexcept {
+        return _data;
+    }
+
+    size_t size() const noexcept {
+        return _size;
+    }
+
+    char const *begin() const noexcept {
+        return data();
+    }
+
+    char const *end() const noexcept {
+        return data() + size();
+    }
+
+    /**
+     * @brief 获取子视图
+     * @param start 起始索引
+     * @param len 长度
+     * @return 子视图
+     */
+    HXConstBytesBufferView subspan(size_t start, size_t len = static_cast<size_t>(-1)) const {
+        if (start > size())
+            throw std::out_of_range("HXConstBytesBufferView::subspan");
+        if (len > size() - start)
+            len = size() - start;
+        return {data() + start, len};
+    }
+
+    operator std::string_view() const noexcept {
+        return std::string_view{data(), size()};
+    }
+};
+
+/**
+ * @brief 字节数组视图
+ */
+class HXBytesBufferView {
+    char* _data;
+    std::size_t _size;
+public:
+    HXBytesBufferView(char* data, std::size_t size) 
+    : _data(data)
+    , _size(size)
+    {}
+
+    char *data() const noexcept {
+        return _data;
+    }
+
+    size_t size() const noexcept {
+        return _size;
+    }
+
+    char *begin() const noexcept {
+        return data();
+    }
+
+    char *end() const noexcept {
+        return data() + size();
+    }
+
+    /**
+     * @brief 获取子视图
+     * @param start 起始索引
+     * @param len 长度
+     * @return 子视图
+     */
+    HXBytesBufferView subspan(size_t start, size_t len = static_cast<size_t>(-1)) const {
+        if (start > size())
+            throw std::out_of_range("HXBytesBufferView::subspan");
+        if (len > size() - start)
+            len = size() - start;
+        return {data() + start, len};
+    }
+
+    operator HXConstBytesBufferView() const noexcept {
+        return HXConstBytesBufferView{data(), size()};
+    }
+
+    operator std::string_view() const noexcept {
+        return std::string_view{data(), size()};
+    }
+};
 
 /**
  * @brief 字节数组 (分配在堆上)
@@ -66,8 +165,44 @@ public:
         return data() + size();
     }
 
+    void append(HXConstBytesBufferView chunk) {
+        _data.insert(_data.end(), chunk.begin(), chunk.end());
+    }
+
+    void append(std::string_view chunk) {
+        _data.insert(_data.end(), chunk.begin(), chunk.end());
+    }
+
+    template <size_t N>
+    void append(const char (&chunk)[N]) {
+        append(std::string_view{chunk, N - 1});
+    }
+
     operator std::string_view() const noexcept {
         return std::string_view {_data.data(), _data.size()};
+    }
+
+    /**
+     * @brief 清楚容器数据
+     */
+    void clear() {
+        _data.clear();
+    }
+
+    /**
+     * @brief 设置容器的有效大小
+     * @param n 设置容器的大小
+     */
+    void resize(size_t n) {
+        _data.resize(n);
+    }
+
+    /**
+     * @brief 设置容器的空间大小 (只变大小, 不改值, 如果`n < .size()`则什么也不做)
+     * @param n 设置容器空间的大小
+     */
+    void reserve(size_t n) {
+        _data.reserve(n);
     }
 };
 

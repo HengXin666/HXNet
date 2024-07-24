@@ -4,7 +4,7 @@
 
 namespace HXHttp {
 
-HXServer::asyncFile HXServer::asyncFile::asyncWrap(int fd) {
+HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
     int flags = CHECK_CALL(::fcntl, fd, F_GETFL);
     flags |= O_NONBLOCK;
     CHECK_CALL(::fcntl, fd, F_SETFL, flags);
@@ -14,10 +14,10 @@ HXServer::asyncFile HXServer::asyncFile::asyncWrap(int fd) {
     event.data.ptr = nullptr; // fd 对应 回调函数 (没有)
     CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_ADD, fd, &event);
 
-    return asyncFile{fd};
+    return AsyncFile{fd};
 }
 
-void HXServer::asyncFile::asyncAccept(
+void HXServer::AsyncFile::asyncAccept(
     HXAddressResolver::address addr, 
     HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cd
     ) {
@@ -46,12 +46,12 @@ void HXServer::asyncFile::asyncAccept(
     CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_MOD, _fd, &event);
 }
 
-void HXServer::asyncFile::asyncRead(
+void HXServer::AsyncFile::asyncRead(
     HXSTL::HXBytesBuffer& buf,
+    std::size_t count,
     HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
     ) {
-    
-    auto ret = HXErrorHandlingTools::convertError<size_t>(::read(_fd, buf.data(), buf.size()));
+    auto ret = HXErrorHandlingTools::convertError<size_t>(::recv(_fd, buf.data(), count, 0));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
         cd(ret);
@@ -60,8 +60,8 @@ void HXServer::asyncFile::asyncRead(
 
     // 如果是 EAGAIN, 那么就让操作系统通知我吧
     // 到时候调用这个回调
-    HXSTL::HXCallback<> resume = [this, &buf, cd = std::move(cd)]() mutable {
-        return asyncRead(buf, std::move(cd));
+    HXSTL::HXCallback<> resume = [this, &buf, count, cd = std::move(cd)]() mutable {
+        return asyncRead(buf, count, std::move(cd));
     };
 
     // 让操作系统通知我
@@ -72,12 +72,12 @@ void HXServer::asyncFile::asyncRead(
 }
 
 void HXServer::ConnectionHandler::start(int fd) {
-    _fd = HXServer::asyncFile::asyncWrap(fd);
+    _fd = HXServer::AsyncFile::asyncWrap(fd);
     return read();
 }
 
 void HXServer::ConnectionHandler::read() {
-    return _fd.asyncRead(buf, [self = shared_from_this()] (HXErrorHandlingTools::Expected<size_t> ret) {
+    return _fd.asyncRead(_buf, _buf.size(), [self = shared_from_this()] (HXErrorHandlingTools::Expected<size_t> ret) {
         if (ret.error()) {
             return;
         }
@@ -85,11 +85,12 @@ void HXServer::ConnectionHandler::read() {
         size_t n = ret.value(); // 读取到的字节数
         if (n == 0) {
             // 断开连接
-            
+            LOG_INFO("客户端已断开连接!");
             return;
         }
         
         // 进行解析
+
     });
 }
 
@@ -103,7 +104,7 @@ void HXServer::Acceptor::start(const std::string& name, const std::string& port)
         port.c_str()
     );
     int listenfd = entry.createSocketAndBind();
-    _serverFd = HXServer::asyncFile::asyncWrap(listenfd);
+    _serverFd = HXServer::AsyncFile::asyncWrap(listenfd);
     return accept();
 }
 

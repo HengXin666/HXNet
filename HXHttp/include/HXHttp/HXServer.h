@@ -28,6 +28,8 @@
 #include <HXSTL/HXBytesBuffer.h>
 #include <HXHttp/HXAddressResolver.h>
 #include <HXHttp/HXErrorHandlingTools.h>
+#include <HXHttp/HXRequest.h>
+#include <HXHttp/HXResponse.h>
 
 namespace HXHttp {
 
@@ -63,19 +65,19 @@ public:
     /**
      * @brief 异步文件操作类
      */
-    class asyncFile {
+    class AsyncFile {
         int _fd = -1;
     public:
-        asyncFile() = default;
+        AsyncFile() = default;
 
-        explicit asyncFile(int fd) : _fd(fd) {}
+        explicit AsyncFile(int fd) : _fd(fd) {}
 
         /**
          * @brief 静态工厂方法: 将fd设置为非阻塞, 注册epoll监听 (EPOLLET)
          * @param fd 文件套接字
          * @return asyncFile对象
          */
-        static asyncFile asyncWrap(int fd);
+        static AsyncFile asyncWrap(int fd);
 
         /**
          * @brief 异步建立连接
@@ -90,10 +92,12 @@ public:
         /**
          * @brief 异步读取
          * @param buf 存放所有读取到的数据
+         * @param count 期望读取的字节数
          * @param cd 读取成功的回调函数
          */
         void asyncRead(
             HXSTL::HXBytesBuffer& buf,
+            std::size_t count,
             HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
         );
     };
@@ -102,8 +106,12 @@ public:
      * @brief 连接处理类
      */
     class ConnectionHandler : std::enable_shared_from_this<ConnectionHandler> {
-        asyncFile _fd; // 连接上的客户端的套接字
-        HXSTL::HXBytesBuffer buf{1024};
+        AsyncFile _fd;             // 连接上的客户端的套接字
+        HXSTL::HXBytesBuffer _buf; // 缓存一次接收到的信息
+        
+        /// 有空改为模版+组合HXRequest/HXResponse
+        HXRequest _request;        // 客户端请求类
+        HXResponse _response;      // 服务端响应类
         using pointer = std::shared_ptr<ConnectionHandler>;
     public:
         /**
@@ -130,7 +138,7 @@ public:
      * @brief 连接接受类
      */
     class Acceptor : std::enable_shared_from_this<Acceptor> {
-        asyncFile _serverFd;              // 服务器套接字
+        AsyncFile _serverFd;              // 服务器套接字
         HXAddressResolver::address _addr; // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
         using pointer = std::shared_ptr<Acceptor>;
     public:

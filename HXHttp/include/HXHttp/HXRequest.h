@@ -25,6 +25,8 @@
 #include <string>
 #include <optional>
 
+#include <HXSTL/HXBytesBuffer.h>
+
 namespace HXHttp {
 
 /**
@@ -71,6 +73,15 @@ public:
      * @return `HXHttp::HXRequest::ParseStatus` 解析状态
      */
     int resolutionRequest(int fd, char *str, std::size_t strLen);
+
+    /**
+     * @brief 解析请求
+     * @param buf 需要解析的内容
+     * @return 是否需要继续解析;
+     *         `== 0`: 不需要;
+     *         `>  0`: 需要继续解析`size_t`个字节
+     */
+    std::size_t parserRequest(HXSTL::HXConstBytesBufferView buf);
 
     /**
      * @brief 获取请求类型
