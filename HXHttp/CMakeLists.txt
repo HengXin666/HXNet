@@ -18,6 +18,7 @@ add_executable (${appName} ${srcs})
 
 target_link_libraries(${appName} HXprint)
 target_link_libraries(${appName} HXJson)
+target_link_libraries(${appName} HXSTL)
 
 # 将include目录添加到HXHttp库的公共包含目录中
 target_include_directories(HXHttp PUBLIC include)

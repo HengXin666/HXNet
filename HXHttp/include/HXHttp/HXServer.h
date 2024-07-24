@@ -24,7 +24,8 @@
 #include <cassert>
 #include <memory>
 
-#include <HXHttp/HXCallback.h>
+#include <HXSTL/HXCallback.h>
+#include <HXSTL/HXBytesBuffer.h>
 #include <HXHttp/HXAddressResolver.h>
 #include <HXHttp/HXErrorHandlingTools.h>
 
@@ -78,10 +79,51 @@ public:
 
         /**
          * @brief 异步建立连接
+         * @param addr [out] 用于记录`客户端`信息
+         * @param cd 连接成功的回调函数
          */
         void asyncAccept(
             HXAddressResolver::address addr, 
-            HXCallback<HXErrorHandlingTools::Expected<int>> cd);
+            HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cd
+        );
+
+        /**
+         * @brief 异步读取
+         * @param buf 存放所有读取到的数据
+         * @param cd 读取成功的回调函数
+         */
+        void asyncRead(
+            HXSTL::HXBytesBuffer& buf,
+            HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
+        );
+    };
+
+    /**
+     * @brief 连接处理类
+     */
+    class ConnectionHandler : std::enable_shared_from_this<ConnectionHandler> {
+        asyncFile _fd; // 连接上的客户端的套接字
+        HXSTL::HXBytesBuffer buf{1024};
+        using pointer = std::shared_ptr<ConnectionHandler>;
+    public:
+        /**
+         * @brief 静态工厂方法
+         * @return ConnectionHandler指针
+         */
+        static pointer make() {
+            return std::make_shared<pointer::element_type>();
+        }
+
+        /**
+         * @brief 开始处理连接
+         * @param fd 客户端套接字
+         */
+        void start(int fd);
+
+        /**
+         * @brief 开始读取
+         */
+        void read();
     };
 
     /**

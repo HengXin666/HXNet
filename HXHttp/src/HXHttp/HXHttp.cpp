@@ -127,6 +127,7 @@ void handleClient(int client_socket) {
 #include <HXHttp/HXRequest.h>
 #include <HXHttp/HXResponse.h>
 #include <HXprint/HXprint.h>
+#include <HXHttp/HXServer.h>
 
 #include <iostream>
 #include <unordered_map>
@@ -137,6 +138,18 @@ void handleClient(int client_socket) {
 bool isAllowServerRun = true;
 
 int main() {
+    try {
+        HXHttp::HXServer::Epoll ctx;
+        auto accetpPtr = HXHttp::HXServer::Acceptor::make();
+        accetpPtr->start("127.0.0.1", "28205");
+        ctx.join();
+    } catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }
+    return 0;
+}
+
+int _hx_main() {
     // 绑定交互信号监听 (Ctrl + C)
     signal(SIGINT, [](int signum) {
 		isAllowServerRun = false;

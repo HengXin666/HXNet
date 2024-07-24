@@ -22,7 +22,7 @@
 
 #include <memory>
 
-namespace HXHttp {
+namespace HXSTL {
 
 // 这个`HXCallback`结构体模板是一种用于存储和调用可变参数回调函数的类模板
 // 它主要通过类型擦除和多态来实现这一点
@@ -113,6 +113,6 @@ struct HXCallback {
     }
 };
 
-} // namespace HXHttp
+} // namespace HXSTL
 
 #endif // _HX_HXCALLBACK_H_
