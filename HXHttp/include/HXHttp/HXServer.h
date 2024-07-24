@@ -45,11 +45,11 @@ public:
         /// @brief 全局线程独占单例
         inline static thread_local Epoll *G_instance = nullptr;
 
-        Epoll() : _epfd(CHECK_CALL(::epoll_create1, 0)) {}
-
-        void join() {
-
+        Epoll() : _epfd(CHECK_CALL(::epoll_create1, 0))  {
+            G_instance = this;
         }
+
+        void join();
 
         ~Epoll() {
             ::close(_epfd);
@@ -100,6 +100,16 @@ public:
             std::size_t count,
             HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
         );
+
+        /**
+         * @brief 异步写入
+         * @param buf 存放需要写入的数据
+         * @param cd 写入成功的回调函数
+         */
+        void asyncWrite(
+            HXSTL::HXConstBytesBufferView buf,
+            HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
+        );
     };
 
     /**
@@ -114,6 +124,8 @@ public:
 
         /// 有空改为模版+组合HXRequest/HXResponse
         HXRequest _request {};    // 客户端请求类
+
+        HXResponse _response {};  // 服务端响应类
 
         /**
          * @brief 静态工厂方法
@@ -134,6 +146,16 @@ public:
          * @param size 读取的数据字节大小
          */
         void read(std::size_t size = HXRequest::BUF_SIZE);
+
+        /**
+         * @brief 处理请求, 返回响应
+         */
+        void handle();
+
+        /**
+         * @brief 开始写入
+         */
+        void write(HXSTL::HXConstBytesBufferView buf);
     };
 
     /**

@@ -138,9 +138,6 @@ void handleClient(int client_socket) {
 bool isAllowServerRun = true;
 
 int main() {
-    int _hx_main();
-    _hx_main();
-    return 0;
     try {
         HXHttp::HXServer::Epoll ctx;
         auto accetpPtr = HXHttp::HXServer::Acceptor::make();

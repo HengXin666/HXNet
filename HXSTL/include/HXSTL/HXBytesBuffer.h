@@ -132,10 +132,10 @@ class HXBytesBuffer {
 public:
     HXBytesBuffer() = default;
     HXBytesBuffer(HXBytesBuffer &&) = default;
-    HXBytesBuffer &operator=(HXBytesBuffer &&) = default;
+    HXBytesBuffer& operator=(HXBytesBuffer &&) = default;
 
-    HXBytesBuffer &&operator=(std::string && str) {
-        return std::move(HXBytesBuffer {str.data(), str.size()});
+    HXBytesBuffer operator=(std::string && str) {
+        return HXBytesBuffer {str.data(), str.size()}; // @test 编译器请帮我优化~
     }
 
     explicit HXBytesBuffer(char *str, std::size_t size) : _data(size) {
@@ -183,7 +183,7 @@ public:
         _data.insert(_data.end(), chunk.begin(), chunk.end());
     }
 
-    template <size_t N>
+    template <std::size_t N>
     void append(const char (&chunk)[N]) {
         append(std::string_view{chunk, N - 1});
     }

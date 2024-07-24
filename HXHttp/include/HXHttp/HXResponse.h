@@ -24,6 +24,8 @@
 #include <string_view>
 #include <unordered_map>
 
+#include <HXSTL/HXBytesBuffer.h>
+
 namespace HXHttp {
 
 /**
@@ -36,6 +38,9 @@ class HXResponse {
     // 空行
     std::string _responseBody; // 响应体
 public:
+    // @brief 待写入的内容
+    HXSTL::HXBytesBuffer _buf;
+
     /**
      * @brief 响应状态码
      */
@@ -112,10 +117,24 @@ public:
      */
     explicit HXResponse(HXResponse::Status statusCode, std::string_view describe = "");
 
+    explicit HXResponse() : _statusLine()
+                          , _responseHeaders()
+                          , _responseBody()
+                          , _buf()
+    {}
+
+    /**
+     * @brief 设置状态行 (协议使用HTTP/1.1)
+     * @param statusCode 状态码
+     * @param describe 状态码描述: 如果为`""`则会使用该状态码对应默认的描述
+     * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
+     */
+    HXResponse& setResponseLine(HXResponse::Status statusCode, std::string_view describe = "");
+
     /**
      * @brief 设置响应头部: 设置响应类型, 如果响应体是文本, 你需要指定字符编码(不指定则留空`""`)
-     * @param type 响应类型
-     * @param encoded 字符编码 如`UTF-8` ~~(如果是图片等就可以不用指定)~~
+     * @param type 响应类型, 如`text/html`
+     * @param encoded 字符编码, 如`UTF-8` ~~(如果是图片等就可以不用指定)~~
      * @return [this&] 可以链式调用
      * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
      */
@@ -123,7 +142,7 @@ public:
         if (encoded == "") // Content-Type: text/html
             _responseHeaders["Content-Type"] = type;
         else // Content-Type: text/html; charset=UTF-8
-            _responseHeaders["Content-Type"] = type + "; charset=" + encoded;
+            _responseHeaders["Content-Type"] = type + ";charset=" + encoded;
         return *this;
     }
 
@@ -139,12 +158,27 @@ public:
     }
 
     /**
+     * @brief 生成响应字符串, 用于写入
+     */
+    void createResponseBuffer();
+
+    /**
+     * @brief 清空已写入的响应, 重置状态 (复用)
+     */
+    void clear() {
+        _statusLine.clear();
+        _responseHeaders.clear();
+        _responseBody.clear();
+        _buf.clear();
+    }
+
+    /**
      * @brief 发送响应信息给 fd
      * @param fd 客户端套接字
      * @return 发送字节数 或 -1 (错误)
      * @warning 内部会通过Body内容设置`Content-Length`长度, 不需要用户手动设置
      */
-    ssize_t sendResponse(int fd) const;
+    [[deprecated]] ssize_t sendResponse(int fd) const;
 };
 
 } // namespace HXHttp

@@ -73,6 +73,7 @@ std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
     return 0; // 解析完毕
 }
 
+// @bug [[deprecated]]
 int HXRequest::resolutionRequest(int fd, char *str, const std::size_t strLen) {
     char *tmp = NULL;
     char *line = ::strtok_r(str, "\r\n", &tmp); // 线程安全

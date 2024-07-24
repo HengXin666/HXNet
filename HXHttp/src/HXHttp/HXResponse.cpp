@@ -6,11 +6,7 @@
 
 namespace HXHttp {
 
-HXResponse::HXResponse(
-    HXResponse::Status statusCode, 
-    std::string_view describe /*= ""*/) : _statusLine("HTTP/1.1 ")
-                                        , _responseHeaders()
-                                        , _responseBody() {
+HXResponse& HXResponse::setResponseLine(HXResponse::Status statusCode, std::string_view describe /*= ""*/) {
     _statusLine.append(std::to_string(static_cast<int>(statusCode)) + ' ');
     if (!describe.size()) {
         switch (statusCode) {
@@ -208,6 +204,30 @@ HXResponse::HXResponse(
     }
 }
 
+HXResponse::HXResponse(
+    HXResponse::Status statusCode, 
+    std::string_view describe /*= ""*/) : _statusLine("HTTP/1.1 ")
+                                        , _responseHeaders()
+                                        , _responseBody() {
+    setResponseLine(statusCode, describe);
+}
+
+void HXResponse::createResponseBuffer() {
+    _buf.append(_statusLine);
+    _buf.append("\r\n");
+    for (const auto& [key, val] : _responseHeaders) {
+        _buf.append(key);
+        _buf.append(": ");
+        _buf.append(val);
+        _buf.append("\r\n");
+    }
+    _buf.append("Content-Length: ");
+    _buf.append(std::to_string(_responseBody.size()));
+    _buf.append("\r\n\r\n");
+    _buf.append(_responseBody);
+}
+
+// @bug [[deprecated]]
 ssize_t HXResponse::sendResponse(int fd) const {
     std::string res {};
     res.append(_statusLine);

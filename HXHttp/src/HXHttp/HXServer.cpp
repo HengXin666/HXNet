@@ -1,8 +1,24 @@
 #include <HXHttp/HXServer.h>
 
 #include <fcntl.h>
+#include <array>
+
+#include <HXSTL/HXStringTools.h>
 
 namespace HXHttp {
+
+void HXServer::Epoll::join() {
+    std::array<struct ::epoll_event, 128> evs;
+    while (1) {
+        int len = epoll_wait(_epfd, evs.data(), evs.size(), -1);
+        if (len < 0) {
+            throw;
+        }
+        for (int i = 0; i < len; ++i) {
+            HXSTL::HXCallback<>::fromAddress(evs[i].data.ptr)();
+        }
+    }
+}
 
 HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
     int flags = CHECK_CALL(::fcntl, fd, F_GETFL);
@@ -71,6 +87,30 @@ void HXServer::AsyncFile::asyncRead(
     CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_MOD, _fd, &event);
 }
 
+void HXServer::AsyncFile::asyncWrite(
+    HXSTL::HXConstBytesBufferView buf,
+    HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
+    ) {
+    auto ret = HXErrorHandlingTools::convertError<size_t>(::send(_fd, buf.data(), buf.size(), 0));
+
+    if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
+        cd(ret);
+        return;
+    }
+
+    // 如果是 EAGAIN, 那么就让操作系统通知我吧
+    // 到时候调用这个回调
+    HXSTL::HXCallback<> resume = [this, &buf, cd = std::move(cd)]() mutable {
+        return asyncWrite(buf, std::move(cd));
+    };
+
+    // 让操作系统通知我
+    struct ::epoll_event event;
+    event.events = EPOLLOUT | EPOLLET | EPOLLONESHOT; // 只通知一次
+    event.data.ptr = resume.leakAddress(); // fd 对应 回调函数 (没有)
+    CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_MOD, _fd, &event);
+}
+
 void HXServer::ConnectionHandler::start(int fd) {
     _fd = HXServer::AsyncFile::asyncWrap(fd);
     return read();
@@ -93,8 +133,41 @@ void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*
         if (std::size_t size = self->_request.parserRequest(HXSTL::HXConstBytesBufferView {self->_buf.data(), n})) {
             self->read(size); // 继续读取
         } else {
-            // 开始响应
+            self->handle(); // 开始响应
         }
+    });
+}
+
+void HXServer::ConnectionHandler::handle() {
+
+    // 处理: 如 路由 ?
+
+    // @test 测试
+    _response.setResponseLine(HXResponse::Status::CODE_200)
+             .setContentType("text/html", "UTF-8")
+             .setBodyData("<h1>Hello, world!</h1><h2>Now Time: " 
+                          + HXSTL::HXDateTimeFormat::format() 
+                          + "</h2>")
+             .createResponseBuffer();
+
+    return write(_response._buf);
+}
+
+void HXServer::ConnectionHandler::write(HXSTL::HXConstBytesBufferView buf) {
+    return _fd.asyncWrite(_response._buf, [self = shared_from_this(), buf] (HXErrorHandlingTools::Expected<std::size_t> ret) {
+        if (ret.error()) {
+            return;
+        }
+
+        size_t n = ret.value(); // 已经写入的字节数
+        if (n == self->_response._buf.size()) {
+            // 全部写入啦
+            self->_response.clear();
+            return self->read(); // 开始读取
+        }
+
+        // self->_response._buf
+        self->write(buf.subspan(n));
     });
 }
 
