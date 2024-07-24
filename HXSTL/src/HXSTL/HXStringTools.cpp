@@ -1,4 +1,4 @@
-#include <HXHttp/HXHttpTools.h>
+#include <HXSTL/HXStringTools.h>
 
 #include <chrono>
 #include <sstream>
@@ -18,7 +18,7 @@
 #define STOK strtok_s
 #endif
 
-namespace HXHttp {
+namespace HXSTL {
 
 std::vector<std::string> HXStringUtil::split(std::string_view str, std::string_view delim)  {
     std::vector<std::string> res;
@@ -88,4 +88,4 @@ std::string HXDateTimeFormat::formatWithMilli(const std::string& fmt /*= "%Y-%m-
 	return ss.str();
 }
 
-} // namespace HXHttp
+} // namespace HXSTL

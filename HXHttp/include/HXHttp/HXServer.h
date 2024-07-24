@@ -105,15 +105,16 @@ public:
     /**
      * @brief 连接处理类
      */
-    class ConnectionHandler : std::enable_shared_from_this<ConnectionHandler> {
-        AsyncFile _fd;             // 连接上的客户端的套接字
-        HXSTL::HXBytesBuffer _buf; // 缓存一次接收到的信息
+    struct ConnectionHandler : std::enable_shared_from_this<ConnectionHandler> {
+        AsyncFile _fd;            // 连接上的客户端的套接字
+        // 缓存一次接收到的信息
+        HXSTL::HXBytesBuffer _buf{ HXRequest::BUF_SIZE };
         
-        /// 有空改为模版+组合HXRequest/HXResponse
-        HXRequest _request;        // 客户端请求类
-        HXResponse _response;      // 服务端响应类
         using pointer = std::shared_ptr<ConnectionHandler>;
-    public:
+
+        /// 有空改为模版+组合HXRequest/HXResponse
+        HXRequest _request {};    // 客户端请求类
+
         /**
          * @brief 静态工厂方法
          * @return ConnectionHandler指针
@@ -130,8 +131,9 @@ public:
 
         /**
          * @brief 开始读取
+         * @param size 读取的数据字节大小
          */
-        void read();
+        void read(std::size_t size = HXRequest::BUF_SIZE);
     };
 
     /**

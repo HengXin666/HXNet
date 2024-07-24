@@ -133,6 +133,16 @@ public:
     HXBytesBuffer() = default;
     HXBytesBuffer(HXBytesBuffer &&) = default;
     HXBytesBuffer &operator=(HXBytesBuffer &&) = default;
+
+    HXBytesBuffer &&operator=(std::string && str) {
+        return std::move(HXBytesBuffer {str.data(), str.size()});
+    }
+
+    explicit HXBytesBuffer(char *str, std::size_t size) : _data(size) {
+        for (std::size_t i = 0; i < size; ++i)
+            _data[i] = str[i];
+    }
+
     explicit HXBytesBuffer(HXBytesBuffer const &) = default;
 
     explicit HXBytesBuffer(size_t n) : _data(n) {}
@@ -180,6 +190,10 @@ public:
 
     operator std::string_view() const noexcept {
         return std::string_view {_data.data(), _data.size()};
+    }
+
+    operator HXConstBytesBufferView() const noexcept {
+        return HXConstBytesBufferView {_data.data(), _data.size()};
     }
 
     /**

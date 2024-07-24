@@ -42,14 +42,22 @@ class HXRequest {
         ProtocolVersion = 2,    // 协议版本
     };
 
+    HXSTL::HXBytesBuffer _previousData; // 之前未解析全的数据
+
     std::vector<std::string> _requestLine; // 请求行
     std::unordered_map<std::string, std::string> _requestHeaders; // 请求头
 
     // 请求体
-    // bool _haveBody = false;
-    // char *_bodyStr = NULL;
     std::optional<std::string> _body;
+
+    // @brief 仍需读取的请求体长度
+    ssize_t _remainingBodyLen = -1;
+
+    // @brief 是否解析完成请求头
+    bool _completeRequestHeader = false;
 public:
+    static constexpr std::size_t BUF_SIZE = 1024ULL;
+
     /**
      * @brief 解析状态
      */
@@ -72,7 +80,7 @@ public:
      * @param strLen sizeof(str)
      * @return `HXHttp::HXRequest::ParseStatus` 解析状态
      */
-    int resolutionRequest(int fd, char *str, std::size_t strLen);
+    [[deprecated]] int resolutionRequest(int fd, char *str, std::size_t strLen);
 
     /**
      * @brief 解析请求
@@ -80,6 +88,7 @@ public:
      * @return 是否需要继续解析;
      *         `== 0`: 不需要;
      *         `>  0`: 需要继续解析`size_t`个字节
+     * @warning 假定内容是符合Http协议的
      */
     std::size_t parserRequest(HXSTL::HXConstBytesBufferView buf);
 
@@ -108,6 +117,18 @@ public:
      */
     std::string getRequesProtocolVersion() const {
         return _requestLine[RequestLineDataType::ProtocolVersion];
+    }
+
+    /**
+     * @brief 清空已有的请求内容, 并且初始化标准
+     */
+    void clear() {
+        _requestLine.clear();
+        _requestHeaders.clear();
+        _previousData.clear();
+        _body.reset();
+        _completeRequestHeader = false;
+        _remainingBodyLen = -1;
     }
 };
 

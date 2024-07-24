@@ -76,8 +76,8 @@ void HXServer::ConnectionHandler::start(int fd) {
     return read();
 }
 
-void HXServer::ConnectionHandler::read() {
-    return _fd.asyncRead(_buf, _buf.size(), [self = shared_from_this()] (HXErrorHandlingTools::Expected<size_t> ret) {
+void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*/) {
+    return _fd.asyncRead(_buf, size, [self = shared_from_this()] (HXErrorHandlingTools::Expected<size_t> ret) {
         if (ret.error()) {
             return;
         }
@@ -90,7 +90,11 @@ void HXServer::ConnectionHandler::read() {
         }
         
         // 进行解析
-
+        if (std::size_t size = self->_request.parserRequest(self->_buf)) {
+            self->read(size); // 继续读取
+        } else {
+            // 开始响应
+        }
     });
 }
 

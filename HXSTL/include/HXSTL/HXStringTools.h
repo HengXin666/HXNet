@@ -17,14 +17,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXHTTP_TOOLS_H_
-#define _HX_HXHTTP_TOOLS_H_
+#ifndef _HX_HXSTRING_TOOLS_H_
+#define _HX_HXSTRING_TOOLS_H_
 
 #include <vector>
 #include <string>
 #include <string_view>
 
-namespace HXHttp {
+namespace HXSTL {
 
 /**
  * @brief 字符串操作工具类
@@ -56,12 +56,26 @@ struct HXStringUtil final {
             if ('A' <= str[i] && str[i] <= 'Z')
                 str[i] ^= ' ';
     }
+
+    /**
+     * @brief 从右到左查找字符并截取后面的子字符串
+     * @param 目标字符串
+     * @param 模版字符串
+     * @return 截取后面的子字符串, 如果没有则返回: 空字符串`""`
+     */
+    static std::string rfindAndTrim(std::string_view  str, std::string_view delim) {
+        std::size_t pos = str.rfind(delim);
+        if (pos != std::string::npos) {
+            return std::string {str.substr(pos + 1)};
+        }
+        return ""; // 如果未找到分隔符，返回原字符串
+    }
 };
 
 /**
  * @brief 时间格式工具类
  */
-struct HXDateTimeFormat {
+struct HXDateTimeFormat final {
     /**
      * @brief 格式化当前时间为如: `%Y-%m-%d %H:%M:%S`的格式
      * @param fmt 格式字符串
@@ -78,6 +92,6 @@ struct HXDateTimeFormat {
     static std::string formatWithMilli(const std::string& fmt = "%Y-%m-%d %H:%M:%S", const std::string msDelim = " ");
 };
 
-} // namespace HXHttp
+} // namespace HXSTL
 
-#endif // _HX_HXHTTP_TOOLS_H_
+#endif // _HX_HXSTRING_TOOLS_H_

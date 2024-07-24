@@ -123,7 +123,7 @@ void handleClient(int client_socket) {
 
 #include <HXHttp/HXEpoll.h>
 #include <HXHttp/HXRouter.h>
-#include <HXHttp/HXHttpTools.h>
+#include <HXSTL/HXStringTools.h>
 #include <HXHttp/HXRequest.h>
 #include <HXHttp/HXResponse.h>
 #include <HXprint/HXprint.h>
@@ -138,6 +138,9 @@ void handleClient(int client_socket) {
 bool isAllowServerRun = true;
 
 int main() {
+    int _hx_main();
+    _hx_main();
+    return 0;
     try {
         HXHttp::HXServer::Epoll ctx;
         auto accetpPtr = HXHttp::HXServer::Acceptor::make();
@@ -171,7 +174,7 @@ int _hx_main() {
                 break;
             HXHttp::HXResponse response {HXHttp::HXResponse::Status::CODE_200};
             if (response.setContentType("text/html", "UTF-8")
-                        .setBodyData("<h1>Hello, world!</h1><h2>" + HXHttp::HXDateTimeFormat::format() + "</h2>")
+                        .setBodyData("<h1>Hello, world!</h1><h2>" + HXSTL::HXDateTimeFormat::format() + "</h2>")
                         .sendResponse(fd) == -1) {
                 LOG_ERROR("发送信息时出现错误: %s (errno: %d)", strerror(errno), errno);
             }
