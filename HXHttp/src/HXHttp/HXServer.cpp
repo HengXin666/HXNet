@@ -4,6 +4,7 @@
 #include <array>
 
 #include <HXSTL/HXStringTools.h>
+#include <HXHttp/HXRouter.h>
 
 namespace HXHttp {
 
@@ -140,17 +141,20 @@ void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*
 }
 
 void HXServer::ConnectionHandler::handle() {
-
-    // 处理: 如 路由 ?
-
-    // @test 测试
-    _response.setResponseLine(HXResponse::Status::CODE_200)
+    // 交给路由处理
+    auto fun = HXRouter::getSingleton().getEndpointFunByURL(_request.getRequesPath());
+    // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
+    if (fun) {
+        _response = fun(_request);
+    } else {
+        _response.setResponseLine(HXResponse::Status::CODE_404)
              .setContentType("text/html", "UTF-8")
-             .setBodyData("<h1>Hello, world!</h1><h2>Now Time: " 
+             .setBodyData("<h1>404 NOT FIND PATH: [" + _request.getRequesPath() + "]</h1><h2>Now Time: " 
                           + HXSTL::HXDateTimeFormat::format() 
-                          + "</h2>")
-             .createResponseBuffer();
-
+                          + "</h2>");
+    }
+    _response.createResponseBuffer();
+    _request.clear(); // 本次请求使用结束, 清空, 复用
     return write(_response._buf);
 }
 

@@ -214,6 +214,7 @@ HXResponse::HXResponse(
 }
 
 void HXResponse::createResponseBuffer() {
+    _buf.clear();
     _buf.append(_statusLine);
     _buf.append("\r\n");
     for (const auto& [key, val] : _responseHeaders) {

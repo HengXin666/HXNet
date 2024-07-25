@@ -115,6 +115,13 @@ bool isAllowServerRun = true;
 
 int main() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
+    HXHttp::HXRouter::getSingleton().addController("/", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+        return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+             .setContentType("text/html", "UTF-8")
+             .setBodyData("<h1>Hello, world!</h1><h2>Now Time: " 
+                          + HXSTL::HXDateTimeFormat::format() 
+                          + "</h2>"));
+    });
     try {
         HXHttp::HXServer::Epoll ctx;
         // @bug: tmd 端口还只能绑定系统有的?! wcnmddsb fsl!!!

@@ -77,7 +77,6 @@ public:
     /**
      * @brief 获取请求类型
      * @return 请求类型 (如: "GET", "POST"...)
-     * @warning 需要保证`resolutionRequest`为`ParseSuccessful`
      */
     std::string getRequesType() const {
         return _requestLine[RequestLineDataType::RequestType];
@@ -86,7 +85,6 @@ public:
     /**
      * @brief 获取请求PATH
      * @return 请求PATH (如: "/", "/home?loli=watasi"...)
-     * @warning 需要保证`resolutionRequest`为`ParseSuccessful`
      */
     std::string getRequesPath() const {
         return _requestLine[RequestLineDataType::RequestPath];
@@ -95,7 +93,6 @@ public:
     /**
      * @brief 获取请求协议版本
      * @return 请求协议版本 (如: "HTTP/1.1", "HTTP/2.0"...)
-     * @warning 需要保证`resolutionRequest`为`ParseSuccessful`
      */
     std::string getRequesProtocolVersion() const {
         return _requestLine[RequestLineDataType::ProtocolVersion];

@@ -123,6 +123,10 @@ public:
                           , _buf()
     {}
 
+    HXResponse(HXResponse&& response) = default;
+    HXResponse& operator=(const HXResponse& response) = delete;
+    HXResponse& operator=(HXResponse&& response) = default;
+
     /**
      * @brief 设置状态行 (协议使用HTTP/1.1)
      * @param statusCode 状态码

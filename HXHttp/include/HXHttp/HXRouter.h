@@ -29,6 +29,9 @@ namespace HXHttp {
 
 class HXController;
 
+class HXRequest;
+class HXResponse;
+
 /**
  * @brief 路由类: 懒汉单例
  */
@@ -38,7 +41,7 @@ class HXRouter {
      * std::string keys are never your bottleneck
      * the performance difference between a char * and a std::string is a myth.
      */
-    std::unordered_map<std::string, std::function<void()>> _routerMap; // URL - 端点函数 路由映射
+    std::unordered_map<std::string, std::function<HXResponse(const HXRequest&)>> _routerMap; // URL - 端点函数 路由映射
 
     explicit HXRouter() : _routerMap()
     {}
@@ -61,7 +64,7 @@ public:
      * @param controller 控制器
      * @return 是否添加成功
      */
-    bool addController(const std::string& path, const std::function<void()>& fun) {
+    bool addController(const std::string& path, const std::function<HXResponse(const HXRequest&)>& fun) {
         return _routerMap.emplace(path, fun).second;
     }
 
@@ -70,7 +73,7 @@ public:
      * @param url 访问的目标地址, 如`"/home/%d"`, 尾部不要`/`
      * @return 存在则返回, 否则为`nullptr`
      */
-    std::function<void()> getEndpointFunByURL(const std::string& url) const {
+    std::function<HXResponse(const HXRequest&)> getEndpointFunByURL(const std::string& url) const {
         auto it = _routerMap.find(url);
         if (it != _routerMap.end())
             return it->second;
