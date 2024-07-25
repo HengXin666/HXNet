@@ -85,7 +85,7 @@ public:
          * @param cd 连接成功的回调函数
          */
         void asyncAccept(
-            HXAddressResolver::address addr, 
+            HXAddressResolver::address& addr, 
             HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cd
         );
 

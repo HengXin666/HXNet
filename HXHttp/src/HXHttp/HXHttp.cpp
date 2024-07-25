@@ -140,18 +140,18 @@ bool isAllowServerRun = true;
 int main() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
-        {
-            HXHttp::HXServer::Epoll ctx;
-            // @bug: tmd 端口还只能绑定系统有的?! wcnmddsb fsl!!!
-            HXHttp::HXServer::Acceptor::make()->start("127.0.0.1", "8080");
-            ctx.join();
-        }
+        HXHttp::HXServer::Epoll ctx;
+        // @bug: tmd 端口还只能绑定系统有的?! wcnmddsb fsl!!!
+        auto ptr = HXHttp::HXServer::Acceptor::make();
+        ptr->start("127.0.0.1", "28205");
+        ctx.join();
     } catch(const std::system_error &e) {
         std::cerr << e.what() << '\n';
     }
     return 0;
 }
 
+template<class = void>
 int _hx_main() {
     // 绑定交互信号监听 (Ctrl + C)
     signal(SIGINT, [](int signum) {

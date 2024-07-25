@@ -15,7 +15,8 @@ void HXServer::Epoll::join() {
             throw;
         }
         for (int i = 0; i < len; ++i) {
-            HXSTL::HXCallback<>::fromAddress(evs[i].data.ptr)();
+            auto cb = HXSTL::HXCallback<>::fromAddress(evs[i].data.ptr);
+            cb();
         }
     }
 }   
@@ -34,7 +35,7 @@ HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
 }
 
 void HXServer::AsyncFile::asyncAccept(
-    HXAddressResolver::address addr, 
+    HXAddressResolver::address& addr, 
     HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cd
     ) {
     auto ret = HXErrorHandlingTools::convertError<int>(::accept(_fd, &addr._addr, &addr._addrlen));

@@ -117,7 +117,7 @@ public:
      */
     explicit HXResponse(HXResponse::Status statusCode, std::string_view describe = "");
 
-    explicit HXResponse() : _statusLine()
+    explicit HXResponse() : _statusLine("HTTP/1.1 ")
                           , _responseHeaders()
                           , _responseBody()
                           , _buf()
@@ -166,7 +166,7 @@ public:
      * @brief 清空已写入的响应, 重置状态 (复用)
      */
     void clear() {
-        _statusLine.clear();
+        _statusLine = "HTTP/1.1 ";
         _responseHeaders.clear();
         _responseBody.clear();
         _buf.clear();
