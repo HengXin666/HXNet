@@ -58,16 +58,6 @@ class HXRequest {
 public:
     static constexpr std::size_t BUF_SIZE = 1024ULL;
 
-    /**
-     * @brief 解析状态
-     */
-    enum ParseStatus {
-        RecvError = -2,      // ::recv的时候出现错误
-        NotHttp = -1,        // 无法以Http协议解析
-        ClientOut = 0,       // 客户端断开
-        ParseSuccessful = 1, // 解析成功
-    };
-
     explicit HXRequest() : _requestLine()
                          , _requestHeaders()
                          , _body(std::nullopt)

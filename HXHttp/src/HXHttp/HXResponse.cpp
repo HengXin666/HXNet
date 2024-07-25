@@ -228,22 +228,4 @@ void HXResponse::createResponseBuffer() {
     _buf.append(_responseBody);
 }
 
-// @bug [[deprecated]]
-ssize_t HXResponse::sendResponse(int fd) const {
-    std::string res {};
-    res.append(_statusLine);
-    res.append("\r\n");
-    for (const auto& [key, val] : _responseHeaders) {
-        res.append(key);
-        res.append(": ");
-        res.append(val);
-        res.append("\r\n");
-    }
-    res.append("Content-Length: ");
-    res.append(std::to_string(_responseBody.size()));
-    res.append("\r\n\r\n");
-    res.append(_responseBody);
-    return ::send(fd, res.c_str(), res.size(), 0);
-}
-
 } // namespace HXHttp

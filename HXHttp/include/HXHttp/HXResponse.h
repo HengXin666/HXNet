@@ -171,14 +171,6 @@ public:
         _responseBody.clear();
         _buf.clear();
     }
-
-    /**
-     * @brief 发送响应信息给 fd
-     * @param fd 客户端套接字
-     * @return 发送字节数 或 -1 (错误)
-     * @warning 内部会通过Body内容设置`Content-Length`长度, 不需要用户手动设置
-     */
-    [[deprecated]] ssize_t sendResponse(int fd) const;
 };
 
 } // namespace HXHttp
