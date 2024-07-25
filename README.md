@@ -14,10 +14,11 @@
 ```sh
 .
 |-- CMakeLists.txt
-|-- HXCodeTest # 测试代码
+|-- HXCodeTest # 测试代码 (请忽略)
 |-- HXJson     # Json解析库
 |-- HXprint    # 万能print
 |-- HXHttp     # web/http 相关的库, 如epoll
+|-- HXSTL      # 自己封装的回调函数/工具类/字节数组(视图)
 |-- LICENSE
 |-- README.md
 |-- build
@@ -43,7 +44,7 @@
 
 ## 开发计划/日志
 
-- [ ] 重构epoll为协程版本
+- [x] 重构epoll为基于回调函数的epoll事件循环
 
 ---
 
