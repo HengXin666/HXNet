@@ -62,7 +62,7 @@ std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
             _body = std::string {tmp};
         } else {
             _remainingBodyLen -= buf.size();
-            _body->append(_previousData.data());
+            _body->append(HXSTL::HXConstBytesBufferView {_previousData.data(), _previousData.size()});
         }
 
         if (_remainingBodyLen != 0) {
@@ -71,6 +71,7 @@ std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
         }
     }
 
+    // printf("请求体: %s\n", _body->c_str());
     _previousData.clear();
     return 0; // 解析完毕
 }

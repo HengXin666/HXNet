@@ -132,7 +132,7 @@ void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*
         
         // 进行解析
         if (std::size_t size = self->_request.parserRequest(HXSTL::HXConstBytesBufferView {self->_buf.data(), n})) {
-            self->read(size); // 继续读取
+            self->read(std::min(size, HXRequest::BUF_SIZE)); // 继续读取
         } else {
             self->handle(); // 开始响应
         }

@@ -51,7 +51,7 @@ class HXRequest {
     std::optional<std::string> _body;
 
     // @brief 仍需读取的请求体长度
-    ssize_t _remainingBodyLen = -1;
+    std::size_t _remainingBodyLen = -1;
 
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
