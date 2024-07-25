@@ -56,18 +56,18 @@ std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
     
     if (_requestHeaders.count("content-length")) { // 存在请求体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
-        if (_remainingBodyLen == -1) {
+        if (!_remainingBodyLen.has_value()) {
             _remainingBodyLen = std::stoll(_requestHeaders["content-length"]) 
                               - static_cast<ssize_t>(::strlen(tmp));
             _body = std::string {tmp};
         } else {
-            _remainingBodyLen -= buf.size();
+            *_remainingBodyLen -= buf.size();
             _body->append(HXSTL::HXConstBytesBufferView {_previousData.data(), _previousData.size()});
         }
 
-        if (_remainingBodyLen != 0) {
+        if (*_remainingBodyLen != 0) {
             _previousData.clear();
-            return _remainingBodyLen;
+            return *_remainingBodyLen;
         }
     }
 

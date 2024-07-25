@@ -51,7 +51,7 @@ class HXRequest {
     std::optional<std::string> _body;
 
     // @brief 仍需读取的请求体长度
-    std::size_t _remainingBodyLen = -1;
+    std::optional<std::size_t> _remainingBodyLen;
 
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
@@ -61,16 +61,8 @@ public:
     explicit HXRequest() : _requestLine()
                          , _requestHeaders()
                          , _body(std::nullopt)
+                         , _remainingBodyLen(std::nullopt)
     {}
-
-    /**
-     * @brief 解析请求, 如果没有读取完毕, 则会继续`::recv(fd)`直到读取完毕
-     * @param fd 客户端套接字
-     * @param str 待解析字符串
-     * @param strLen sizeof(str)
-     * @return `HXHttp::HXRequest::ParseStatus` 解析状态
-     */
-    [[deprecated]] int resolutionRequest(int fd, char *str, std::size_t strLen);
 
     /**
      * @brief 解析请求
@@ -118,7 +110,7 @@ public:
         _previousData.clear();
         _body.reset();
         _completeRequestHeader = false;
-        _remainingBodyLen = -1;
+        _remainingBodyLen.reset();
     }
 };
 
