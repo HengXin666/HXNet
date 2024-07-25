@@ -161,7 +161,7 @@ public:
     /**
      * @brief 连接接受类
      */
-    class Acceptor : std::enable_shared_from_this<Acceptor> {
+    class Acceptor : public std::enable_shared_from_this<Acceptor> {
         AsyncFile _serverFd;              // 服务器套接字
         HXAddressResolver::address _addr; // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
         using pointer = std::shared_ptr<Acceptor>;

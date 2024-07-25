@@ -202,6 +202,7 @@ HXResponse& HXResponse::setResponseLine(HXResponse::Status statusCode, std::stri
     } else {
         _statusLine.append(describe);
     }
+    return *this;
 }
 
 HXResponse::HXResponse(

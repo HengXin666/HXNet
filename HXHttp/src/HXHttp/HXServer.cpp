@@ -18,7 +18,7 @@ void HXServer::Epoll::join() {
             HXSTL::HXCallback<>::fromAddress(evs[i].data.ptr)();
         }
     }
-}
+}   
 
 HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
     int flags = CHECK_CALL(::fcntl, fd, F_GETFL);
@@ -46,7 +46,7 @@ void HXServer::AsyncFile::asyncAccept(
 
     // 如果是 EAGAIN, 那么就让操作系统通知我吧
     // 到时候调用这个回调
-    HXSTL::HXCallback<> resume = [this, &addr, cd = std::move(cd)]() mutable {
+    HXSTL::HXCallback<> resume = [this, &addr, cd = std::move(cd)] () mutable {
         return asyncAccept(addr, std::move(cd));
     };
 

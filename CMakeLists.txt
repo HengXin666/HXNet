@@ -21,6 +21,7 @@ set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
 # 设置CMake模块路径, 包含当前目录下的cmake文件夹以及之前的路径
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
+add_compile_options(-Wall -Wextra -Werror=return-type)
 
 # 定义生成的库的存放目录
 set(LIB_PATH ${PROJECT_SOURCE_DIR}/lib)

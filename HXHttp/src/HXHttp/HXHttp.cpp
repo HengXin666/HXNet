@@ -138,12 +138,14 @@ void handleClient(int client_socket) {
 bool isAllowServerRun = true;
 
 int main() {
+    setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
-        HXHttp::HXServer::Epoll ctx;
-        auto accetpPtr = HXHttp::HXServer::Acceptor::make();
-        accetpPtr->start("127.0.0.1", "28205");
-        ctx.join();
-    } catch(const std::exception& e) {
+        {
+            HXHttp::HXServer::Epoll ctx;
+            HXHttp::HXServer::Acceptor::make()->start("127.0.0.1", "28205");
+            ctx.join();
+        }
+    } catch(const std::system_error &e) {
         std::cerr << e.what() << '\n';
     }
     return 0;
