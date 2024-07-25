@@ -8,6 +8,7 @@
 namespace HXHttp {
 
 std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
+    printf("解析请求: %s...\n", buf.data());
     _previousData.append(buf);
     char *tmp = nullptr;
     char *line = nullptr;
@@ -48,7 +49,7 @@ std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
             HXSTL::HXStringUtil::toSmallLetter(p.first);
             p.second.pop_back(); // 去掉 '\r'
             _requestHeaders.insert(p);
-            // printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
+            printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
         } while ((line = ::strtok_r(nullptr, "\n", &tmp)));
     }
     
