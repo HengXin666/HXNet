@@ -11,10 +11,22 @@ namespace HXHttp {
 #include <HXprint/HXprint.h>
 #include <HXHttp/HXServer.h>
 
+#include <HXSTL/HXMagicEnum.h>
+
 #include <iostream>
 #include <unordered_map>
 #include <csignal>
 #include <cstring>
+
+int _me_main() {
+    enum MyEnum {
+        LoLi = 1,
+        imouto = 8,
+    };
+    std::cout << HXSTL::MagicEnum::getEnumName<MyEnum>(MyEnum::imouto) << '\n';
+    std::cout << HXSTL::MagicEnum::nameFromEnum<MyEnum>("imouto") << '\n';
+    return 0;
+}
 
 int main() {
     setlocale(LC_ALL, "zh_CN.UTF-8");

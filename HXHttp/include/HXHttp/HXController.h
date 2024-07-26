@@ -20,10 +20,13 @@
 #ifndef _HX_HXCONTROLLER_H_
 #define _HX_HXCONTROLLER_H_
 
-#include <HXHttp/HXRouter.h>
-
 #include <string_view>
 #include <list>
+
+#include <HXHttp/HXRouter.h>
+#include <HXHttp/HXRequest.h>
+#include <HXHttp/HXResponse.h>
+#include <HXSTL/HXStringTools.h>
 
 namespace HXHttp {
 
@@ -49,15 +52,23 @@ public:
 
 /// @brief 测试使用的
 class MyWebController : HXController {
-    // 请求类型, URL, 端点名称, 请求数据...(可变参数)
-    int fun(std::string_view requestType = "", 
-            const std::unordered_map<std::string, std::string>& requestHead = {}) {
-        if (requestType == "GET")
-            return -1;
-        // 内部的 requestHead 处理, 需要的
-    }
+    const int x = []() -> int {
+        HXRouter::getSingleton().addController("GET", "/home", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+            HXHttp::HXResponse response;
+            response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData(execQueryHomeData());
+            return response;
+        });
+        return 0;
+    }();
 
-    const int x = fun();
+public:
+    static std::string execQueryHomeData() {
+        return "<h1>Heng_Xin Home 哇!</h1><h2>Now Time: " 
+                + HXSTL::HXDateTimeFormat::format() 
+                + "</h2>";
+    }
 };
 
 } // namespace HXHttp

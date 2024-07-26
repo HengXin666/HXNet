@@ -123,8 +123,10 @@ public:
                           , _buf()
     {}
 
-    HXResponse(HXResponse&& response) = default;
+    HXResponse(const HXResponse& response) = default;
     HXResponse& operator=(const HXResponse& response) = delete;
+
+    HXResponse(HXResponse&& response) = default;
     HXResponse& operator=(HXResponse&& response) = default;
 
     /**

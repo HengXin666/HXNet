@@ -58,6 +58,23 @@ class HXRequest {
 public:
     static constexpr std::size_t BUF_SIZE = 1024ULL;
 
+    /**
+     * @brief 请求类型枚举
+     */
+    enum class RequestType : int {
+        GET = 0,
+        POST = 1,
+        PUT = 2,
+        DELETE = 3,
+
+        // 极少使用
+        HEAD = 4,    // 获得报文首部
+        OPTIONS = 5, // 询问支持的方法
+        PATCH = 6,   // 局部更新文件
+        TRACE = 7,   // 追踪路径
+        CONNECT = 8, // 要求用隧道协议连接代理
+    };
+
     explicit HXRequest() : _requestLine()
                          , _requestHeaders()
                          , _body(std::nullopt)

@@ -47,11 +47,7 @@ class HXRouter {
     /// @brief 请求类型 -> URL -> 端点函数 路由映射
     std::unordered_map<std::string, std::unordered_map<std::string, EndpointFunc>> _routerMap;
 
-    explicit HXRouter() : _routerMap() {
-        // 注册请求类型
-        _routerMap["GET"];
-        _routerMap["POST"];
-    }
+    explicit HXRouter();
 
     HXRouter(const HXRouter&) = delete;
     HXRouter& operator=(const HXRouter&) = delete;
