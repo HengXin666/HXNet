@@ -49,7 +49,7 @@ namespace HXprint { // C++20
 namespace _ {
 /////////////////////////////////////////////////////////
 
-// === 仅DEBUG编译期(未发布)有的日志打印 === \\ 
+// === 仅DEBUG编译期(未发布)有的日志打印 ===
 
 #ifdef _HX_DEBUG_
 
@@ -117,7 +117,7 @@ concept StringType = std::is_same_v<T, std::string> ||
 
 /////////////////////////////////////////////////////////
 
-// === 事先声明 === \\ 
+// === 事先声明 ===
 
 // 显式重载
 static void _HXprint(const std::nullptr_t& t);

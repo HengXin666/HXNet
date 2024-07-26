@@ -142,16 +142,18 @@ void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*
 
 void HXServer::ConnectionHandler::handle() {
     // 交给路由处理
-    auto fun = HXRouter::getSingleton().getEndpointFunByURL(_request.getRequesPath());
+    auto fun = HXRouter::getSingleton().getEndpointFunc(_request.getRequesType(), _request.getRequesPath());
     // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
     if (fun) {
         _response = fun(_request);
     } else {
         _response.setResponseLine(HXResponse::Status::CODE_404)
-             .setContentType("text/html", "UTF-8")
-             .setBodyData("<h1>404 NOT FIND PATH: [" + _request.getRequesPath() + "]</h1><h2>Now Time: " 
-                          + HXSTL::HXDateTimeFormat::format() 
-                          + "</h2>");
+                 .setContentType("text/html", "UTF-8")
+                 .setBodyData("<h1>404 NOT FIND PATH: [" 
+                    + _request.getRequesPath() 
+                    + "]</h1><h2>Now Time: " 
+                    + HXSTL::HXDateTimeFormat::format() 
+                    + "</h2>");
     }
     _response.createResponseBuffer();
     _request.clear(); // 本次请求使用结束, 清空, 复用

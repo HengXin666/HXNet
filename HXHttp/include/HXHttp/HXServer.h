@@ -49,6 +49,9 @@ public:
             G_instance = this;
         }
 
+        /**
+         * @brief 开始Epoll事件循环, 等待操作系统消息
+         */
         void join();
 
         ~Epoll() {
@@ -56,6 +59,9 @@ public:
             G_instance = nullptr;
         }
 
+        /**
+         * @brief 获取全局线程独占单例对象引用
+         */
         static Epoll& get() {
             assert(G_instance);
             return *G_instance;

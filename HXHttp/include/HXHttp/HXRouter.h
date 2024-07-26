@@ -36,15 +36,22 @@ class HXResponse;
  * @brief 路由类: 懒汉单例
  */
 class HXRouter {
+    /// @brief 端点函数
+    using EndpointFunc = std::function<HXResponse(const HXRequest&)>;
+
     /**
      * don't use a char * as a key
      * std::string keys are never your bottleneck
      * the performance difference between a char * and a std::string is a myth.
      */
-    std::unordered_map<std::string, std::function<HXResponse(const HXRequest&)>> _routerMap; // URL - 端点函数 路由映射
+    /// @brief 请求类型 -> URL -> 端点函数 路由映射
+    std::unordered_map<std::string, std::unordered_map<std::string, EndpointFunc>> _routerMap;
 
-    explicit HXRouter() : _routerMap()
-    {}
+    explicit HXRouter() : _routerMap() {
+        // 注册请求类型
+        _routerMap["GET"];
+        _routerMap["POST"];
+    }
 
     HXRouter(const HXRouter&) = delete;
     HXRouter& operator=(const HXRouter&) = delete;
@@ -59,24 +66,30 @@ public:
     }
 
     /**
-     * @brief 添加控制器
+     * @brief 添加端点函数
+     * @param requestType 请求类型, 如`"GET"`, `POST` (全大写)
      * @param path 挂载的PTAH, 如`"/home/%d"`, 尾部不要`/`
-     * @param controller 控制器
-     * @return 是否添加成功
+     * @param func 端点函数
+     * @throw 如果请求类型不正确则会抛出
      */
-    bool addController(const std::string& path, const std::function<HXResponse(const HXRequest&)>& fun) {
-        return _routerMap.emplace(path, fun).second;
+    void addController(const std::string& requestType, const std::string& path, const EndpointFunc& func) {
+        auto pathFunMapIt = _routerMap.find(requestType);
+        if (pathFunMapIt == _routerMap.end()) {
+            throw "There is no such request type available"; // 没有这种请求类型
+        }
+        pathFunMapIt->second.insert_or_assign(path, func);
     }
 
     /**
-     * @brief 获取该URL(PTAH)对于绑定的端点函数
-     * @param url 访问的目标地址, 如`"/home/%d"`, 尾部不要`/`
+     * @brief 获取该请求类型和URL(PTAH)绑定的端点函数
+     * @param requestType 请求类型, 如`"GET"`, `POST` (全大写)
+     * @param path 访问的目标地址, 如`"/home/%d"`, 尾部不要`/`
      * @return 存在则返回, 否则为`nullptr`
      */
-    std::function<HXResponse(const HXRequest&)> getEndpointFunByURL(const std::string& url) const {
-        auto it = _routerMap.find(url);
-        if (it != _routerMap.end())
-            return it->second;
+    EndpointFunc getEndpointFunc(const std::string& requestType, const std::string& path) const {
+        if (auto pathFunMapIt = _routerMap.find(requestType); pathFunMapIt != _routerMap.end())
+            if (auto pairIt = pathFunMapIt->second.find(path); pairIt != pathFunMapIt->second.end())
+                return pairIt->second;
         return nullptr;
     }
 };
