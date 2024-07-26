@@ -35,7 +35,11 @@ static constexpr int MAGIC_ENUM_RECURSION_DEPTH = 16;
 
 template<class T, T N>
 constexpr const char * _getNameByPrettyFunc() {
+#if defined(_MSC_VER)
+    return __FUNCSIG__;
+#else
     return __PRETTY_FUNCTION__;
+#endif
 }
 
 template<bool C>
@@ -81,9 +85,15 @@ constexpr std::string getEnumName(T n) {
     _::staticFor<Begin, End + 1>(_::getEnumNameFunctor<T>((int)n, data));
     if (data.empty())
         return "";
+#if defined(_MSC_VER)
+    size_t pos = s.find(',');
+    pos += 1;
+    size_t pos2 = s.find('>', pos);
+#else
     std::size_t pos = data.find("N = ");
     pos += 4;
     size_t pos2 = data.find_first_of(";]", pos);
+#endif
     data = data.substr(pos, pos2 - pos);
     size_t pos3 = data.rfind(':');
     if (pos3 != data.npos)
