@@ -52,21 +52,21 @@ struct HXEnableIf<true> {
 };
 
 template<int Begin, int End, class F>
-typename HXEnableIf<Begin == End>::type staticFor(const F& func) {
+typename HXEnableIf<Begin == End>::type _staticFor(const F& func) {
 }
 
 template<int Begin, int End, class F>
-typename HXEnableIf<Begin != End>::type staticFor(const F& func) {
+typename HXEnableIf<Begin != End>::type _staticFor(const F& func) {
     func.template call<Begin>();
-    staticFor<Begin + 1, End>(func);
+    _staticFor<Begin + 1, End>(func);
 }
 
 template<class T>
-struct getEnumNameFunctor {
+struct _GetEnumNameFunctor {
     int _n;
     std::string& _str;
 
-    getEnumNameFunctor(int n, std::string& str) : _n(n)
+    _GetEnumNameFunctor(int n, std::string& str) : _n(n)
                                                 , _str(str)
     {}
 
@@ -82,7 +82,7 @@ struct getEnumNameFunctor {
 template<class T, int Begin, int End>
 constexpr std::string getEnumName(T n) {
     std::string data;
-    _::staticFor<Begin, End + 1>(_::getEnumNameFunctor<T>((int)n, data));
+    _::_staticFor<Begin, End + 1>(_::_GetEnumNameFunctor<T>((int)n, data));
     if (data.empty())
         return "";
 #if defined(_MSC_VER)
