@@ -83,9 +83,12 @@ public:
      * @return 存在则返回, 否则为`nullptr`
      */
     EndpointFunc getEndpointFunc(const std::string& requestType, const std::string& path) const {
-        if (auto pathFunMapIt = _routerMap.find(requestType); pathFunMapIt != _routerMap.end())
-            if (auto pairIt = pathFunMapIt->second.find(path); pairIt != pathFunMapIt->second.end())
+        if (auto pathFunMapIt = _routerMap.find(requestType); pathFunMapIt != _routerMap.end()) {
+            // 如果path是`/home/?loli=imouto`这种, 先不要解析参数, 应该只做?之前的映射(没有必要, 因为用户可以乱传输后面的参数)
+            std::size_t pos = path.find('?');
+            if (auto pairIt = pathFunMapIt->second.find(pos == std::string::npos ? path : path.substr(0, pos)); pairIt != pathFunMapIt->second.end())
                 return pairIt->second;
+        }
         return nullptr;
     }
 };
