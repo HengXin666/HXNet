@@ -18,6 +18,24 @@ namespace HXHttp {
 #include <csignal>
 #include <cstring>
 
+#include <HXSTL/HXCallback.h>
+#include <HXSTL/HXRadixTree.h>
+
+int main() {
+    using func = std::function<void()>;
+    HXSTL::HXRadixTree<func> tree;
+    tree.insert({"awa", "qwq", "*"}, [](){
+        printf("awa");
+    });
+    tree.insert({"awa", "0.0", "*"}, [](){
+        printf("qwq");
+    });
+    (*tree.find({"awa", "0.0", "*"}))();
+    if (!tree.find({"qwq", "0.0"}).has_value())
+        printf("\n没有这个\n");
+    return 0;
+}
+
 int _me_main() {
     enum MyEnum {
         LoLi = 1,
@@ -28,7 +46,7 @@ int _me_main() {
     return 0;
 }
 
-int main() {
+int xo_main() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
         HXHttp::HXRouter::getSingleton().addController("GET", "/", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {

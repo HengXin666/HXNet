@@ -79,7 +79,7 @@ public:
     /**
      * @brief 获取该请求类型和URL(PTAH)绑定的端点函数
      * @param requestType 请求类型, 如`"GET"`, `POST` (全大写)
-     * @param path 访问的目标地址, 如`"/home/%d"`, 尾部不要`/`
+     * @param path 访问的目标地址, 如`"/home/%d?loli=imouto"`, 尾部不要`/`, 会解析为`?`之前的内容
      * @return 存在则返回, 否则为`nullptr`
      */
     EndpointFunc getEndpointFunc(const std::string& requestType, const std::string& path) const {
