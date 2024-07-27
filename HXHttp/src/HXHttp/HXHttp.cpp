@@ -53,14 +53,35 @@ int main() {
             return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>Hello, world!</h1><h2>Now Time: " 
-                            + HXSTL::HXDateTimeFormat::format() 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+        });
+        HXHttp::HXRouter::getSingleton().addController("GET", "/home/**", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+            return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>这个是**吗</h1><h2>Now Time: " 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+        });
+        HXHttp::HXRouter::getSingleton().addController("GET", "/home/{id}/123", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+            return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+        });
+        HXHttp::HXRouter::getSingleton().addController("GET", "/home/", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+            return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>/home/ 哇! 哥们好细!!</h1><h2>Now Time: " 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
                             + "</h2>"));
         });
         HXHttp::HXRouter::getSingleton().addController("POST", "/", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
             return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>Hello, world! POSH老哥</h1><h2>Now Time: " 
-                            + HXSTL::HXDateTimeFormat::format() 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
                             + "</h2>"));
         });
         HXHttp::HXServer::Epoll ctx;

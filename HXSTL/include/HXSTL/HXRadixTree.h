@@ -54,6 +54,7 @@ struct RadixTreeNode {
  */
 template<class T>
 class HXRadixTree {
+protected:
     std::shared_ptr<RadixTreeNode<T>> _root;
 public:
     explicit HXRadixTree() : _root(std::make_shared<RadixTreeNode<T>>())

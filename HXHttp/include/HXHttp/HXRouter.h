@@ -25,7 +25,7 @@
 #include <string>
 #include <functional>
 
-#include <HXSTL/HXRadixTree.h>
+#include <HXHttp/RouteMapPrefixTree.h>
 
 namespace HXHttp {
 
@@ -48,7 +48,7 @@ class HXRouter {
      */
     // std::unordered_map<std::string, std::unordered_map<std::string, EndpointFunc>> _routerMap;
     /// @brief 请求类型 -> URL -> 端点函数 路由映射
-    HXSTL::HXRadixTree<EndpointFunc> _routerRadixTree;
+    RouteMapPrefixTree<EndpointFunc> _routerRadixTree;
 
     explicit HXRouter() : _routerRadixTree() 
     {}
