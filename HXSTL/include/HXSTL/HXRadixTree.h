@@ -59,6 +59,9 @@ public:
     explicit HXRadixTree() : _root(std::make_shared<RadixTreeNode<T>>())
     {}
 
+    HXRadixTree& operator=(const HXRadixTree&) = delete;
+    HXRadixTree(const HXRadixTree& ) = delete;
+
     /**
      * @brief 构建字典树
      * @param buildLink 字典树构建链路, 如["home", "name", "{id}"], 即 <root> -> home -> name -> {id}

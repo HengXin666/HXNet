@@ -25,6 +25,8 @@
 #include <string>
 #include <functional>
 
+#include <HXSTL/HXRadixTree.h>
+
 namespace HXHttp {
 
 class HXController;
@@ -44,10 +46,12 @@ class HXRouter {
      * std::string keys are never your bottleneck
      * the performance difference between a char * and a std::string is a myth.
      */
+    // std::unordered_map<std::string, std::unordered_map<std::string, EndpointFunc>> _routerMap;
     /// @brief 请求类型 -> URL -> 端点函数 路由映射
-    std::unordered_map<std::string, std::unordered_map<std::string, EndpointFunc>> _routerMap;
+    HXSTL::HXRadixTree<EndpointFunc> _routerRadixTree;
 
-    explicit HXRouter();
+    explicit HXRouter() : _routerRadixTree() 
+    {}
 
     HXRouter(const HXRouter&) = delete;
     HXRouter& operator=(const HXRouter&) = delete;
@@ -64,33 +68,18 @@ public:
     /**
      * @brief 添加端点函数
      * @param requestType 请求类型, 如`"GET"`, `POST` (全大写)
-     * @param path 挂载的PTAH, 如`"/home/%d"`, 尾部不要`/`
+     * @param path 挂载的PTAH, 如`"/home/{id}"`, 尾部不要`/`
      * @param func 端点函数
-     * @throw 如果请求类型不正确则会抛出
      */
-    void addController(const std::string& requestType, const std::string& path, const EndpointFunc& func) {
-        auto pathFunMapIt = _routerMap.find(requestType);
-        if (pathFunMapIt == _routerMap.end()) {
-            throw "There is no such request type available"; // 没有这种请求类型
-        }
-        pathFunMapIt->second.insert_or_assign(path, func);
-    }
+    void addController(const std::string& requestType, const std::string& path, const EndpointFunc& func);
 
     /**
      * @brief 获取该请求类型和URL(PTAH)绑定的端点函数
      * @param requestType 请求类型, 如`"GET"`, `POST` (全大写)
-     * @param path 访问的目标地址, 如`"/home/%d?loli=imouto"`, 尾部不要`/`, 会解析为`?`之前的内容
+     * @param path 访问的目标地址, 如`"/home\**?loli=imouto"`, 尾部不要`/`, 会解析为`?`之前的内容
      * @return 存在则返回, 否则为`nullptr`
      */
-    EndpointFunc getEndpointFunc(const std::string& requestType, const std::string& path) const {
-        if (auto pathFunMapIt = _routerMap.find(requestType); pathFunMapIt != _routerMap.end()) {
-            // 如果path是`/home/?loli=imouto`这种, 先不要解析参数, 应该只做?之前的映射(没有必要, 因为用户可以乱传输后面的参数)
-            std::size_t pos = path.find('?');
-            if (auto pairIt = pathFunMapIt->second.find(pos == std::string::npos ? path : path.substr(0, pos)); pairIt != pathFunMapIt->second.end())
-                return pairIt->second;
-        }
-        return nullptr;
-    }
+    EndpointFunc getEndpointFunc(const std::string& requestType, const std::string& path);
 };
 
 } // namespace HXHttp

@@ -34,9 +34,10 @@ struct HXStringUtil final {
      * @brief 将字符串按`delimiter`分割为数组
      * @param str 需要分割的字符串
      * @param delimiter 分割字符
+     * @param res 待返回数组, 你可以事先在前面插入元素
      * @return 分割后的数组
      */
-    static std::vector<std::string> split(std::string_view str, std::string_view delim);
+    static std::vector<std::string> split(std::string_view str, std::string_view delim, std::vector<std::string> res = {});
 
     /**
      * @brief 将字符串按从左到右第一个`delimiter`分割为两半

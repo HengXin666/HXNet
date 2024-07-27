@@ -21,7 +21,7 @@ namespace HXHttp {
 #include <HXSTL/HXCallback.h>
 #include <HXSTL/HXRadixTree.h>
 
-int main() {
+int _xxx_main() {
     using func = std::function<void()>;
     HXSTL::HXRadixTree<func> tree;
     tree.insert({"awa", "qwq", "*"}, [](){
@@ -46,7 +46,7 @@ int _me_main() {
     return 0;
 }
 
-int xo_main() {
+int main() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
         HXHttp::HXRouter::getSingleton().addController("GET", "/", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
