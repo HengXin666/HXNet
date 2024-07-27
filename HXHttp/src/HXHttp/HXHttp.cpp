@@ -50,6 +50,10 @@ int main() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
         HXHttp::HXRouter::getSingleton().addController("GET", "/", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+            auto csMap = req.parseQueryParameters();
+            for (const auto& [k, v] : csMap) {
+                printf("%s = %s\n", k.c_str(), v.c_str());
+            }
             return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>Hello, world!</h1><h2>Now Time: " 

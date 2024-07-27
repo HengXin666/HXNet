@@ -56,6 +56,7 @@ class HXRequest {
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
 public:
+    /// @brief 缓冲区大小: 第一次recv的大小, 以及存放其值的缓冲区数组的大小
     static constexpr std::size_t BUF_SIZE = 1024ULL;
 
     /**
@@ -90,6 +91,13 @@ public:
      * @warning 假定内容是符合Http协议的
      */
     std::size_t parserRequest(HXSTL::HXConstBytesBufferView buf);
+
+    /**
+     * @brief 解析查询参数 (解析如: `?name=loli&awa=ok&hitori`)
+     * @return 返回解析到的字符串键值对哈希表
+     * @warning 如果解析到不是键值对的, 即通过`&`分割后没有`=`的, 默认其全部为Key, 但Val = ""
+     */
+    std::unordered_map<std::string, std::string> parseQueryParameters() const;
 
     /**
      * @brief 获取请求类型

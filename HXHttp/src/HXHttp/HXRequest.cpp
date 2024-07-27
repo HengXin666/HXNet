@@ -76,4 +76,21 @@ std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
     return 0; // 解析完毕
 }
 
+std::unordered_map<std::string, std::string> HXRequest::parseQueryParameters() const {
+    std::size_t pos = getRequesPath().rfind('?');
+    if (pos == std::string::npos)
+        return {};
+    std::string parameter = getRequesPath().substr(pos + 1);
+    auto kvArr = HXSTL::HXStringUtil::split(parameter, "&");
+    std::unordered_map<std::string, std::string> res;
+    for (const auto& it : kvArr) {
+        auto&& kvPair = HXSTL::HXStringUtil::splitAtFirst(it, "=");
+        if (kvPair.first == "")
+            res.insert_or_assign(it, "");
+        else
+            res.insert(std::move(kvPair));
+    }
+    return res;
+}
+
 } // namespace HXHttp

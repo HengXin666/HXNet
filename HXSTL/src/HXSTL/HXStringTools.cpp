@@ -20,7 +20,11 @@
 
 namespace HXSTL {
 
-std::vector<std::string> HXStringUtil::split(std::string_view str, std::string_view delim, std::vector<std::string> res /*= {}*/)  {
+std::vector<std::string> HXStringUtil::split(
+    std::string_view str, 
+    std::string_view delim, 
+    std::vector<std::string> res /*= std::vector<std::string>{}*/
+)  {
     // 空字符处理
     if ("" == str) 
         return res;
