@@ -53,9 +53,9 @@ int main() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
         HXHttp::MyWebController {};
-        
+
         HXHttp::HXRouter::getSingleton().addController("GET", "/", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
-            auto csMap = req.parseQueryParameters();
+            auto csMap = req.getParseQueryParameters();
             for (const auto& [k, v] : csMap) {
                 printf("%s = %s\n", k.c_str(), v.c_str());
             }

@@ -97,7 +97,7 @@ public:
      * @return 返回解析到的字符串键值对哈希表
      * @warning 如果解析到不是键值对的, 即通过`&`分割后没有`=`的, 默认其全部为Key, 但Val = ""
      */
-    std::unordered_map<std::string, std::string> parseQueryParameters() const;
+    std::unordered_map<std::string, std::string> getParseQueryParameters() const;
 
     /**
      * @brief 获取请求类型

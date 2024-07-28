@@ -27,27 +27,14 @@ namespace HXHttp {
 /**
  * @brief 控制器类
  */
-class HXController {
-protected:
-    // std::list<std::string, std::function<void()>> _endpoints;
-public:
-    // explicit HXController() : _endpoints()
-    // {}
+// class HXController {
 
-    // std::list<std::string, std::function<void()>>&& getEndpoints() {
-    //     // return std::move(_endpoints);
-    // }
-
-    // 注册端点函数
-    // void addEndpoint(const std::string& url, const std::function<void()>& func) {
-    //     // _endpoints.emplace_back(url, func);
-    // }
-};
+// };
 
 /// @brief 测试使用的
-class MyWebController : HXController {
+class MyWebController {
 
-    ENDPOINT_BEGIN("GET", "/op", op_fun_endpoint) {
+    ENDPOINT_BEGIN(R_GET, "/op", op_fun_endpoint) {
         HXHttp::HXResponse response;
         response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
@@ -55,7 +42,7 @@ class MyWebController : HXController {
         return response;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN("GET", "/awa/{id}", awa_fun) {
+    ENDPOINT_BEGIN(R_GET, "/awa/{id}", awa_fun) {
         START_PARSE_PATH_PARAMS;
         PARSE_PARAM(0, int32_t, id);
         HXHttp::HXResponse response;
@@ -66,8 +53,11 @@ class MyWebController : HXController {
                             + "</h2>"));
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN("GET", "/qwq/**", qwq_fun) {
+    ENDPOINT_BEGIN(R_GET, "/qwq/**", qwq_fun) {
         PARSE_MULTI_LEVEL_PARAM(pathStr);
+        GET_PARSE_QUERY_PARAMETERS(map);
+        if (map.count("awa"))
+            printf("awa -> %s\n", map["awa"].c_str());
         HXHttp::HXResponse response;
         return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")

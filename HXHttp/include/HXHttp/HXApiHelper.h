@@ -28,8 +28,14 @@
 
 /* 简化用户编写的 API 宏 */
 
+// 定义常用的请求类型
+#define R_GET "GET"
+#define R_POST "POST"
+#define R_PUT "PUT"
+#define R_DELETE "DELETE"
+
 /**
- * @brief 定义一个端点
+ * @brief 定义一个端点, 其中定义了`req`请求信息(HXHttp::HXRequest)
  * @param METHOD 请求类型, 如"GET"
  * @param PATH 端点对应的路径, 如"/home/{id}"
  * @param FUNC_NAME 端点函数名称
@@ -75,5 +81,11 @@ if (!NAME) \
 static const auto UWPIndex = HXHttp::HXRequestTemplateParsing::getUniversalWildcardPathBeginIndex(templatePath); \
 std::string NAME = req.getPureRequesPath().substr(UWPIndex)
 
+/**
+ * @brief 解析查询参数键值对Map (解析如: `?name=loli&awa=ok&hitori`)
+ * @param NAME 键值对Map的变量名
+ */
+#define GET_PARSE_QUERY_PARAMETERS(NAME) \
+auto NAME = req.getParseQueryParameters()
 
 #endif // _HX_HXAPI_HELPER_H_
