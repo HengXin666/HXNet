@@ -4,7 +4,7 @@
 
 namespace HXHttp {
 
-std::vector<int> HXRequestParsing::getPathWildcardAnalysisArr(std::string_view path) {
+std::vector<int> HXRequestTemplateParsing::getPathWildcardAnalysisArr(std::string_view path) {
     auto arr = HXSTL::HXStringUtil::split(path, "/");
     std::vector<int> res;
     std::size_t n = arr.size();
@@ -18,7 +18,7 @@ std::vector<int> HXRequestParsing::getPathWildcardAnalysisArr(std::string_view p
     return res;
 }
 
-std::size_t HXRequestParsing::getUniversalWildcardPathBeginIndex(std::string_view path) {
+std::size_t HXRequestTemplateParsing::getUniversalWildcardPathBeginIndex(std::string_view path) {
     std::size_t pos = path.find("**");
     if (pos == std::string_view::npos)
         throw "The path does not have wildcard characters (**)";

@@ -30,9 +30,9 @@
 namespace HXHttp {
 
 /**
- * @brief 请求解析工具类
+ * @brief 请求模版解析工具类
  */
-struct HXRequestParsing {
+struct HXRequestTemplateParsing {
     /**
      * @brief 将路径通配符解析成数组索引映射
      * @param path 模版路径, 如: `/home/{name}/{id}`

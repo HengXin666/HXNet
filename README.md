@@ -52,9 +52,11 @@
 
 ---
 - [ ] 编写API宏
+    - [x] 端点快速定义宏
+    - [x] 路径参数解析宏
 - [x] 新增`enum`反射, 支持枚举值和字符串相互映射
 - [x] 重构epoll为基于回调函数的epoll事件循环
-- [ ] 开发控制层, 封装简易可使用的端点
+- [x] 开发控制层, 封装简易可使用的端点
 - [x] 处理TCP粘包问题 ~~(我连怎么检测出来都不知道...)~~
     - 一般是解析超大请求体才有的问题?!
 - [x] 解析请求体 (通过`\r\n\r\n`)区分 (得造轮子了吗?)
@@ -114,3 +116,75 @@ content-type: application/json
         - [x] 响应码
         - [x] 响应头/行
         - [x] 响应体
+
+## 快速开始
+> [!TIP]
+> 还正在开发, 非最终产品...
+
+- 端点定义 (初步示例)
+
+```cpp
+#include <HXHttp/HXApiHelper.h> // 头文件
+
+// 定义端点, 会自动注册到路由
+class MyWebController { // 控制器类
+
+    ENDPOINT_BEGIN("GET", "/op", op_fun_endpoint) { // GET请求, 路径是 /op
+        HXHttp::HXResponse response;
+        response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+            .setContentType("text/html", "UTF-8")
+            .setBodyData(execQueryHomeData());
+        return response; // 返回响应
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN("GET", "/awa/{id}", awa_fun) { // 路径是 /awa/%d
+        START_PARSE_PATH_PARAMS;
+        PARSE_PARAM(0, int32_t, id); // 解析第一个通配符参数, 为int32_t类型, 命名为id
+        HXHttp::HXResponse response;
+        return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN("GET", "/qwq/**", qwq_fun) { // 路径是 /qwq/** (多级任意, 如 /qwq/file/awa.jpg 这种)
+        PARSE_MULTI_LEVEL_PARAM(pathStr); // 解析 ** 的内容, 到 std::string pathStr 中
+        HXHttp::HXResponse response;
+        return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+    } ENDPOINT_END;
+
+public:
+    static std::string execQueryHomeData() { // 可惜的是, 必须定义为静态成员函数 (我个人感觉这样没问题吧?~)
+        return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
+                + HXSTL::HXDateTimeFormat::format() 
+                + "</h2>";
+    }
+};
+```
+
+- 使用: 启动服务端
+
+```cpp
+#include <HXHttp/HXServer.h>
+#include <HXHttp/HXController.h> // 假装导入头文件qwq..
+
+int main() {
+    // setlocale(LC_ALL, "zh_CN.UTF-8"); // 设置Linux错误提示本地化为中文
+    try {
+        HXHttp::MyWebController {}; // 这个只是暂时这样写qwq
+        
+        HXHttp::HXServer::Epoll ctx;
+        auto ptr = HXHttp::HXServer::Acceptor::make();
+        ptr->start("127.0.0.1", "28205"); // 绑定到 127.0.0.1:28205
+        ctx.join();
+    } catch(const std::system_error &e) {
+        std::cerr << e.what() << '\n';
+    }
+    return 0;
+}
+```

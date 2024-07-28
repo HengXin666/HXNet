@@ -20,22 +20,60 @@
 #ifndef _HX_HXAPI_HELPER_H_
 #define _HX_HXAPI_HELPER_H_
 
+#include <HXHttp/HXRouter.h>
+#include <HXHttp/HXRequest.h>
+#include <HXHttp/HXResponse.h>
+#include <HXHttp/HXRequestParsing.h>
+#include <HXSTL/HXStringTools.h>
+
 /* 简化用户编写的 API 宏 */
 
-// 编写: 请求类型宏
+/**
+ * @brief 定义一个端点
+ * @param METHOD 请求类型, 如"GET"
+ * @param PATH 端点对应的路径, 如"/home/{id}"
+ * @param FUNC_NAME 端点函数名称
+ */
+#define ENDPOINT_BEGIN(METHOD, PATH, FUNC_NAME) \
+const int _HX_endpoint_##FUNC_NAME = []() -> int { \
+    std::string templatePath = PATH; \
+    HXRouter::getSingleton().addController(METHOD, templatePath, [=](const HXHttp::HXRequest& req) -> HXHttp::HXResponse
 
-// 编写: 基本的控制器宏
+/**
+ * @brief 结束端点的定义
+ */
+#define ENDPOINT_END \
+    );\
+    return 0;\
+}()
 
-// 编写: 解析GET参数解析映射 获取宏
+/**
+ * @brief 开始解析请求路径参数
+ * @warning 接下来请使用`PARSE_PARAM`宏
+ */
+#define START_PARSE_PATH_PARAMS \
+static const auto wildcarIndexArr = HXHttp::HXRequestTemplateParsing::getPathWildcardAnalysisArr(templatePath); \
+auto pathSplitArr = HXSTL::HXStringUtil::split(req.getPureRequesPath(), "/")
 
-// 编写: GET参数解析 查找宏
+/**
+ * @brief 用于解析指定索引的路径参数, 并将其转换为指定类型的变量
+ * @param INDEX 模版路径的第几个通配参数 (从`0`开始计算)
+ * @param TYPE 需要解析成的类型, 如`bool`/`int32_t`/`double`/`std::string`/`std::string_view`等
+ * @param NAME 变量名称
+ * @warning 如果解析不到(出错), 则会直接返回错误给客户端
+ */
+#define PARSE_PARAM(INDEX, TYPE, NAME) \
+auto NAME = HXHttp::TypeInterpretation<TYPE>::wildcardElementTypeConversion(pathSplitArr[wildcarIndexArr[INDEX]]); \
+if (!NAME) \
+    return HXHttp::HXResponse{}.setResponseLine(HXHttp::HXResponse::Status::CODE_400).setContentType("application/json", "UTF-8").setBodyData("Missing PATH parameter '"#NAME"'")
 
-namespace HXHttp {
+/**
+ * @brief 解析多级通配符的宏, 如 `/home/ **` 这种
+ * @param NAME 解析结果字符串(`std::string`)的变量名称
+ */
+#define PARSE_MULTI_LEVEL_PARAM(NAME) \
+static const auto UWPIndex = HXHttp::HXRequestTemplateParsing::getUniversalWildcardPathBeginIndex(templatePath); \
+std::string NAME = req.getPureRequesPath().substr(UWPIndex)
 
-class HXApiHelper {
-
-};
-
-} // namespace HXHttp
 
 #endif // _HX_HXAPI_HELPER_H_

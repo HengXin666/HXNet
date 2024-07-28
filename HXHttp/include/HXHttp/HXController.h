@@ -20,13 +20,7 @@
 #ifndef _HX_HXCONTROLLER_H_
 #define _HX_HXCONTROLLER_H_
 
-#include <string_view>
-#include <list>
-
-#include <HXHttp/HXRouter.h>
-#include <HXHttp/HXRequest.h>
-#include <HXHttp/HXResponse.h>
-#include <HXSTL/HXStringTools.h>
+#include <HXHttp/HXApiHelper.h>
 
 namespace HXHttp {
 
@@ -52,20 +46,39 @@ public:
 
 /// @brief 测试使用的
 class MyWebController : HXController {
-    const int x = []() -> int {
-        HXRouter::getSingleton().addController("GET", "/home", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
-            HXHttp::HXResponse response;
-            response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+
+    ENDPOINT_BEGIN("GET", "/op", op_fun_endpoint) {
+        HXHttp::HXResponse response;
+        response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+            .setContentType("text/html", "UTF-8")
+            .setBodyData(execQueryHomeData());
+        return response;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN("GET", "/awa/{id}", awa_fun) {
+        START_PARSE_PATH_PARAMS;
+        PARSE_PARAM(0, int32_t, id);
+        HXHttp::HXResponse response;
+        return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
-                .setBodyData(execQueryHomeData());
-            return response;
-        });
-        return 0;
-    }();
+                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN("GET", "/qwq/**", qwq_fun) {
+        PARSE_MULTI_LEVEL_PARAM(pathStr);
+        HXHttp::HXResponse response;
+        return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
+                            + HXSTL::HXDateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+    } ENDPOINT_END;
 
 public:
     static std::string execQueryHomeData() {
-        return "<h1>Heng_Xin Home 哇!</h1><h2>Now Time: " 
+        return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
                 + HXSTL::HXDateTimeFormat::format() 
                 + "</h2>";
     }
