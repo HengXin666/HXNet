@@ -77,7 +77,7 @@ std::size_t HXRequest::parserRequest(HXSTL::HXConstBytesBufferView buf) {
 }
 
 std::unordered_map<std::string, std::string> HXRequest::parseQueryParameters() const {
-    std::size_t pos = getRequesPath().rfind('?');
+    std::size_t pos = getRequesPath().find('?'); // 没必要反向查找
     if (pos == std::string::npos)
         return {};
     std::string parameter = getRequesPath().substr(pos + 1);

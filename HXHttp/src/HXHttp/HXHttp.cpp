@@ -21,6 +21,8 @@ namespace HXHttp {
 #include <HXSTL/HXCallback.h>
 #include <HXSTL/HXRadixTree.h>
 
+#include <HXHttp/HXRequestParsing.h>
+
 int _xxx_main() {
     using func = std::function<void()>;
     HXSTL::HXRadixTree<func> tree;
@@ -68,6 +70,17 @@ int main() {
                             + "</h2>"));
         });
         HXHttp::HXRouter::getSingleton().addController("GET", "/home/{id}/123", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+            /**
+             * 解析 {id}, 是通过什么呢, 用宏, 无需正则, 因为可以映射找到端点, 说明已经是满足条件的了
+             * 因此, 只需要解析即可, 那么通过`/`分割然后使用相对位置提取即可
+             * 特别的`**`则需要采用其他方法, 如 .find("/home/") 提取出后面的字符串
+             */
+            static const auto wildcarIndexArr = HXHttp::HXRequestParsing::pathWildcardAnalysis("/home/{id}/123");
+            auto pathSplitArr = HXSTL::HXStringUtil::split(req.getRequesPath(), "/");
+            // 解析第一个通配符, 解析为 某 基础类型
+            auto id = HXHttp::TypeInterpretation<bool>::wildcardElementTypeConversion(pathSplitArr[wildcarIndexArr[0]]);
+            if (id)
+                printf("%d\n", *id);
             return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
