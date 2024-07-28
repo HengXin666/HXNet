@@ -131,31 +131,32 @@ class MyWebController { // 控制器类
 
     ENDPOINT_BEGIN("GET", "/op", op_fun_endpoint) { // GET请求, 路径是 /op
         HXHttp::HXResponse response;
+        // 控制器逻辑...
         response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
-            .setBodyData(execQueryHomeData());
+            .setBodyData(execQueryHomeData()); // 可以调用 控制器(MyWebController) 的静态方法
         return response; // 返回响应
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN("GET", "/awa/{id}", awa_fun) { // 路径是 /awa/%d
-        START_PARSE_PATH_PARAMS;
+        START_PARSE_PATH_PARAMS;     // 开始解析路径参数
         PARSE_PARAM(0, int32_t, id); // 解析第一个通配符参数, 为int32_t类型, 命名为id
         HXHttp::HXResponse response;
-        return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+        return response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
+                .setBodyData("<h1>/awa/{id} 哇!</h1><h2>Now Time: " 
                             + HXSTL::HXDateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
+                            + "</h2>");
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN("GET", "/qwq/**", qwq_fun) { // 路径是 /qwq/** (多级任意, 如 /qwq/file/awa.jpg 这种)
         PARSE_MULTI_LEVEL_PARAM(pathStr); // 解析 ** 的内容, 到 std::string pathStr 中
         HXHttp::HXResponse response;
-        return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
+        return response.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
                             + HXSTL::HXDateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
+                            + "</h2>");
     } ENDPOINT_END;
 
 public:
