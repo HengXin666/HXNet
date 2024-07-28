@@ -116,6 +116,18 @@ public:
     }
 
     /**
+     * @brief 获取请求的纯PATH部分
+     * @return 请求PATH (如: "/", "/home?loli=watasi"的"/home"部分)
+     */
+    std::string getPureRequesPath() const {
+        std::string path = getRequesPath();
+        std::size_t pos = path.find('?');
+        if (pos == std::string::npos)
+            return path;
+        return path.substr(0, pos);
+    }
+
+    /**
      * @brief 获取请求协议版本
      * @return 请求协议版本 (如: "HTTP/1.1", "HTTP/2.0"...)
      */

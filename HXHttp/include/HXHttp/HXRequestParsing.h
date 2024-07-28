@@ -40,7 +40,16 @@ struct HXRequestParsing {
      * @warning 只能解析如`{id}`的匹配, 不能解析`**`!
      * @throw 如果解析不到如`{id}`的通配符, 则会抛出异常
      */
-    static std::vector<int> pathWildcardAnalysis(std::string_view path);
+    static std::vector<int> getPathWildcardAnalysisArr(std::string_view path);
+
+    /**
+     * @brief 获取万用通配符前缀索引, 如: `/home/ **` -> `/home/`
+     * @param path 模版路径, 如: `/home/ **`
+     * @return `**`位置之前一个单位的索引
+     * @warning 只能解析`**`!
+     * @throw 如果解析不到如`**`的通配符, 则会抛出异常
+     */
+    static std::size_t getUniversalWildcardPathBeginIndex(std::string_view path);
 };
 
 template<class T>

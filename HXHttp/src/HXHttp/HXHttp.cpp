@@ -63,6 +63,9 @@ int main() {
                             + "</h2>"));
         });
         HXHttp::HXRouter::getSingleton().addController("GET", "/home/**", [](const HXHttp::HXRequest& req) -> HXHttp::HXResponse {
+            static const auto UWPIndex = HXHttp::HXRequestParsing::getUniversalWildcardPathBeginIndex("/home/**");
+            std::string cilPath = req.getPureRequesPath().substr(UWPIndex);
+            printf("-> %s\n", cilPath.c_str());
             return std::move(HXHttp::HXResponse {}.setResponseLine(HXHttp::HXResponse::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>这个是**吗</h1><h2>Now Time: " 
@@ -75,8 +78,8 @@ int main() {
              * 因此, 只需要解析即可, 那么通过`/`分割然后使用相对位置提取即可
              * 特别的`**`则需要采用其他方法, 如 .find("/home/") 提取出后面的字符串
              */
-            static const auto wildcarIndexArr = HXHttp::HXRequestParsing::pathWildcardAnalysis("/home/{id}/123");
-            auto pathSplitArr = HXSTL::HXStringUtil::split(req.getRequesPath(), "/");
+            static const auto wildcarIndexArr = HXHttp::HXRequestParsing::getPathWildcardAnalysisArr("/home/{id}/123");
+            auto pathSplitArr = HXSTL::HXStringUtil::split(req.getPureRequesPath(), "/");
             // 解析第一个通配符, 解析为 某 基础类型
             auto id = HXHttp::TypeInterpretation<bool>::wildcardElementTypeConversion(pathSplitArr[wildcarIndexArr[0]]);
             if (id)
