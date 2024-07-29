@@ -77,8 +77,8 @@ void HXServer::AsyncFile::_epollCallback(
     HXErrorHandlingTools::convertError<int>(
         ::epoll_ctl(HXServer::EpollContext::get()._epfd, EPOLL_CTL_MOD, _fd, &event)
     ).expect("EPOLL_CTL_MOD");
-    stop.setStopCallback([resume = resume.leakAddress()] {
-        HXSTL::HXCallback<>::fromAddress(resume)();
+    stop.setStopCallback([resumePtr = resume.leakAddress()] {
+        HXSTL::HXCallback<>::fromAddress(resumePtr)();
     });
 }
 
@@ -166,7 +166,7 @@ void HXServer::AsyncFile::asyncWrite(
     return _epollCallback(
         [this, &buf, cb = std::move(cb), stop]() mutable {
         return asyncWrite(buf, std::move(cb), stop);
-        }, EPOLLOUT | EPOLLET | EPOLLERR | EPOLLONESHOT, stop
+        }, EPOLLOUT | EPOLLERR | EPOLLET | EPOLLONESHOT, stop
     );
 }
 
@@ -179,13 +179,13 @@ void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*
     StopSource stopIO(std::in_place);    // 读写停止程序
     StopSource stopTimer(std::in_place); // 计时器停止程序
     // 定时器先完成时, 取消读取
-    EpollContext::get()._timer.setTimeout(
-        std::chrono::seconds(2), 
-        [stopIO] {
-            stopIO.doRequestStop();
-        },
-        stopTimer
-    );
+    // EpollContext::get()._timer.setTimeout(
+    //     std::chrono::seconds(2), 
+    //     [stopIO] {
+    //         stopIO.doRequestStop();
+    //     },
+    //     stopTimer
+    // );
     return _fd.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (HXErrorHandlingTools::Expected<size_t> ret) {
         stopTimer.doRequestStop();
         
@@ -242,7 +242,6 @@ void HXServer::ConnectionHandler::write(HXSTL::HXConstBytesBufferView buf) {
             return self->read(); // 开始读取
         }
 
-        // self->_response._buf
         self->write(buf.subspan(n));
     });
 }
