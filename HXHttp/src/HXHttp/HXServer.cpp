@@ -8,19 +8,79 @@
 
 namespace HXHttp {
 
-void HXServer::Epoll::join() {
+void HXServer::CallbackFuncTimer::setTimeout(
+    std::chrono::steady_clock::duration dt, 
+    HXSTL::HXCallback<> cb, 
+    StopSource stop /*= {}*/
+) {
+    auto expireTime = std::chrono::steady_clock::now() + dt;
+    auto it = _timerHeap.insert({expireTime, _TimerEntry{std::move(cb), stop}});
+    stop.setStopCallback([this, it] {
+        auto cb = std::move(it->second._cb);
+        _timerHeap.erase(it);
+        cb();
+    });
+}
+
+std::chrono::steady_clock::duration HXServer::CallbackFuncTimer::durationToNextTimer() {
+    while (_timerHeap.size()) {
+        auto it = _timerHeap.begin();
+        auto now = std::chrono::steady_clock::now();
+        if (it->first <= now) {
+            // 持续时间已经到了, 执行其回调, 并且删除
+            it->second._stop.clearStopCallback();
+            auto cb = std::move(it->second._cb);
+            _timerHeap.erase(it);
+            cb();
+        } else {
+            return it->first - now;
+        }
+    }
+    return std::chrono::nanoseconds(-1);
+}
+
+void HXServer::EpollContext::join() {
     std::array<struct ::epoll_event, 128> evs;
     while (1) {
-        int len = epoll_wait(_epfd, evs.data(), evs.size(), -1);
-        if (len < 0) {
-            throw;
+        std::chrono::nanoseconds dt = _timer.durationToNextTimer();
+        struct ::timespec timeout, *timeoutp = nullptr;
+        if (dt.count() > 0) {
+            timeout.tv_sec = dt.count() / 1'000'000'000;
+            timeout.tv_nsec = dt.count() % 1'000'000'000;
+            timeoutp = &timeout;
         }
+        int len = HXErrorHandlingTools::convertError<int>(
+            epoll_pwait2(_epfd, evs.data(), evs.size(), timeoutp, nullptr)
+        ).expect("epoll_pwait2");
         for (int i = 0; i < len; ++i) {
             auto cb = HXSTL::HXCallback<>::fromAddress(evs[i].data.ptr);
             cb();
         }
     }
 }   
+
+void HXServer::AsyncFile::_epollCallback(
+    HXSTL::HXCallback<> &&resume, 
+    uint32_t events,
+    StopSource stop
+) {
+    // 让操作系统通知我
+    /**
+     * EPOLLIN: 当有数据可读时, `epoll` 会触发事件
+     * EPOLLET: 设置边沿触发模式
+     * EPOLLONESHOT: 表示事件只会触发一次: 当一个文件描述符上的一个事件触发并被处理后, 这个文件描述符会从 `epoll` 监控队列中移除
+     */
+    struct ::epoll_event event;
+    event.events = events;
+    event.data.ptr = resume.getAddress(); // fd 对应 回调函数
+
+    HXErrorHandlingTools::convertError<int>(
+        ::epoll_ctl(HXServer::EpollContext::get()._epfd, EPOLL_CTL_MOD, _fd, &event)
+    ).expect("EPOLL_CTL_MOD");
+    stop.setStopCallback([resume = resume.leakAddress()] {
+        HXSTL::HXCallback<>::fromAddress(resume)();
+    });
+}
 
 HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
     int flags = CHECK_CALL(::fcntl, fd, F_GETFL);
@@ -30,87 +90,84 @@ HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
     struct ::epoll_event event;
     event.events = EPOLLET;
     event.data.ptr = nullptr; // fd 对应 回调函数 (没有)
-    CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_ADD, fd, &event);
+    HXErrorHandlingTools::convertError<int>(
+        ::epoll_ctl(EpollContext::get()._epfd, EPOLL_CTL_ADD, fd, &event)
+    ).expect("EPOLL_CTL_ADD");
 
     return AsyncFile{fd};
 }
 
 void HXServer::AsyncFile::asyncAccept(
     HXAddressResolver::address& addr, 
-    HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cd
+    HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cb,
+    StopSource stop /*= {}*/
     ) {
+    if (stop.isStopRequested()) {
+        stop.clearStopCallback();
+        return cb(-ECANCELED);
+    }
+
     auto ret = HXErrorHandlingTools::convertError<int>(::accept(_fd, &addr._addr, &addr._addrlen));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
-        cd(ret);
-        return;
+        stop.clearStopCallback();
+        return cb(ret);
     }
 
-    // 如果是 EAGAIN, 那么就让操作系统通知我吧
-    // 到时候调用这个回调
-    HXSTL::HXCallback<> resume = [this, &addr, cd = std::move(cd)] () mutable {
-        return asyncAccept(addr, std::move(cd));
-    };
-
-    // 让操作系统通知我
-    struct ::epoll_event event;
-    /**
-     * EPOLLIN: 当有数据可读时，`epoll` 会触发事件
-     * EPOLLET: 设置边沿触发模式
-     * EPOLLONESHOT: 表示事件只会触发一次。当一个文件描述符上的一个事件触发并被处理后，这个文件描述符会从 `epoll` 监控队列中移除。
-     */
-    event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-    event.data.ptr = resume.leakAddress(); // fd 对应 回调函数 (没有)
-    CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_MOD, _fd, &event);
+    return _epollCallback(
+        [this, &addr, cb = std::move(cb), stop] () mutable {
+            return asyncAccept(addr, std::move(cb), stop);
+        }, EPOLLIN | EPOLLERR | EPOLLET | EPOLLONESHOT, stop
+    );
 }
 
 void HXServer::AsyncFile::asyncRead(
     HXSTL::HXBytesBuffer& buf,
     std::size_t count,
-    HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
+    HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cb,
+    StopSource stop /*= {}*/
     ) {
+    if (stop.isStopRequested()) {
+        stop.clearStopCallback();
+        return cb(-ECANCELED);
+    }
+        
     auto ret = HXErrorHandlingTools::convertError<size_t>(::recv(_fd, buf.data(), count, 0));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
-        cd(ret);
-        return;
+        stop.clearStopCallback();
+        return cb(ret);
     }
 
-    // 如果是 EAGAIN, 那么就让操作系统通知我吧
-    // 到时候调用这个回调
-    HXSTL::HXCallback<> resume = [this, &buf, count, cd = std::move(cd)]() mutable {
-        return asyncRead(buf, count, std::move(cd));
-    };
-
-    // 让操作系统通知我
-    struct ::epoll_event event;
-    event.events = EPOLLIN | EPOLLET | EPOLLONESHOT; // 只通知一次
-    event.data.ptr = resume.leakAddress(); // fd 对应 回调函数 (没有)
-    CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_MOD, _fd, &event);
+    return _epollCallback(
+        [this, &buf, count, cb = std::move(cb), stop]() mutable {
+            return asyncRead(buf, count, std::move(cb), stop);
+        }, EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT, stop
+    );
 }
 
 void HXServer::AsyncFile::asyncWrite(
     HXSTL::HXConstBytesBufferView buf,
-    HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
+    HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cb,
+    StopSource stop /*= {}*/
     ) {
+    if (stop.isStopRequested()) {
+        stop.clearStopCallback();
+        return cb(-ECANCELED);
+    }
+
     auto ret = HXErrorHandlingTools::convertError<size_t>(::send(_fd, buf.data(), buf.size(), 0));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
-        cd(ret);
-        return;
+        stop.clearStopCallback();
+        return cb(ret);
     }
 
-    // 如果是 EAGAIN, 那么就让操作系统通知我吧
-    // 到时候调用这个回调
-    HXSTL::HXCallback<> resume = [this, &buf, cd = std::move(cd)]() mutable {
-        return asyncWrite(buf, std::move(cd));
-    };
-
-    // 让操作系统通知我
-    struct ::epoll_event event;
-    event.events = EPOLLOUT | EPOLLET | EPOLLONESHOT; // 只通知一次
-    event.data.ptr = resume.leakAddress(); // fd 对应 回调函数 (没有)
-    CHECK_CALL(::epoll_ctl, HXServer::Epoll::get()._epfd, EPOLL_CTL_MOD, _fd, &event);
+    return _epollCallback(
+        [this, &buf, cb = std::move(cb), stop]() mutable {
+        return asyncWrite(buf, std::move(cb), stop);
+        }, EPOLLOUT | EPOLLET | EPOLLERR | EPOLLONESHOT, stop
+    );
 }
 
 void HXServer::ConnectionHandler::start(int fd) {
@@ -119,7 +176,19 @@ void HXServer::ConnectionHandler::start(int fd) {
 }
 
 void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*/) {
-    return _fd.asyncRead(_buf, size, [self = shared_from_this()] (HXErrorHandlingTools::Expected<size_t> ret) {
+    StopSource stopIO(std::in_place);    // 读写停止程序
+    StopSource stopTimer(std::in_place); // 计时器停止程序
+    // 定时器先完成时, 取消读取
+    EpollContext::get()._timer.setTimeout(
+        std::chrono::seconds(2), 
+        [stopIO] {
+            stopIO.doRequestStop();
+        },
+        stopTimer
+    );
+    return _fd.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (HXErrorHandlingTools::Expected<size_t> ret) {
+        stopTimer.doRequestStop();
+        
         if (ret.error()) {
             return;
         }
@@ -137,7 +206,7 @@ void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*
         } else {
             self->handle(); // 开始响应
         }
-    });
+    }, stopIO);
 }
 
 void HXServer::ConnectionHandler::handle() {

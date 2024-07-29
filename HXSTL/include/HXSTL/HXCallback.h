@@ -43,16 +43,17 @@ struct HXCallback {
     // 具体回调实现类模板
     template <class F>
     struct _HXCallbackImpl final : _HXCallbackBase {
-        F m_func;
+        F _func;
 
-        template <class ...Ts, class = std::enable_if_t<std::is_constructible_v<F, Ts...>>>
-        _HXCallbackImpl(Ts &&...ts) : m_func(std::forward<Ts>(ts)...) 
+        template <class ...Ts, 
+                  class = std::enable_if_t<std::is_constructible_v<F, Ts...>>>
+        _HXCallbackImpl(Ts &&...ts) : _func(std::forward<Ts>(ts)...) 
         {}
 
         // 这个类模板继承`_HXCallbackBase`并实现了`_call`方法
         // 它持有一个具体的函数对象`m_func`, 并在`_call`方法中调用该函数对象
         void _call(Args... args) override {
-            m_func(std::forward<Args>(args)...);
+            _func(std::forward<Args>(args)...);
         }
     };
 
@@ -62,8 +63,13 @@ struct HXCallback {
     // 构造函数
     // 通过模板参数和`std::enable_if`限制, 确保传入的函数对象是可调用的, 并且不是`callback`本身的类型
     // 这个构造函数会创建一个`_HXCallbackImpl`实例, 并将其存储在`_base`中
-    template <class F, class = std::enable_if_t<std::is_invocable_v<F, Args...> && !std::is_same_v<std::decay_t<F>, HXCallback>>>
-    HXCallback(F &&f) : _base(std::make_unique<_HXCallbackImpl<std::decay_t<F>>>(std::forward<F>(f))) {}
+    template <class F, 
+              class = std::enable_if_t<
+                    std::is_invocable_v<F, Args...> && 
+                    !std::is_same_v<std::decay_t<F>, HXCallback>>>
+    HXCallback(F &&f) 
+    : _base(std::make_unique<_HXCallbackImpl<std::decay_t<F>>>(std::forward<F>(f))) 
+    {}
 
 /**
  * 注: std::is_invocable<F, Args...> 是一个类型特征模板, 
@@ -79,6 +85,9 @@ struct HXCallback {
 
     HXCallback() = default;
 
+    // 允许 = nullptr 作移动赋值构造
+    HXCallback(std::nullptr_t) noexcept {}
+
     // 不可拷贝
     HXCallback(HXCallback const &) = delete;
     HXCallback &operator=(HXCallback const &) = delete;
@@ -93,6 +102,10 @@ struct HXCallback {
         return _base->_call(std::forward<Args>(args)...);
     }
 
+    explicit operator bool() const noexcept {
+        return _base != nullptr;
+    }
+
     // @brief 获取存储的具体回调实现对象
     template <class F>
     F &target() const {
@@ -100,9 +113,14 @@ struct HXCallback {
         return static_cast<_HXCallbackImpl<F> &>(*_base);
     }
 
-    // @brief 主动内存泄漏
+    // @brief 主动内存泄漏(取消对指针的托管)
     void *leakAddress() {
         return static_cast<void *>(_base.release());
+    }
+
+    // @brief 获取其地址(不取消对指针的托管)
+    void *getAddress() {
+        return static_cast<void *>(_base.get());
     }
 
     // @brief 恢复回调对象的地址

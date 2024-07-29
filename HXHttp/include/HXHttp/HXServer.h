@@ -23,6 +23,7 @@
 #include <sys/epoll.h>
 #include <cassert>
 #include <memory>
+#include <chrono>
 
 #include <HXSTL/HXCallback.h>
 #include <HXSTL/HXBytesBuffer.h>
@@ -31,21 +32,143 @@
 #include <HXHttp/HXRequest.h>
 #include <HXHttp/HXResponse.h>
 
-namespace HXHttp {
-
 /**
  * @brief 基于回调函数实现异步并依赖epoll以事件促动循环的高并发服务器
  */
-class HXServer {
-public:
-    // @brief epoll (半懒汉单例)类
-    struct Epoll {
+namespace HXHttp { namespace HXServer {
+
+    // @brief 停止计时器程序
+    class StopSource {
+        // @brief 控制块
+        struct _ControlBlock {
+            bool _stop = false;      // 是否停止
+            HXSTL::HXCallback<> _cb; // 停止计时器的回调
+        };
+
+        // @brief 控制器
+        std::shared_ptr<_ControlBlock> _control;
+    public:
+
+        explicit StopSource() = default;
+
+        /**
+         * @brief 构造函数
+         * @param std::in_place_t 区分构造函数的, 传入`std::in_place`即可
+         */
+        explicit StopSource(std::in_place_t)
+        : _control(std::make_shared<_ControlBlock>()) 
+        {}
+
+        /**
+         * @brief 是否停止请求
+         * @return 是否
+         */
+        bool isStopRequested() const noexcept {
+            return _control && _control->_stop;
+        }
+
+        /**
+         * @brief 是否可以被停止
+         * @return 是否
+         */
+        bool isStopPossible() const noexcept {
+            return _control != nullptr;
+        }
+
+        /**
+         * @brief 停止请求, 并且执行回调函数
+         */
+        void doRequestStop() const {
+            if (!_control) {
+                return;
+            }
+            _control->_stop = true;
+            if (_control->_cb) {
+                _control->_cb();
+                _control->_cb = nullptr;
+            }
+        }
+
+        /**
+         * @brief 设置停止时执行的回调函数
+         * @param cb 停止时执行的回调函数
+         */
+        void setStopCallback(HXSTL::HXCallback<> cb) const noexcept {
+            if (!_control) {
+                return;
+            }
+            _control->_cb = std::move(cb);
+        }
+
+        /**
+         * @brief 清除停止时执行的回调函数
+         */
+        void clearStopCallback() const noexcept {
+            if (!_control) {
+                return;
+            }
+            _control->_cb = nullptr;
+        }
+    };
+
+    // @brief 回调函数计时器
+    class CallbackFuncTimer {
+        struct _TimerEntry {
+            HXSTL::HXCallback<> _cb; // 这个是计时到点执行的回调
+            StopSource _stop;        // 这个是删除计时器的回调
+        };
+
+        // 红黑树: 时间 - 计时项
+        std::multimap<std::chrono::steady_clock::time_point, _TimerEntry> _timerHeap;
+    public:
+        explicit CallbackFuncTimer() : _timerHeap()
+        {}
+
+        CallbackFuncTimer(CallbackFuncTimer &&) = delete;
+
+        /**
+         * @brief 设置超时时间
+         * @param dt 持续时间
+         * @param cb 超时后执行的回调函数
+         * @param stop 停止计时器的回调
+         */
+        void setTimeout(
+            std::chrono::steady_clock::duration dt, 
+            HXSTL::HXCallback<> cb, 
+            StopSource stop = StopSource {}
+        );
+
+        /**
+         * @brief 检查所有的持续时间, 如果超时则执行其回调, 否则返回下一个计时器到点的时间
+         * @return 下一个计时器到点的时间, 无则返回`-1`
+         */
+        std::chrono::steady_clock::duration durationToNextTimer();
+
+        bool empty() const {
+            return _timerHeap.empty();
+        }
+
+        /**
+         * @brief 获取红黑树结点个数
+         * @return _timerHeap.size()
+         */
+        std::size_t size() const {
+            return _timerHeap.size();
+        }
+    };
+
+    // @brief epoll上下文 (半懒汉单例)类
+    class EpollContext {
+    public:
         int _epfd;
+        CallbackFuncTimer _timer;
 
         /// @brief 全局线程独占单例
-        inline static thread_local Epoll *G_instance = nullptr;
+        inline static thread_local EpollContext *G_instance = nullptr;
 
-        Epoll() : _epfd(CHECK_CALL(::epoll_create1, 0))  {
+        EpollContext() 
+        : _epfd(CHECK_CALL(::epoll_create1, 0)) 
+        , _timer() {
             G_instance = this;
         }
 
@@ -54,7 +177,7 @@ public:
          */
         void join();
 
-        ~Epoll() {
+        ~EpollContext() {
             ::close(_epfd);
             G_instance = nullptr;
         }
@@ -62,7 +185,7 @@ public:
         /**
          * @brief 获取全局线程独占单例对象引用
          */
-        static Epoll& get() {
+        static EpollContext& get() {
             assert(G_instance);
             return *G_instance;
         }
@@ -73,10 +196,26 @@ public:
      */
     class AsyncFile {
         int _fd = -1;
+
+        void _epollCallback(
+            HXSTL::HXCallback<> &&resume, 
+            uint32_t events,
+            StopSource stop
+        );
     public:
         AsyncFile() = default;
 
-        explicit AsyncFile(int fd) : _fd(fd) {}
+        explicit AsyncFile(int fd) : _fd(fd) 
+        {}
+
+        AsyncFile(AsyncFile &&that) noexcept : _fd(that._fd) {
+            that._fd = -1;
+        }
+
+        AsyncFile &operator=(AsyncFile &&that) noexcept {
+            std::swap(_fd, that._fd);
+            return *this;
+        }
 
         /**
          * @brief 静态工厂方法: 将fd设置为非阻塞, 注册epoll监听 (EPOLLET)
@@ -92,7 +231,8 @@ public:
          */
         void asyncAccept(
             HXAddressResolver::address& addr, 
-            HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cd
+            HXSTL::HXCallback<HXErrorHandlingTools::Expected<int>> cd,
+            StopSource stop = StopSource {}
         );
 
         /**
@@ -104,7 +244,8 @@ public:
         void asyncRead(
             HXSTL::HXBytesBuffer& buf,
             std::size_t count,
-            HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
+            HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd,
+            StopSource stop = StopSource {}
         );
 
         /**
@@ -114,8 +255,21 @@ public:
          */
         void asyncWrite(
             HXSTL::HXConstBytesBufferView buf,
-            HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd
+            HXSTL::HXCallback<HXErrorHandlingTools::Expected<size_t>> cd,
+            StopSource stop = StopSource {}
         );
+
+        ~AsyncFile() {
+            if (_fd == -1) {
+                return;
+            }
+            ::close(_fd);
+            ::epoll_ctl(HXServer::EpollContext::get()._epfd, EPOLL_CTL_DEL, _fd, nullptr);
+        }
+
+        explicit operator bool() const noexcept {
+            return _fd != -1;
+        }
     };
 
     /**
@@ -192,10 +346,7 @@ public:
          */
         void accept();
     };
-
-public:
-
-};
+} // namespace HXServer
 
 } // namespace HXHttp
 
