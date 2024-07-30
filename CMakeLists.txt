@@ -33,12 +33,17 @@ message (STATUS "Binary dir is ${PROJECT_BINARY_DIR}")
 message (STATUS "Source dir is ${PROJECT_SOURCE_DIR}")
 message (STATUS "ROOT_PATH dir is ${ROOT_PATH}")
 
-# 包含自定义的CMake模块MyUsefulFuncs
-# include(MyUsefulFuncs)
+# 设置文件名称
+set (appName HXNet)
 
-# ===添加子目录===
-add_subdirectory(HXJson)
-add_subdirectory(HXprint)
-add_subdirectory(HXCodeTest)
-add_subdirectory(HXHttp)
-add_subdirectory(HXSTL)
+# 递归查找
+file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
+
+# 编译可执行文件
+add_executable (${appName} ${srcs})
+
+# 设置头文件路径
+include_directories(${ROOT_PATH}/include)
+
+# 将include目录添加到HXHttp库的公共包含目录中
+target_include_directories(HXNet PUBLIC include)
