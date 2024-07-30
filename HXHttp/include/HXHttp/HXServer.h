@@ -167,7 +167,7 @@ namespace HXHttp { namespace HXServer {
         inline static thread_local EpollContext *G_instance = nullptr;
 
         EpollContext() 
-        : _epfd(CHECK_CALL(::epoll_create1, 0)) 
+        : _epfd(HXErrorHandlingTools::convertError<int>(::epoll_create1(0)).expect("epoll_create1")) 
         , _timer() {
             G_instance = this;
         }
@@ -185,17 +185,45 @@ namespace HXHttp { namespace HXServer {
         /**
          * @brief 获取全局线程独占单例对象引用
          */
-        static EpollContext& get() {
+        [[gnu::const]] static EpollContext& get() {
             assert(G_instance);
             return *G_instance;
         }
     };
 
     /**
+     * @brief 文件描述符
+     */
+    class FileDescriptor {
+    protected:
+        int _fd = -1;
+    public:
+        FileDescriptor() = default;
+
+        explicit FileDescriptor(int fd) : _fd(fd) 
+        {}
+
+        FileDescriptor(FileDescriptor &&that) noexcept : _fd(that._fd) {
+            that._fd = -1;
+        }
+
+        FileDescriptor &operator=(FileDescriptor &&that) noexcept {
+            std::swap(_fd, that._fd);
+            return *this;
+        }
+
+        ~FileDescriptor() {
+            if (_fd == -1) {
+                return;
+            }
+            ::close(_fd);
+        }
+    };
+
+    /**
      * @brief 异步文件操作类
      */
-    class AsyncFile {
-        int _fd = -1;
+    class AsyncFile : public FileDescriptor {
 
         void _epollCallback(
             HXSTL::HXCallback<> &&resume, 
@@ -205,24 +233,28 @@ namespace HXHttp { namespace HXServer {
     public:
         AsyncFile() = default;
 
-        explicit AsyncFile(int fd) : _fd(fd) 
-        {}
+        explicit AsyncFile(int fd);
 
-        AsyncFile(AsyncFile &&that) noexcept : _fd(that._fd) {
-            that._fd = -1;
-        }
-
-        AsyncFile &operator=(AsyncFile &&that) noexcept {
-            std::swap(_fd, that._fd);
-            return *this;
-        }
+        AsyncFile(AsyncFile &&) = default;
+        AsyncFile &operator=(AsyncFile &&) = default;
 
         /**
-         * @brief 静态工厂方法: 将fd设置为非阻塞, 注册epoll监听 (EPOLLET)
-         * @param fd 文件套接字
-         * @return asyncFile对象
+         * @brief 建立连接
          */
-        static AsyncFile asyncWrap(int fd);
+        static AsyncFile asyncBind(HXAddressResolver::addressInfo const &addr) {
+            auto sock = AsyncFile{addr.createSocket()};
+            auto serve_addr = addr.getAddress();
+            int on = 1;
+            setsockopt(sock._fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+            setsockopt(sock._fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
+            HXErrorHandlingTools::convertError<int>(
+                ::bind(sock._fd, serve_addr._addr, serve_addr._addrlen)
+            ).expect("bind");
+            HXErrorHandlingTools::convertError<int>(
+                ::listen(sock._fd, SOMAXCONN)
+            ).expect("listen");
+            return sock;
+        }
 
         /**
          * @brief 异步建立连接
@@ -263,7 +295,6 @@ namespace HXHttp { namespace HXServer {
             if (_fd == -1) {
                 return;
             }
-            ::close(_fd);
             ::epoll_ctl(HXServer::EpollContext::get()._epfd, EPOLL_CTL_DEL, _fd, nullptr);
         }
 

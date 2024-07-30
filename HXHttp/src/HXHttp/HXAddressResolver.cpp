@@ -12,11 +12,11 @@ namespace HXHttp {
 
 int HXAddressResolver::addressInfo::createSocketAndBind() const {
     int serverFd = createSocket();
-    addressRef serve_addr = getAddress();
+    addressRef serveAddr = getAddress();
     int on = 1;
     setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));     // 设置端口复用(允许一个套接字在 TIME_WAIT 状态下重新绑定到之前使用的地址和端口)
     setsockopt(serverFd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));     // 允许多个套接字绑定到相同的地址和端口
-    CHECK_CALL(::bind, serverFd, serve_addr._addr, serve_addr._addrlen); // 将套接字绑定IP和端口用于监听
+    CHECK_CALL(::bind, serverFd, serveAddr._addr, serveAddr._addrlen);   // 将套接字绑定IP和端口用于监听
     CHECK_CALL(::listen, serverFd, SOMAXCONN);                           // 设置监听: 设定可同时排队的客户端最大连接个数
                                                                          // 其中`SOMAXCONN`: Linux可监听的最大数量
     return serverFd;

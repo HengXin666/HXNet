@@ -6,6 +6,8 @@
 #include <HXSTL/HXStringTools.h>
 #include <HXHttp/HXRouter.h>
 
+int epollCnt = 0;
+
 namespace HXHttp {
 
 void HXServer::CallbackFuncTimer::setTimeout(
@@ -32,6 +34,7 @@ std::chrono::steady_clock::duration HXServer::CallbackFuncTimer::durationToNextT
             auto cb = std::move(it->second._cb);
             _timerHeap.erase(it);
             cb();
+            --epollCnt;
         } else {
             return it->first - now;
         }
@@ -49,12 +52,15 @@ void HXServer::EpollContext::join() {
             timeout.tv_nsec = dt.count() % 1'000'000'000;
             timeoutp = &timeout;
         }
+        printf("===阻塞(%d)====================\n", epollCnt);
         int len = HXErrorHandlingTools::convertError<int>(
             epoll_pwait2(_epfd, evs.data(), evs.size(), timeoutp, nullptr)
         ).expect("epoll_pwait2");
+        printf("Linux通知: ... %s ~\n", HXSTL::HXDateTimeFormat::formatWithMilli().c_str());
         for (int i = 0; i < len; ++i) {
             auto cb = HXSTL::HXCallback<>::fromAddress(evs[i].data.ptr);
             cb();
+            --epollCnt;
         }
     }
 }   
@@ -77,25 +83,44 @@ void HXServer::AsyncFile::_epollCallback(
     HXErrorHandlingTools::convertError<int>(
         ::epoll_ctl(HXServer::EpollContext::get()._epfd, EPOLL_CTL_MOD, _fd, &event)
     ).expect("EPOLL_CTL_MOD");
+    ++epollCnt;
     stop.setStopCallback([resumePtr = resume.leakAddress()] {
         HXSTL::HXCallback<>::fromAddress(resumePtr)();
     });
 }
 
-HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
-    int flags = CHECK_CALL(::fcntl, fd, F_GETFL);
+HXServer::AsyncFile::AsyncFile(int fd) 
+    : FileDescriptor(fd) {
+    int flags = HXErrorHandlingTools::convertError<int>(
+        ::fcntl(_fd, F_GETFL)
+    ).expect("F_GETFL");
     flags |= O_NONBLOCK;
-    CHECK_CALL(::fcntl, fd, F_SETFL, flags);
-
-    struct ::epoll_event event;
-    event.events = EPOLLET;
-    event.data.ptr = nullptr; // fd 对应 回调函数 (没有)
     HXErrorHandlingTools::convertError<int>(
-        ::epoll_ctl(EpollContext::get()._epfd, EPOLL_CTL_ADD, fd, &event)
-    ).expect("EPOLL_CTL_ADD");
+        ::fcntl(_fd, F_SETFL, flags)
+    ).expect("F_SETFL");
 
-    return AsyncFile{fd};
+    struct epoll_event event;
+    event.events = EPOLLET;
+    event.data.ptr = nullptr;
+    HXErrorHandlingTools::convertError<int>(
+        ::epoll_ctl(EpollContext::get()._epfd, EPOLL_CTL_ADD, _fd, &event)
+    ).expect("EPOLL_CTL_ADD");
 }
+
+// HXServer::AsyncFile HXServer::AsyncFile::asyncWrap(int fd) {
+//     int flags = CHECK_CALL(::fcntl, fd, F_GETFL);
+//     flags |= O_NONBLOCK;
+//     CHECK_CALL(::fcntl, fd, F_SETFL, flags);
+
+//     struct ::epoll_event event;
+//     event.events = EPOLLET;
+//     event.data.ptr = nullptr; // fd 对应 回调函数 (没有)
+//     HXErrorHandlingTools::convertError<int>(
+//         ::epoll_ctl(EpollContext::get()._epfd, EPOLL_CTL_ADD, fd, &event)
+//     ).expect("EPOLL_CTL_ADD");
+
+//     return AsyncFile{fd};
+// }
 
 void HXServer::AsyncFile::asyncAccept(
     HXAddressResolver::address& addr, 
@@ -110,6 +135,7 @@ void HXServer::AsyncFile::asyncAccept(
     auto ret = HXErrorHandlingTools::convertError<int>(::accept(_fd, &addr._addr, &addr._addrlen));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
+        printf("已连接 %s ~\n", HXSTL::HXDateTimeFormat::formatWithMilli().c_str());
         stop.clearStopCallback();
         return cb(ret);
     }
@@ -135,6 +161,7 @@ void HXServer::AsyncFile::asyncRead(
     auto ret = HXErrorHandlingTools::convertError<size_t>(::recv(_fd, buf.data(), count, 0));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
+        printf("开始发送 %s ~\n", HXSTL::HXDateTimeFormat::formatWithMilli().c_str());
         stop.clearStopCallback();
         return cb(ret);
     }
@@ -159,6 +186,7 @@ void HXServer::AsyncFile::asyncWrite(
     auto ret = HXErrorHandlingTools::convertError<size_t>(::send(_fd, buf.data(), buf.size(), 0));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
+        printf("发送完毕 %s ~\n", HXSTL::HXDateTimeFormat::formatWithMilli().c_str());
         stop.clearStopCallback();
         return cb(ret);
     }
@@ -171,21 +199,22 @@ void HXServer::AsyncFile::asyncWrite(
 }
 
 void HXServer::ConnectionHandler::start(int fd) {
-    _fd = HXServer::AsyncFile::asyncWrap(fd);
+    _fd = HXServer::AsyncFile {fd};
     return read();
 }
 
 void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*/) {
+    printf("解析中... %s ~\n", HXSTL::HXDateTimeFormat::formatWithMilli().c_str());
     StopSource stopIO(std::in_place);    // 读写停止程序
     StopSource stopTimer(std::in_place); // 计时器停止程序
     // 定时器先完成时, 取消读取
-    // EpollContext::get()._timer.setTimeout(
-    //     std::chrono::seconds(2), 
-    //     [stopIO] {
-    //         stopIO.doRequestStop();
-    //     },
-    //     stopTimer
-    // );
+    EpollContext::get()._timer.setTimeout(
+        std::chrono::seconds(2), 
+        [stopIO] {
+            stopIO.doRequestStop();
+        },
+        stopTimer
+    );
     return _fd.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (HXErrorHandlingTools::Expected<size_t> ret) {
         stopTimer.doRequestStop();
         
@@ -249,20 +278,21 @@ void HXServer::ConnectionHandler::write(HXSTL::HXConstBytesBufferView buf) {
 void HXServer::Acceptor::start(const std::string& name, const std::string& port) {
     HXAddressResolver resolver;
     auto entry = resolver.resolve(name, port);
+    _serverFd = HXServer::AsyncFile::asyncBind(entry);
     LOG_INFO("====== HXServer start: \033[33m\033]8;;http://%s:%s/\033\\http://%s:%s/\033]8;;\033\\\033[0m\033[1;32m ======", 
         name.c_str(),
         port.c_str(),
         name.c_str(),
         port.c_str()
     );
-    int listenfd = entry.createSocketAndBind();
-    _serverFd = HXServer::AsyncFile::asyncWrap(listenfd);
     return accept();
 }
 
 void HXServer::Acceptor::accept() {
+    printf(">>> %s <<<\n", HXSTL::HXDateTimeFormat::formatWithMilli().c_str());
     return _serverFd.asyncAccept(_addr, [self = shared_from_this()] (HXErrorHandlingTools::Expected<int> ret) {
         int fd = ret.expect("accept");
+        printf("建立连接成功... %s ~\n", HXSTL::HXDateTimeFormat::formatWithMilli().c_str());
         HXServer::ConnectionHandler::make()->start(fd); // 开始读取
         return self->accept(); // 继续回调(如果没有就挂起, 就返回了)
     });
