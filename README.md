@@ -1,5 +1,5 @@
 # HXNet
-学习现代Cpp的代码存放库, 事件循环epoll, http解析, Json解析, 万用print等
+学习现代Cpp的代码存放库, 事件循环epoll, 基于压缩前缀树的路由, http解析, Json解析, 万用print等
 
 > 目标是写一个基于epoll事件循环的 Web Http 后端
 
@@ -53,6 +53,19 @@
 - 阶段性BUG:
     - [ ] 首次建立连接的延迟居然有300ms, 但是之后的响应才几ms, 而重新连接又是tm的300ms...
         - DE半天了, 找不到bug..
+        - 奇怪的问题..
+
+```sh
+╰─ wrk -c200 -d30s http://localhost:28205 # wsl Arth Linux 渣机
+Running 30s test @ http://localhost:28205
+  2 threads and 200 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.25ms  609.54us  47.83ms   89.89%
+    Req/Sec    16.08k   747.80    17.86k    69.33%
+  959976 requests in 30.05s, 130.00MB read
+Requests/sec:  31950.71
+Transfer/sec:      4.33MB
+```
 
 ---
 - [ ] 编写API宏

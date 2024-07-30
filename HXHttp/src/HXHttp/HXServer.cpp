@@ -209,7 +209,7 @@ void HXServer::ConnectionHandler::read(std::size_t size /*= HXRequest::BUF_SIZE*
     StopSource stopTimer(std::in_place); // 计时器停止程序
     // 定时器先完成时, 取消读取
     EpollContext::get()._timer.setTimeout(
-        std::chrono::seconds(2), 
+        std::chrono::seconds(30),  // 定时为 30 s, 后期改为宏定义或者constexpr吧
         [stopIO] {
             stopIO.doRequestStop();
         },
