@@ -20,7 +20,7 @@
 #ifndef _HX_ROUTE_MAP_PREFIX_TREE_H_
 #define _HX_ROUTE_MAP_PREFIX_TREE_H_
 
-#include <HXSTL/HXRadixTree.h>
+#include <HXSTL/container/RadixTree.h>
 #include <stack>
 
 namespace HX::web {
@@ -29,11 +29,11 @@ namespace HX::web {
  * @brief 路由映射前缀树
  */
 template<class T>
-class RouteMapPrefixTree : public HX::STL::HXRadixTree<T> {
+class RouteMapPrefixTree : public HX::STL::container::RadixTree<T> {
 
     std::optional<T> _find(
         const std::vector<std::string>& findLink,
-        std::shared_ptr<HX::STL::RadixTreeNode<T>> node,
+        std::shared_ptr<HX::STL::container::RadixTreeNode<T>> node,
         std::size_t index
     ) {
         std::size_t n = findLink.size();
@@ -62,9 +62,9 @@ class RouteMapPrefixTree : public HX::STL::HXRadixTree<T> {
         return node->val;
     }
 
-    using HX::STL::HXRadixTree<T>::_root; // 避免找不到父类成员
+    using HX::STL::container::RadixTree<T>::_root; // 避免找不到父类成员
 public:
-    explicit RouteMapPrefixTree() : HX::STL::HXRadixTree<T>()
+    explicit RouteMapPrefixTree() : HX::STL::container::RadixTree<T>()
     {}
 
     /**
@@ -82,7 +82,7 @@ public:
             }
             auto findIt = node->child.find(key);
             if (findIt == node->child.end()) {
-               node = node->child[key] = std::make_shared<HX::STL::RadixTreeNode<T>>();
+               node = node->child[key] = std::make_shared<HX::STL::container::RadixTreeNode<T>>();
             } else {
                 node = findIt->second;
             }

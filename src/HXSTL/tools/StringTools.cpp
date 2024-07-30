@@ -1,4 +1,4 @@
-#include <HXSTL/HXStringTools.h>
+#include <HXSTL/tools/StringTools.h>
 
 #include <chrono>
 #include <sstream>
@@ -18,9 +18,9 @@
 #define STOK strtok_s
 #endif
 
-namespace HX::STL {
+namespace HX { namespace STL { namespace tools {
 
-std::vector<std::string> HXStringUtil::split(
+std::vector<std::string> StringUtil::split(
     std::string_view str, 
     std::string_view delim, 
     std::vector<std::string> res /*= std::vector<std::string>{}*/
@@ -49,7 +49,7 @@ std::vector<std::string> HXStringUtil::split(
     return res;
 }
 
-std::pair<std::string, std::string> HXStringUtil::splitAtFirst(std::string_view str, std::string_view delim) {
+std::pair<std::string, std::string> StringUtil::splitAtFirst(std::string_view str, std::string_view delim) {
     std::pair<std::string, std::string> res;
     std::size_t pos = str.find(delim);
     if (pos != std::string_view::npos) {
@@ -61,7 +61,7 @@ std::pair<std::string, std::string> HXStringUtil::splitAtFirst(std::string_view 
     return res;
 }
 
-std::string HXDateTimeFormat::format(const std::string& fmt /*= "%Y-%m-%d %H:%M:%S"*/) {
+std::string DateTimeFormat::format(const std::string& fmt /*= "%Y-%m-%d %H:%M:%S"*/) {
 	// 获取当前时间
 	auto now = std::chrono::system_clock::now();
 	
@@ -72,7 +72,7 @@ std::string HXDateTimeFormat::format(const std::string& fmt /*= "%Y-%m-%d %H:%M:
 	return ss.str();
 }
 
-std::string HXDateTimeFormat::formatWithMilli(const std::string& fmt /*= "%Y-%m-%d %H:%M:%S"*/, const std::string msDelim /*= " "*/) {
+std::string DateTimeFormat::formatWithMilli(const std::string& fmt /*= "%Y-%m-%d %H:%M:%S"*/, const std::string msDelim /*= " "*/) {
 	// 获取当前时间
 	auto now = std::chrono::system_clock::now();
 	
@@ -91,4 +91,4 @@ std::string HXDateTimeFormat::formatWithMilli(const std::string& fmt /*= "%Y-%m-
 	return ss.str();
 }
 
-} // namespace HX::STL
+}}} // namespace HX::STL::tools

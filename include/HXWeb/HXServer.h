@@ -25,10 +25,10 @@
 #include <memory>
 #include <chrono>
 
-#include <HXSTL/HXCallback.h>
-#include <HXSTL/HXBytesBuffer.h>
+#include <HXSTL/container/Callback.h>
+#include <HXSTL/container/BytesBuffer.h>
 #include <HXWeb/HXAddressResolver.h>
-#include <HXWeb/HXErrorHandlingTools.h>
+#include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 
@@ -42,7 +42,7 @@ namespace HX::web { namespace Server {
         // @brief 控制块
         struct _ControlBlock {
             bool _stop = false;      // 是否停止
-            HX::STL::HXCallback<> _cb; // 停止计时器的回调
+            HX::STL::container::Callback<> _cb; // 停止计时器的回调
         };
 
         // @brief 控制器
@@ -93,7 +93,7 @@ namespace HX::web { namespace Server {
          * @brief 设置停止时执行的回调函数
          * @param cb 停止时执行的回调函数
          */
-        void setStopCallback(HX::STL::HXCallback<> cb) const noexcept {
+        void setStopCallback(HX::STL::container::Callback<> cb) const noexcept {
             if (!_control) {
                 return;
             }
@@ -114,7 +114,7 @@ namespace HX::web { namespace Server {
     // @brief 回调函数计时器
     class CallbackFuncTimer {
         struct _TimerEntry {
-            HX::STL::HXCallback<> _cb; // 这个是计时到点执行的回调
+            HX::STL::container::Callback<> _cb; // 这个是计时到点执行的回调
             StopSource _stop;        // 这个是删除计时器的回调
         };
 
@@ -134,7 +134,7 @@ namespace HX::web { namespace Server {
          */
         void setTimeout(
             std::chrono::steady_clock::duration dt, 
-            HX::STL::HXCallback<> cb, 
+            HX::STL::container::Callback<> cb, 
             StopSource stop = StopSource {}
         );
 
@@ -167,7 +167,7 @@ namespace HX::web { namespace Server {
         inline static thread_local EpollContext *G_instance = nullptr;
 
         EpollContext() 
-        : _epfd(ErrorHandlingTools::convertError<int>(::epoll_create1(0)).expect("epoll_create1")) 
+        : _epfd(HX::STL::tools::ErrorHandlingTools::convertError<int>(::epoll_create1(0)).expect("epoll_create1")) 
         , _timer() {
             G_instance = this;
         }
@@ -226,7 +226,7 @@ namespace HX::web { namespace Server {
     class AsyncFile : public FileDescriptor {
 
         void _epollCallback(
-            HX::STL::HXCallback<> &&resume, 
+            HX::STL::container::Callback<> &&resume, 
             uint32_t events,
             StopSource stop
         );
@@ -247,10 +247,10 @@ namespace HX::web { namespace Server {
             int on = 1;
             setsockopt(sock._fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
             setsockopt(sock._fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
-            ErrorHandlingTools::convertError<int>(
+            HX::STL::tools::ErrorHandlingTools::convertError<int>(
                 ::bind(sock._fd, serve_addr._addr, serve_addr._addrlen)
             ).expect("bind");
-            ErrorHandlingTools::convertError<int>(
+            HX::STL::tools::ErrorHandlingTools::convertError<int>(
                 ::listen(sock._fd, SOMAXCONN)
             ).expect("listen");
             return sock;
@@ -263,7 +263,7 @@ namespace HX::web { namespace Server {
          */
         void asyncAccept(
             AddressResolver::Address& addr, 
-            HX::STL::HXCallback<ErrorHandlingTools::Expected<int>> cd,
+            HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<int>> cd,
             StopSource stop = StopSource {}
         );
 
@@ -274,9 +274,9 @@ namespace HX::web { namespace Server {
          * @param cd 读取成功的回调函数
          */
         void asyncRead(
-            HX::STL::HXBytesBuffer& buf,
+            HX::STL::container::BytesBuffer& buf,
             std::size_t count,
-            HX::STL::HXCallback<ErrorHandlingTools::Expected<size_t>> cd,
+            HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<size_t>> cd,
             StopSource stop = StopSource {}
         );
 
@@ -286,8 +286,8 @@ namespace HX::web { namespace Server {
          * @param cd 写入成功的回调函数
          */
         void asyncWrite(
-            HX::STL::HXConstBytesBufferView buf,
-            HX::STL::HXCallback<ErrorHandlingTools::Expected<size_t>> cd,
+            HX::STL::container::ConstBytesBufferView buf,
+            HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<size_t>> cd,
             StopSource stop = StopSource {}
         );
 
@@ -309,7 +309,7 @@ namespace HX::web { namespace Server {
     struct ConnectionHandler : std::enable_shared_from_this<ConnectionHandler> {
         AsyncFile _fd;            // 连接上的客户端的套接字
         // 缓存一次接收到的信息
-        HX::STL::HXBytesBuffer _buf{ protocol::http::Request::BUF_SIZE };
+        HX::STL::container::BytesBuffer _buf{ protocol::http::Request::BUF_SIZE };
         
         using pointer = std::shared_ptr<ConnectionHandler>;
 
@@ -346,7 +346,7 @@ namespace HX::web { namespace Server {
         /**
          * @brief 开始写入
          */
-        void write(HX::STL::HXConstBytesBufferView buf);
+        void write(HX::STL::container::ConstBytesBufferView buf);
     };
 
     /**

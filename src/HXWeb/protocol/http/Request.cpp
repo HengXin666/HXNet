@@ -3,11 +3,11 @@
 #include <sys/socket.h> // 套接字
 #include <cstring>
 
-#include <HXSTL/HXStringTools.h>
+#include <HXSTL/tools/StringTools.h>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
-std::size_t protocol::http::Request::parserRequest(HX::STL::HXConstBytesBufferView buf) {
+std::size_t protocol::http::Request::parserRequest(HX::STL::container::ConstBytesBufferView buf) {
     _previousData.append(buf);
     char *tmp = nullptr;
     char *line = nullptr;
@@ -15,7 +15,7 @@ std::size_t protocol::http::Request::parserRequest(HX::STL::HXConstBytesBufferVi
         line = ::strtok_r(_previousData.data(), "\r\n", &tmp); // 线程安全
         if (!line)
             return protocol::http::Request::BUF_SIZE;
-        _requestLine = HX::STL::HXStringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
+        _requestLine = HX::STL::tools::StringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
         if (_requestLine.size() != 3)
             return protocol::http::Request::BUF_SIZE;
     }
@@ -36,18 +36,18 @@ std::size_t protocol::http::Request::parserRequest(HX::STL::HXConstBytesBufferVi
         do {// 解析 请求行
             // 计算当前子字符串的长度
             std::size_t length = (*tmp == '\0' ? ::strlen(line) : tmp - line - 1);
-            auto p = HX::STL::HXStringUtil::splitAtFirst(std::string_view {line, length}, ": ");
+            auto p = HX::STL::tools::StringUtil::splitAtFirst(std::string_view {line, length}, ": ");
             if (p.first == "") { // 解析失败, 说明当前是空行, 也有可能是没有读取完毕
                 if (*line != '\r') { 
                     // 应该剩下的参与下次解析
-                    _previousData = HX::STL::HXStringUtil::rfindAndTrim(_previousData.data(), "\r\n");
+                    _previousData = HX::STL::tools::StringUtil::rfindAndTrim(_previousData.data(), "\r\n");
                     return protocol::http::Request::BUF_SIZE;
                 }
                 // 是空行
                 _completeRequestHeader = true;
                 break;
             }
-            HX::STL::HXStringUtil::toSmallLetter(p.first);
+            HX::STL::tools::StringUtil::toSmallLetter(p.first);
             p.second.pop_back(); // 去掉 '\r'
             _requestHeaders.insert(p);
             // printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
@@ -62,7 +62,7 @@ std::size_t protocol::http::Request::parserRequest(HX::STL::HXConstBytesBufferVi
             _body = std::string {tmp};
         } else {
             *_remainingBodyLen -= buf.size();
-            _body->append(HX::STL::HXConstBytesBufferView {_previousData.data(), _previousData.size()});
+            _body->append(HX::STL::container::ConstBytesBufferView {_previousData.data(), _previousData.size()});
         }
 
         if (*_remainingBodyLen != 0) {
@@ -82,10 +82,10 @@ std::unordered_map<std::string, std::string> protocol::http::Request::getParseQu
     if (pos == std::string::npos)
         return {};
     std::string parameter = path.substr(pos + 1);
-    auto kvArr = HX::STL::HXStringUtil::split(parameter, "&");
+    auto kvArr = HX::STL::tools::StringUtil::split(parameter, "&");
     std::unordered_map<std::string, std::string> res;
     for (const auto& it : kvArr) {
-        auto&& kvPair = HX::STL::HXStringUtil::splitAtFirst(it, "=");
+        auto&& kvPair = HX::STL::tools::StringUtil::splitAtFirst(it, "=");
         if (kvPair.first == "")
             res.insert_or_assign(it, "");
         else

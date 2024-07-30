@@ -1,6 +1,6 @@
-#include <HXWeb/HXErrorHandlingTools.h>
+#include <HXSTL/tools/ErrorHandlingTools.h>
 
-namespace HX::web {
+namespace HX { namespace STL { namespace tools {
 
 [[noreturn]] void ErrorHandlingTools::_throwSystemError(const char *what) {
     auto ec = std::error_code(errno, std::system_category());
@@ -8,4 +8,4 @@ namespace HX::web {
     throw std::system_error(ec, what);
 }
 
-} // namespace HXHttp
+}}} // namespace HX::STL::tools

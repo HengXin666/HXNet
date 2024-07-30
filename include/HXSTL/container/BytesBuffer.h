@@ -24,16 +24,16 @@
 #include <string_view>
 #include <stdexcept>
 
-namespace HX::STL {
+namespace HX { namespace STL { namespace container {
 
 /**
  * @brief const字节数组视图
  */
-class HXConstBytesBufferView {
+class ConstBytesBufferView {
     const char* _data;
     std::size_t _size;
 public:
-    HXConstBytesBufferView(const char* data, std::size_t size) 
+    ConstBytesBufferView(const char* data, std::size_t size) 
     : _data(data)
     , _size(size)
     {}
@@ -60,7 +60,7 @@ public:
      * @param len 长度
      * @return 子视图
      */
-    HXConstBytesBufferView subspan(size_t start, size_t len = static_cast<size_t>(-1)) const {
+    ConstBytesBufferView subspan(size_t start, size_t len = static_cast<size_t>(-1)) const {
         if (start > size())
             throw std::out_of_range("HXConstBytesBufferView::subspan");
         if (len > size() - start)
@@ -76,11 +76,11 @@ public:
 /**
  * @brief 字节数组视图
  */
-class HXBytesBufferView {
+class BytesBufferView {
     char* _data;
     std::size_t _size;
 public:
-    HXBytesBufferView(char* data, std::size_t size) 
+    BytesBufferView(char* data, std::size_t size) 
     : _data(data)
     , _size(size)
     {}
@@ -107,16 +107,16 @@ public:
      * @param len 长度
      * @return 子视图
      */
-    HXBytesBufferView subspan(size_t start, size_t len = static_cast<size_t>(-1)) const {
+    BytesBufferView subspan(size_t start, size_t len = static_cast<size_t>(-1)) const {
         if (start > size())
-            throw std::out_of_range("HXBytesBufferView::subspan");
+            throw std::out_of_range("BytesBufferView::subspan");
         if (len > size() - start)
             len = size() - start;
         return {data() + start, len};
     }
 
-    operator HXConstBytesBufferView() const noexcept {
-        return HXConstBytesBufferView{data(), size()};
+    operator ConstBytesBufferView() const noexcept {
+        return ConstBytesBufferView{data(), size()};
     }
 
     operator std::string_view() const noexcept {
@@ -127,25 +127,25 @@ public:
 /**
  * @brief 字节数组 (分配在堆上)
  */
-class HXBytesBuffer {
+class BytesBuffer {
     std::vector<char> _data;
 public:
-    HXBytesBuffer() = default;
-    HXBytesBuffer(HXBytesBuffer &&) = default;
-    HXBytesBuffer& operator=(HXBytesBuffer &&) = default;
+    BytesBuffer() = default;
+    BytesBuffer(BytesBuffer &&) = default;
+    BytesBuffer& operator=(BytesBuffer &&) = default;
 
-    HXBytesBuffer operator=(std::string && str) {
-        return HXBytesBuffer {str.data(), str.size()}; // @test 编译器请帮我优化~
+    BytesBuffer operator=(std::string && str) {
+        return BytesBuffer {str.data(), str.size()}; // @test 编译器请帮我优化~
     }
 
-    explicit HXBytesBuffer(char *str, std::size_t size) : _data(size) {
+    explicit BytesBuffer(char *str, std::size_t size) : _data(size) {
         for (std::size_t i = 0; i < size; ++i)
             _data[i] = str[i];
     }
 
-    explicit HXBytesBuffer(HXBytesBuffer const &) = default;
+    explicit BytesBuffer(BytesBuffer const &) = default;
 
-    explicit HXBytesBuffer(size_t n) : _data(n) {}
+    explicit BytesBuffer(size_t n) : _data(n) {}
 
     const char *data() const noexcept {
         return _data.data();
@@ -175,7 +175,7 @@ public:
         return data() + size();
     }
 
-    void append(HXConstBytesBufferView chunk) {
+    void append(ConstBytesBufferView chunk) {
         _data.insert(_data.end(), chunk.begin(), chunk.end());
     }
 
@@ -192,8 +192,8 @@ public:
         return std::string_view {_data.data(), _data.size()};
     }
 
-    operator HXConstBytesBufferView() const noexcept {
-        return HXConstBytesBufferView {_data.data(), _data.size()};
+    operator ConstBytesBufferView() const noexcept {
+        return ConstBytesBufferView {_data.data(), _data.size()};
     }
 
     /**
@@ -220,6 +220,6 @@ public:
     }
 };
 
-} // namespace HX::STL
+}}} // namespace HX::STL::container
 
 #endif // _HX_HXBYTESBUFFER_H_

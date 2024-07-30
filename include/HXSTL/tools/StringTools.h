@@ -24,12 +24,12 @@
 #include <string>
 #include <string_view>
 
-namespace HX::STL {
+namespace HX { namespace STL { namespace tools {
 
 /**
  * @brief 字符串操作工具类
  */
-struct HXStringUtil final {
+struct StringUtil final {
     /**
      * @brief 将字符串按`delimiter`分割为数组
      * @param str 需要分割的字符串
@@ -76,7 +76,7 @@ struct HXStringUtil final {
 /**
  * @brief 时间格式工具类
  */
-struct HXDateTimeFormat final {
+struct DateTimeFormat final {
     /**
      * @brief 格式化当前时间为如: `%Y-%m-%d %H:%M:%S`的格式
      * @param fmt 格式字符串
@@ -93,6 +93,6 @@ struct HXDateTimeFormat final {
     static std::string formatWithMilli(const std::string& fmt = "%Y-%m-%d %H:%M:%S", const std::string msDelim = " ");
 };
 
-} // namespace HX::STL
+}}} // namespace HX::STL::tools
 
 #endif // _HX_HXSTRING_TOOLS_H_

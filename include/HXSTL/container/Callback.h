@@ -22,32 +22,32 @@
 
 #include <memory>
 
-namespace HX::STL {
+namespace HX { namespace STL { namespace container {
 
-// 这个`HXCallback`结构体模板是一种用于存储和调用可变参数回调函数的类模板
+// 这个`Callback`结构体模板是一种用于存储和调用可变参数回调函数的类模板
 // 它主要通过类型擦除和多态来实现这一点
 
 /**
  * @brief 回调函数
  */
 template <class ...Args>
-struct HXCallback {
+struct Callback {
 
     // 基础回调基类
-    struct _HXCallbackBase {
+    struct _CallbackBase {
         // 定义一个通用的`_call` 方法, 所有具体的回调实现都会继承自这个基类, 并实现`_call`方法
         virtual void _call(Args... args) = 0;
-        virtual ~_HXCallbackBase() = default;
+        virtual ~_CallbackBase() = default;
     };
 
     // 具体回调实现类模板
     template <class F>
-    struct _HXCallbackImpl final : _HXCallbackBase {
+    struct _CallbackImpl final : _CallbackBase {
         F _func;
 
         template <class ...Ts, 
                   class = std::enable_if_t<std::is_constructible_v<F, Ts...>>>
-        _HXCallbackImpl(Ts &&...ts) : _func(std::forward<Ts>(ts)...) 
+        _CallbackImpl(Ts &&...ts) : _func(std::forward<Ts>(ts)...) 
         {}
 
         // 这个类模板继承`_HXCallbackBase`并实现了`_call`方法
@@ -58,17 +58,17 @@ struct HXCallback {
     };
 
     // 基础回调基类 独享智能指针, 用于持有具体的回调实现
-    std::unique_ptr<_HXCallbackBase> _base;
+    std::unique_ptr<_CallbackBase> _base;
 
     // 构造函数
     // 通过模板参数和`std::enable_if`限制, 确保传入的函数对象是可调用的, 并且不是`callback`本身的类型
-    // 这个构造函数会创建一个`_HXCallbackImpl`实例, 并将其存储在`_base`中
+    // 这个构造函数会创建一个`_CallbackImpl`实例, 并将其存储在`_base`中
     template <class F, 
               class = std::enable_if_t<
                     std::is_invocable_v<F, Args...> && 
-                    !std::is_same_v<std::decay_t<F>, HXCallback>>>
-    HXCallback(F &&f) 
-    : _base(std::make_unique<_HXCallbackImpl<std::decay_t<F>>>(std::forward<F>(f))) 
+                    !std::is_same_v<std::decay_t<F>, Callback>>>
+    Callback(F &&f) 
+    : _base(std::make_unique<_CallbackImpl<std::decay_t<F>>>(std::forward<F>(f))) 
     {}
 
 /**
@@ -83,18 +83,18 @@ struct HXCallback {
  * 此处, 保证 F 和 callback 不是相同类型及其衍生
  */
 
-    HXCallback() = default;
+    Callback() = default;
 
     // 允许 = nullptr 作移动赋值构造
-    HXCallback(std::nullptr_t) noexcept {}
+    Callback(std::nullptr_t) noexcept {}
 
     // 不可拷贝
-    HXCallback(HXCallback const &) = delete;
-    HXCallback &operator=(HXCallback const &) = delete;
+    Callback(Callback const &) = delete;
+    Callback &operator=(Callback const &) = delete;
 
     // 可以移动
-    HXCallback(HXCallback &&) = default;
-    HXCallback &operator=(HXCallback &&) = default;
+    Callback(Callback &&) = default;
+    Callback &operator=(Callback &&) = default;
 
     // @brief 调用存储的回调函数
     void operator()(Args... args) const {
@@ -110,7 +110,7 @@ struct HXCallback {
     template <class F>
     F &target() const {
         assert(_base);
-        return static_cast<_HXCallbackImpl<F> &>(*_base);
+        return static_cast<_CallbackImpl<F> &>(*_base);
     }
 
     // @brief 主动内存泄漏(取消对指针的托管)
@@ -124,13 +124,13 @@ struct HXCallback {
     }
 
     // @brief 恢复回调对象的地址
-    static HXCallback fromAddress(void *addr) {
-        HXCallback cb;
-        cb._base = std::unique_ptr<_HXCallbackBase>(static_cast<_HXCallbackBase *>(addr));
+    static Callback fromAddress(void *addr) {
+        Callback cb;
+        cb._base = std::unique_ptr<_CallbackBase>(static_cast<_CallbackBase *>(addr));
         return cb;
     }
 };
 
-} // namespace HX::STL
+}}} // namespace HX::STL::container
 
 #endif // _HX_HXCALLBACK_H_

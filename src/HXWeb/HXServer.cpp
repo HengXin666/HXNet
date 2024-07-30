@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <array>
 
-#include <HXSTL/HXStringTools.h>
+#include <HXSTL/tools/StringTools.h>
 #include <HXWeb/router/Router.h>
 
 // int epollCnt = 0;
@@ -12,7 +12,7 @@ namespace HX::web {
 
 void Server::CallbackFuncTimer::setTimeout(
     std::chrono::steady_clock::duration dt, 
-    HX::STL::HXCallback<> cb, 
+    HX::STL::container::Callback<> cb, 
     StopSource stop /*= {}*/
 ) {
     auto expireTime = std::chrono::steady_clock::now() + dt;
@@ -53,12 +53,12 @@ void Server::EpollContext::join() {
             timeoutp = &timeout;
         }
         // printf("===阻塞(%d)====================\n", epollCnt);
-        int len = ErrorHandlingTools::convertError<int>(
+        int len = HX::STL::tools::ErrorHandlingTools::convertError<int>(
             epoll_pwait2(_epfd, evs.data(), evs.size(), timeoutp, nullptr)
         ).expect("epoll_pwait2");
-        // printf("Linux通知: ... %s ~\n", HX::STL::HXDateTimeFormat::formatWithMilli().c_str());
+        // printf("Linux通知: ... %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
         for (int i = 0; i < len; ++i) {
-            auto cb = HX::STL::HXCallback<>::fromAddress(evs[i].data.ptr);
+            auto cb = HX::STL::container::Callback<>::fromAddress(evs[i].data.ptr);
             cb();
             // --epollCnt;
         }
@@ -66,7 +66,7 @@ void Server::EpollContext::join() {
 }   
 
 void Server::AsyncFile::_epollCallback(
-    HX::STL::HXCallback<> &&resume, 
+    HX::STL::container::Callback<> &&resume, 
     uint32_t events,
     StopSource stop
 ) {
@@ -80,29 +80,29 @@ void Server::AsyncFile::_epollCallback(
     event.events = events;
     event.data.ptr = resume.getAddress(); // fd 对应 回调函数
 
-    ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::ErrorHandlingTools::convertError<int>(
         ::epoll_ctl(Server::EpollContext::get()._epfd, EPOLL_CTL_MOD, _fd, &event)
     ).expect("EPOLL_CTL_MOD");
     // ++epollCnt;
     stop.setStopCallback([resumePtr = resume.leakAddress()] {
-        HX::STL::HXCallback<>::fromAddress(resumePtr)();
+        HX::STL::container::Callback<>::fromAddress(resumePtr)();
     });
 }
 
 Server::AsyncFile::AsyncFile(int fd) 
     : FileDescriptor(fd) {
-    int flags = ErrorHandlingTools::convertError<int>(
+    int flags = HX::STL::tools::ErrorHandlingTools::convertError<int>(
         ::fcntl(_fd, F_GETFL)
     ).expect("F_GETFL");
     flags |= O_NONBLOCK;
-    ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::ErrorHandlingTools::convertError<int>(
         ::fcntl(_fd, F_SETFL, flags)
     ).expect("F_SETFL");
 
     struct epoll_event event;
     event.events = EPOLLET;
     event.data.ptr = nullptr;
-    ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::ErrorHandlingTools::convertError<int>(
         ::epoll_ctl(EpollContext::get()._epfd, EPOLL_CTL_ADD, _fd, &event)
     ).expect("EPOLL_CTL_ADD");
 }
@@ -115,7 +115,7 @@ Server::AsyncFile::AsyncFile(int fd)
 //     struct ::epoll_event event;
 //     event.events = EPOLLET;
 //     event.data.ptr = nullptr; // fd 对应 回调函数 (没有)
-//     ErrorHandlingTools::convertError<int>(
+//     HX::STL::tools::ErrorHandlingTools::convertError<int>(
 //         ::epoll_ctl(EpollContext::get()._epfd, EPOLL_CTL_ADD, fd, &event)
 //     ).expect("EPOLL_CTL_ADD");
 
@@ -124,7 +124,7 @@ Server::AsyncFile::AsyncFile(int fd)
 
 void Server::AsyncFile::asyncAccept(
     AddressResolver::Address& addr, 
-    HX::STL::HXCallback<ErrorHandlingTools::Expected<int>> cb,
+    HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<int>> cb,
     StopSource stop /*= {}*/
     ) {
     if (stop.isStopRequested()) {
@@ -132,10 +132,10 @@ void Server::AsyncFile::asyncAccept(
         return cb(-ECANCELED);
     }
 
-    auto ret = ErrorHandlingTools::convertError<int>(::accept(_fd, &addr._addr, &addr._addrlen));
+    auto ret = HX::STL::tools::ErrorHandlingTools::convertError<int>(::accept(_fd, &addr._addr, &addr._addrlen));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
-        // printf("已连接 %s ~\n", HX::STL::HXDateTimeFormat::formatWithMilli().c_str());
+        // printf("已连接 %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
         stop.clearStopCallback();
         return cb(ret);
     }
@@ -148,9 +148,9 @@ void Server::AsyncFile::asyncAccept(
 }
 
 void Server::AsyncFile::asyncRead(
-    HX::STL::HXBytesBuffer& buf,
+    HX::STL::container::BytesBuffer& buf,
     std::size_t count,
-    HX::STL::HXCallback<ErrorHandlingTools::Expected<size_t>> cb,
+    HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<size_t>> cb,
     StopSource stop /*= {}*/
     ) {
     if (stop.isStopRequested()) {
@@ -158,10 +158,10 @@ void Server::AsyncFile::asyncRead(
         return cb(-ECANCELED);
     }
         
-    auto ret = ErrorHandlingTools::convertError<size_t>(::read(_fd, buf.data(), count));
+    auto ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(::read(_fd, buf.data(), count));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
-        // printf("开始发送 %s ~\n", HX::STL::HXDateTimeFormat::formatWithMilli().c_str());
+        // printf("开始发送 %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
         stop.clearStopCallback();
         return cb(ret);
     }
@@ -174,8 +174,8 @@ void Server::AsyncFile::asyncRead(
 }
 
 void Server::AsyncFile::asyncWrite(
-    HX::STL::HXConstBytesBufferView buf,
-    HX::STL::HXCallback<ErrorHandlingTools::Expected<size_t>> cb,
+    HX::STL::container::ConstBytesBufferView buf,
+    HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<size_t>> cb,
     StopSource stop /*= {}*/
     ) {
     if (stop.isStopRequested()) {
@@ -183,10 +183,10 @@ void Server::AsyncFile::asyncWrite(
         return cb(-ECANCELED);
     }
 
-    auto ret = ErrorHandlingTools::convertError<size_t>(::write(_fd, buf.data(), buf.size()));
+    auto ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(::write(_fd, buf.data(), buf.size()));
 
     if (!ret.isError(EAGAIN)) { // 不是EAGAIN错误
-        // printf("发送完毕 %s ~\n", HX::STL::HXDateTimeFormat::formatWithMilli().c_str());
+        // printf("发送完毕 %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
         stop.clearStopCallback();
         return cb(ret);
     }
@@ -204,7 +204,7 @@ void Server::ConnectionHandler::start(int fd) {
 }
 
 void Server::ConnectionHandler::read(std::size_t size /*= protocol::http::Request::BUF_SIZE*/) {
-    // printf("解析中... %s ~\n", HX::STL::HXDateTimeFormat::formatWithMilli().c_str());
+    // printf("解析中... %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
     StopSource stopIO(std::in_place);    // 读写停止程序
     StopSource stopTimer(std::in_place); // 计时器停止程序
     // 定时器先完成时, 取消读取
@@ -215,7 +215,7 @@ void Server::ConnectionHandler::read(std::size_t size /*= protocol::http::Reques
         },
         stopTimer
     );
-    return _fd.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (ErrorHandlingTools::Expected<size_t> ret) {
+    return _fd.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (HX::STL::tools::ErrorHandlingTools::Expected<size_t> ret) {
         stopTimer.doRequestStop();
         
         if (ret.error()) {
@@ -230,7 +230,7 @@ void Server::ConnectionHandler::read(std::size_t size /*= protocol::http::Reques
         }
         
         // 进行解析
-        if (std::size_t size = self->_request.parserRequest(HX::STL::HXConstBytesBufferView {self->_buf.data(), n})) {
+        if (std::size_t size = self->_request.parserRequest(HX::STL::container::ConstBytesBufferView {self->_buf.data(), n})) {
             self->read(std::min(size, protocol::http::Request::BUF_SIZE)); // 继续读取
         } else {
             self->handle(); // 开始响应
@@ -250,7 +250,7 @@ void Server::ConnectionHandler::handle() {
                  .setBodyData("<h1>404 NOT FIND PATH: [" 
                     + _request.getRequesPath() 
                     + "]</h1><h2>Now Time: " 
-                    + HX::STL::HXDateTimeFormat::format() 
+                    + HX::STL::tools::DateTimeFormat::format() 
                     + "</h2>");
     }
     _response.createResponseBuffer();
@@ -258,8 +258,8 @@ void Server::ConnectionHandler::handle() {
     return write(_response._buf);
 }
 
-void Server::ConnectionHandler::write(HX::STL::HXConstBytesBufferView buf) {
-    return _fd.asyncWrite(_response._buf, [self = shared_from_this(), buf] (ErrorHandlingTools::Expected<std::size_t> ret) {
+void Server::ConnectionHandler::write(HX::STL::container::ConstBytesBufferView buf) {
+    return _fd.asyncWrite(_response._buf, [self = shared_from_this(), buf] (HX::STL::tools::ErrorHandlingTools::Expected<std::size_t> ret) {
         if (ret.error()) {
             return;
         }
@@ -289,10 +289,10 @@ void Server::Acceptor::start(const std::string& name, const std::string& port) {
 }
 
 void Server::Acceptor::accept() {
-    // printf(">>> %s <<<\n", HX::STL::HXDateTimeFormat::formatWithMilli().c_str());
-    return _serverFd.asyncAccept(_addr, [self = shared_from_this()] (ErrorHandlingTools::Expected<int> ret) {
+    // printf(">>> %s <<<\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
+    return _serverFd.asyncAccept(_addr, [self = shared_from_this()] (HX::STL::tools::ErrorHandlingTools::Expected<int> ret) {
         int fd = ret.expect("accept");
-        // printf("建立连接成功... %s ~\n", HX::STL::HXDateTimeFormat::formatWithMilli().c_str());
+        // printf("建立连接成功... %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
         Server::ConnectionHandler::make()->start(fd); // 开始读取
         return self->accept(); // 继续回调(如果没有就挂起, 就返回了)
     });

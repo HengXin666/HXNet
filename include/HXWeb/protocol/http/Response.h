@@ -24,7 +24,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include <HXSTL/HXBytesBuffer.h>
+#include <HXSTL/container/BytesBuffer.h>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
@@ -39,7 +39,7 @@ class Response {
     std::string _responseBody; // 响应体
 public:
     // @brief 待写入的内容
-    HX::STL::HXBytesBuffer _buf;
+    HX::STL::container::BytesBuffer _buf;
 
     /**
      * @brief 响应状态码

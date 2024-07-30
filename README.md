@@ -15,10 +15,10 @@
 .
 |-- CMakeLists.txt
 |-- HXCodeTest # 测试代码 (请忽略)
-|-- HX::Json     # Json解析库
-|-- HX::print    # 万能print
-|-- HX::Web     # web/http 相关的库, 如epoll
-|-- HX::STL      # 自己封装的回调函数/工具类/字节数组(视图)
+|-- HXJson     # Json解析库
+|-- HXprint    # 万能print
+|-- HXWeb      # web/http 相关的库, 如epoll
+|-- HXSTL      # 自己封装的回调函数/工具类/字节数组(视图)
 |-- LICENSE
 |-- README.md
 |-- build
@@ -143,43 +143,54 @@ content-type: application/json
 ```cpp
 #include <HXWeb/HXApiHelper.h> // 头文件
 
-// 定义端点, 会自动注册到路由
-class MyWebController { // 控制器类
+class MywebController {
 
-    ENDPOINT_BEGIN("GET", "/op", op_fun_endpoint) { // GET请求, 路径是 /op
-        HX::Web::HXResponse response;
-        // 控制器逻辑...
-        response.setResponseLine(HX::Web::HXResponse::Status::CODE_200)
+    ENDPOINT_BEGIN(R_GET, "/", root) { // 挂载 `/` 路径, 接收 GET 请求
+        HX::web::protocol::http::Response response;
+        response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
-            .setBodyData(execQueryHomeData()); // 可以调用 控制器(MyWebController) 的静态方法
-        return response; // 返回响应
+            .setBodyData("<h1>这里是根目录!</h1><h2>Now Time: " 
+                + HX::STL::tools::DateTimeFormat::format() 
+                + "</h2>");
+        return response;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN("GET", "/awa/{id}", awa_fun) { // 路径是 /awa/%d
-        START_PARSE_PATH_PARAMS;     // 开始解析路径参数
-        PARSE_PARAM(0, int32_t, id); // 解析第一个通配符参数, 为int32_t类型, 命名为id
-        HX::Web::HXResponse response;
-        return response.setResponseLine(HX::Web::HXResponse::Status::CODE_200)
+    ENDPOINT_BEGIN(R_GET, "/op", op_fun_endpoint) {
+        HX::web::protocol::http::Response response;
+        response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+            .setContentType("text/html", "UTF-8")
+            .setBodyData(execQueryHomeData());
+        return response;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(R_GET, "/awa/{id}", awa_fun) {
+        START_PARSE_PATH_PARAMS;     // 开始解析 {} 的动态路径
+        PARSE_PARAM(0, int32_t, id); // 解析动态路径参数命名为 id 变量, 类型为 int32_t
+        HX::web::protocol::http::Response response;
+        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>/awa/{id} 哇!</h1><h2>Now Time: " 
-                            + HX::STL::HXDateTimeFormat::formatWithMilli() 
-                            + "</h2>");
+                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
+                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN("GET", "/qwq/**", qwq_fun) { // 路径是 /qwq/** (多级任意, 如 /qwq/file/awa.jpg 这种)
-        PARSE_MULTI_LEVEL_PARAM(pathStr); // 解析 ** 的内容, 到 std::string pathStr 中
-        HX::Web::HXResponse response;
-        return response.setResponseLine(HX::Web::HXResponse::Status::CODE_200)
+    ENDPOINT_BEGIN(R_GET, "/qwq/**", qwq_fun) {
+        PARSE_MULTI_LEVEL_PARAM(pathStr); // 开始解析 /** 的动态路径
+        GET_PARSE_QUERY_PARAMETERS(map);  // 解析动态路径 如 /qwq/awa/loli -> awa/loli
+        if (map.count("awa"))
+            printf("awa -> %s\n", map["awa"].c_str());
+        HX::web::protocol::http::Response response;
+        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
-                            + HX::STL::HXDateTimeFormat::formatWithMilli() 
-                            + "</h2>");
+                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
     } ENDPOINT_END;
 
 public:
-    static std::string execQueryHomeData() { // 可惜的是, 必须定义为静态成员函数 (我个人感觉这样没问题吧?~)
+    static std::string execQueryHomeData() { // 控制器函数得是静态的才可以被端点函数调用
         return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
-                + HX::STL::HXDateTimeFormat::format() 
+                + HX::STL::tools::DateTimeFormat::format() 
                 + "</h2>";
     }
 };
@@ -192,13 +203,13 @@ public:
 #include <HXWeb/HXController.h> // 假装导入头文件qwq..
 
 int main() {
-    // setlocale(LC_ALL, "zh_CN.UTF-8"); // 设置Linux错误提示本地化为中文
+    setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
-        HX::Web::MyWebController {}; // 这个只是暂时这样写qwq
-        
-        HX::Web::HXServer::Epoll ctx;
-        auto ptr = HX::Web::HXServer::Acceptor::make();
-        ptr->start("127.0.0.1", "28205"); // 绑定到 127.0.0.1:28205
+        HX::web::MywebController {}; // 实例化 == 自动注册到路由
+
+        HX::web::Server::EpollContext ctx;
+        auto ptr = HX::web::Server::Acceptor::make();
+        ptr->start("127.0.0.1", "28205");
         ctx.join();
     } catch(const std::system_error &e) {
         std::cerr << e.what() << '\n';

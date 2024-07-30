@@ -25,7 +25,7 @@
 #include <string>
 #include <optional>
 
-#include <HXSTL/HXBytesBuffer.h>
+#include <HXSTL/container/BytesBuffer.h>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
@@ -42,7 +42,7 @@ class Request {
         ProtocolVersion = 2,    // 协议版本
     };
 
-    HX::STL::HXBytesBuffer _previousData; // 之前未解析全的数据
+    HX::STL::container::BytesBuffer _previousData; // 之前未解析全的数据
 
     std::vector<std::string> _requestLine; // 请求行
     std::unordered_map<std::string, std::string> _requestHeaders; // 请求头
@@ -90,7 +90,7 @@ public:
      *         `>  0`: 需要继续解析`size_t`个字节
      * @warning 假定内容是符合Http协议的
      */
-    std::size_t parserRequest(HX::STL::HXConstBytesBufferView buf);
+    std::size_t parserRequest(HX::STL::container::ConstBytesBufferView buf);
 
     /**
      * @brief 解析查询参数 (解析如: `?name=loli&awa=ok&hitori`)

@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace HX::STL {
+namespace HX { namespace STL { namespace container {
 
 /**
  * @brief 基数树结点
@@ -53,15 +53,15 @@ struct RadixTreeNode {
  * @tparam T 存储的类型
  */
 template<class T>
-class HXRadixTree {
+class RadixTree {
 protected:
     std::shared_ptr<RadixTreeNode<T>> _root;
 public:
-    explicit HXRadixTree() : _root(std::make_shared<RadixTreeNode<T>>())
+    explicit RadixTree() : _root(std::make_shared<RadixTreeNode<T>>())
     {}
 
-    HXRadixTree& operator=(const HXRadixTree&) = delete;
-    HXRadixTree(const HXRadixTree& ) = delete;
+    RadixTree& operator=(const RadixTree&) = delete;
+    RadixTree(const RadixTree& ) = delete;
 
     /**
      * @brief 构建字典树
@@ -101,6 +101,6 @@ public:
     }
 };
 
-} // namespace HX::STL
+}}} // namespace HX::STL::container
 
 #endif // _HX_HXRADIX_TREE_H_

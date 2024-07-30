@@ -25,7 +25,7 @@
 // #define LOG(str)
 // std::cout << __FILE__ << " -> (" << __LINE__ << ") in [" << __PRETTY_FUNCTION__ << "]: " << str << '\n';
 
-namespace HX::STL { namespace MagicEnum {
+namespace HX { namespace STL { namespace tools { namespace MagicEnum {
 
 /// @brief 自用命名空间
 namespace _ {
@@ -135,6 +135,6 @@ constexpr T nameFromEnum(const std::string& name) {
     return nameFromEnum<T, (T)-_::MAGIC_ENUM_RECURSION_DEPTH, (T)_::MAGIC_ENUM_RECURSION_DEPTH>(name);
 }
 
-} } // namespace HX::STL::HXMagicEnum
+}}}} // namespace HX::STL::tools::HXMagicEnum
 
 #endif // _HX_HXMAGIC_ENUM_H_

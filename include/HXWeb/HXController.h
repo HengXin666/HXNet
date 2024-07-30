@@ -39,7 +39,7 @@ class MywebController {
         response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
             .setBodyData("<h1>这里是根目录!</h1><h2>Now Time: " 
-                + HX::STL::HXDateTimeFormat::format() 
+                + HX::STL::tools::DateTimeFormat::format() 
                 + "</h2>");
         return response;
     } ENDPOINT_END;
@@ -59,7 +59,7 @@ class MywebController {
         return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
-                            + HX::STL::HXDateTimeFormat::formatWithMilli() 
+                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
                             + "</h2>"));
     } ENDPOINT_END;
 
@@ -72,14 +72,14 @@ class MywebController {
         return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
                 .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
-                            + HX::STL::HXDateTimeFormat::formatWithMilli() 
+                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
                             + "</h2>"));
     } ENDPOINT_END;
 
 public:
     static std::string execQueryHomeData() {
         return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
-                + HX::STL::HXDateTimeFormat::format() 
+                + HX::STL::tools::DateTimeFormat::format() 
                 + "</h2>";
     }
 };
