@@ -109,7 +109,7 @@ void testServer() {
 
     setlocale(LC_ALL, "zh_CN.UTF-8");
     try {
-        MywebController {};
+        ROUTER_BIND(MywebController);
 
         HX::web::server::context::EpollContext ctx;
         auto ptr = HX::web::server::Acceptor::make();

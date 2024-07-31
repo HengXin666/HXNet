@@ -88,4 +88,11 @@ std::string NAME = req.getPureRequesPath().substr(UWPIndex)
 #define GET_PARSE_QUERY_PARAMETERS(NAME) \
 auto NAME = req.getParseQueryParameters()
 
+/**
+ * @brief 路由绑定, 将控制器绑定到路由
+ * @param NAME 控制器类名
+ */
+#define ROUTER_BIND(NAME) \
+{NAME {};}
+
 #endif // _HX_API_HELPER_H_

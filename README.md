@@ -9,19 +9,123 @@
 - GCC 编译器
 - C++20
 
+## 快速开始
+> [!TIP]
+> 仍然在开发, 非最终产品
+
+- 编写端点
+```cpp
+#include <HXWeb/HXApiHelper.h> // 包含了控制器编写的宏
+
+/// @brief 编写控制器(端点)
+class MywebController {
+
+    ENDPOINT_BEGIN(API_GET, "/", root) { // 绑定 `/` 路径, 并且监听GET请求
+        HX::web::protocol::http::Response response;
+        response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+            .setContentType("text/html", "UTF-8")
+            .setBodyData("<h1>这里是根目录!</h1><h2>Now Time: " 
+                + HX::STL::tools::DateTimeFormat::format() 
+                + "</h2>");
+        return response;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/awa/{id}", awa_fun) { // 支持解析路径参数
+        START_PARSE_PATH_PARAMS;     // 开始解析路径参数
+        PARSE_PARAM(0, int32_t, id); // 解析第一个路径参数{id}, 命名为id, 类型为 int32_t
+        HX::web::protocol::http::Response response;
+        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
+                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/qwq/**", qwq_fun) { // 支持解析多级通配符路径参数(/**这种)
+        PARSE_MULTI_LEVEL_PARAM(pathStr); // 开始解析多级通配符路径参数, 并且解析得到string, 并且命名为 pathStr
+
+        GET_PARSE_QUERY_PARAMETERS(map);  // 解析请求(如 /?awa=xxx 这种), 返回的是 unordered_map<string, string>
+        if (map.count("awa"))
+            printf("awa -> %s\n", map["awa"].c_str());
+        HX::web::protocol::http::Response response;
+        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+                .setContentType("text/html", "UTF-8")
+                .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
+                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
+                            + "</h2>"));
+    } ENDPOINT_END;
+
+public:
+    static std::string execQueryHomeData() { // 在端点内调用的函数应该是静态函数
+        return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
+                + HX::STL::tools::DateTimeFormat::format() 
+                + "</h2>";
+    }
+};
+```
+
+- 绑定控制器到全局路由
+```cpp
+#include <HXWeb/HXApiHelper.h> // 宏所在头文件
+
+ROUTER_BIND(MywebController); // 这个类在上面声明过了
+```
+
+- 启动服务器, 并且监听 0.0.0.0:28205
+```cpp
+#include <HXWeb/server/Acceptor.h>
+#include <HXWeb/server/context/EpollContext.h>
+
+try { // TOOD: 到时候应该还会进一步封装这个东西...
+    HX::web::server::context::EpollContext ctx;
+    auto ptr = HX::web::server::Acceptor::make();
+    ptr->start("0.0.0.0", "28205");
+    ctx.join();
+} catch(const std::system_error &e) {
+    std::cerr << e.what() << '\n';
+}
+```
+
 ## 目录结构
 
 ```sh
-.
-|-- CMakeLists.txt
-|-- LICENSE
-|-- README.md
+. # 只说明头文件
 |-- include
-|   |-- HXJson  # Json 库
-|   |-- HXSTL   # 自己编写的容器库/工具类库
-|   |-- HXWeb   # 网络编程相关
-|   `-- HXprint # 可 print std容器的库 | 日志库
-`-- src
+|   |-- HXJson
+|   |   `-- HXJson.h # JSON字符串解析为cpp对象
+|   |-- HXSTL
+|   |   |-- HXSTL.h
+|   |   |-- container
+|   |   |   |-- BytesBuffer.h        # 字节数组
+|   |   |   |-- Callback.h           # 回调函数(函数对象)
+|   |   |   `-- RadixTree.h          # 基数树(压缩前缀树)
+|   |   `-- tools
+|   |       |-- ErrorHandlingTools.h # Linux 错误处理工具
+|   |       |-- MagicEnum.h          # 魔法枚举: 支持反射到枚举值对应的字符串, 和通过字符串得到枚举值
+|   |       `-- StringTools.h        # 字符串工具类(切分等) / 当前时间格式化到字符串工具类
+|   |-- HXWeb
+|   |   |-- HXApiHelper.h            # 为用户提供更好体验的API宏定义
+|   |   |-- client                   # 客户端
+|   |   |-- protocol                 # 协议
+|   |   |   |-- http                 # HTTP协议
+|   |   |   |   |-- Request.h        # 请求
+|   |   |   |   `-- Response.h       # 响应
+|   |   |   `-- websocket
+|   |   |-- router
+|   |   |   |-- RequestParsing.h     # 请求模版解析 (用于给路由解析初始化)
+|   |   |   |-- RouteMapPrefixTree.h # 路由的压缩前缀树
+|   |   |   `-- Router.h             # 单例 路由类
+|   |   |-- server                   # 服务端
+|   |   |   |-- Acceptor.h           # 接受连接类
+|   |   |   |-- AsyncFile.h          # 文件异步操作类
+|   |   |   |-- ConnectionHandler.h  # 连接消息处理类
+|   |   |   `-- context
+|   |   |       `-- EpollContext.h   # 单例 Epoll 上下文 + 基于红黑树の定时器
+|   |   `-- socket
+|   |       |-- AddressResolver.h    # 地址(适配器模式封装的LinuxAPI)
+|   |       `-- FileDescriptor.h     # 文件描述符类
+|   `-- HXprint
+|       `-- HXprint.h                # 可打印 STL 容器 | 日志 函数
 ```
 
 ## 代码规范
@@ -46,7 +150,7 @@
 - 阶段性BUG:
     - [ ] 首次建立连接的延迟居然有300ms, 但是之后的响应才几ms, 而重新连接又是tm的300ms...
         - DE半天了, 找不到bug..
-        - 奇怪的问题..
+        - 奇怪的问题.. >> tmd 等我以后学了协程的, 重构你!
 
 ```sh
 ╰─ wrk -c200 -d30s http://localhost:28205 # wsl Arth Linux 渣机
@@ -64,16 +168,6 @@ Transfer/sec:      4.33MB
 - [ ] 编写API宏
     - [x] 端点快速定义宏
     - [x] 路径参数解析宏
-- [x] 新增`enum`反射, 支持枚举值和字符串相互映射
-- [x] 重构epoll为基于回调函数的epoll事件循环
-- [x] 开发控制层, 封装简易可使用的端点
-- [x] 处理TCP粘包问题 ~~(我连怎么检测出来都不知道...)~~
-    - 一般是解析超大请求体才有的问题?!
-- [x] 解析请求体 (通过`\r\n\r\n`)区分 (得造轮子了吗?)
-- [x] 请求类-请求解析器
-- [x] 修复问题: HTTP Headers 不区分大小写, 应该通用一下(使用小写)
-- [x] 修复问题: epoll的高并发时候, fd会被争抢: 原因: epoll的模式设置有问题, 应该是边沿模式: EPOLLIN 检查读缓冲区, + 非阻塞
-- [x] 新增当前日期时间格式化工具类
 
 - [ ] 路由映射的前置任务:
     - [x] 支持解析Http的请求行/头/体
@@ -126,87 +220,3 @@ content-type: application/json
         - [x] 响应码
         - [x] 响应头/行
         - [x] 响应体
-
-## 快速开始
-> [!TIP]
-> 还正在开发, 非最终产品...
-
-- 端点定义 (初步示例)
-
-```cpp
-#include <HXWeb/HXApiHelper.h> // 头文件
-
-class MywebController {
-
-    ENDPOINT_BEGIN(API_GET, "/", root) { // 挂载 `/` 路径, 接收 GET 请求
-        HX::web::protocol::http::Response response;
-        response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/html", "UTF-8")
-            .setBodyData("<h1>这里是根目录!</h1><h2>Now Time: " 
-                + HX::STL::tools::DateTimeFormat::format() 
-                + "</h2>");
-        return response;
-    } ENDPOINT_END;
-
-    ENDPOINT_BEGIN(API_GET, "/op", op_fun_endpoint) {
-        HX::web::protocol::http::Response response;
-        response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/html", "UTF-8")
-            .setBodyData(execQueryHomeData());
-        return response;
-    } ENDPOINT_END;
-
-    ENDPOINT_BEGIN(API_GET, "/awa/{id}", awa_fun) {
-        START_PARSE_PATH_PARAMS;     // 开始解析 {} 的动态路径
-        PARSE_PARAM(0, int32_t, id); // 解析动态路径参数命名为 id 变量, 类型为 int32_t
-        HX::web::protocol::http::Response response;
-        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
-                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
-    } ENDPOINT_END;
-
-    ENDPOINT_BEGIN(API_GET, "/qwq/**", qwq_fun) {
-        PARSE_MULTI_LEVEL_PARAM(pathStr); // 开始解析 /** 的动态路径
-        GET_PARSE_QUERY_PARAMETERS(map);  // 解析动态路径 如 /qwq/awa/loli -> awa/loli
-        if (map.count("awa"))
-            printf("awa -> %s\n", map["awa"].c_str());
-        HX::web::protocol::http::Response response;
-        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
-                            + HX::STL::tools::DateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
-    } ENDPOINT_END;
-
-public:
-    static std::string execQueryHomeData() { // 控制器函数得是静态的才可以被端点函数调用
-        return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
-                + HX::STL::tools::DateTimeFormat::format() 
-                + "</h2>";
-    }
-};
-```
-
-- 使用: 启动服务端
-
-```cpp
-#include <HXWeb/HXServer.h>
-#include <HXWeb/HXController.h> // 假装导入头文件qwq..
-
-int main() {
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-    try {
-        HX::web::MywebController {}; // 实例化 == 自动注册到路由
-
-        HX::web::Server::EpollContext ctx;
-        auto ptr = HX::web::Server::Acceptor::make();
-        ptr->start("127.0.0.1", "28205");
-        ctx.join();
-    } catch(const std::system_error &e) {
-        std::cerr << e.what() << '\n';
-    }
-    return 0;
-}
-```
