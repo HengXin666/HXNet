@@ -14,22 +14,15 @@
 ```sh
 .
 |-- CMakeLists.txt
-|-- HXCodeTest # 测试代码 (请忽略)
-|-- HXJson     # Json解析库
-|-- HXprint    # 万能print
-|-- HXWeb      # web/http 相关的库, 如epoll
-|-- HXSTL      # 自己封装的回调函数/工具类/字节数组(视图)
 |-- LICENSE
 |-- README.md
-|-- build
+|-- include
+|   |-- HXJson  # Json 库
+|   |-- HXSTL   # 自己编写的容器库/工具类库
+|   |-- HXWeb   # 网络编程相关
+|   `-- HXprint # 可 print std容器的库 | 日志库
+`-- src
 ```
-
-## 工具
-我提供了以下的`.sh`脚本, 方便快速构建项目: ~~(我觉得下面的代码还可以复用一下qwq...)~~
-
-- `newCodeDir.sh`: 构建子模块, 默认为静态库, 并且会创建一对cpp/h
-
-- `newCodeHCPP.sh`: 构建子模块的cpp和h, 在上面的基础上创建一对cpp/h
 
 ## 代码规范
 > 几乎是谷歌C++规范
@@ -145,7 +138,7 @@ content-type: application/json
 
 class MywebController {
 
-    ENDPOINT_BEGIN(R_GET, "/", root) { // 挂载 `/` 路径, 接收 GET 请求
+    ENDPOINT_BEGIN(API_GET, "/", root) { // 挂载 `/` 路径, 接收 GET 请求
         HX::web::protocol::http::Response response;
         response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
@@ -155,7 +148,7 @@ class MywebController {
         return response;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(R_GET, "/op", op_fun_endpoint) {
+    ENDPOINT_BEGIN(API_GET, "/op", op_fun_endpoint) {
         HX::web::protocol::http::Response response;
         response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
@@ -163,7 +156,7 @@ class MywebController {
         return response;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(R_GET, "/awa/{id}", awa_fun) {
+    ENDPOINT_BEGIN(API_GET, "/awa/{id}", awa_fun) {
         START_PARSE_PATH_PARAMS;     // 开始解析 {} 的动态路径
         PARSE_PARAM(0, int32_t, id); // 解析动态路径参数命名为 id 变量, 类型为 int32_t
         HX::web::protocol::http::Response response;
@@ -174,7 +167,7 @@ class MywebController {
                             + "</h2>"));
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(R_GET, "/qwq/**", qwq_fun) {
+    ENDPOINT_BEGIN(API_GET, "/qwq/**", qwq_fun) {
         PARSE_MULTI_LEVEL_PARAM(pathStr); // 开始解析 /** 的动态路径
         GET_PARSE_QUERY_PARAMETERS(map);  // 解析动态路径 如 /qwq/awa/loli -> awa/loli
         if (map.count("awa"))

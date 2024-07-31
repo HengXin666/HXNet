@@ -17,13 +17,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXADDRESS_RESOLVER_H_
-#define _HX_HXADDRESS_RESOLVER_H_
+#ifndef _HX_ADDRESS_RESOLVER_H_
+#define _HX_ADDRESS_RESOLVER_H_
 
 #include <netdb.h>
 #include <string>
 
-namespace HX::web {
+namespace HX { namespace web { namespace socket {
 
 /**
  * @brief 地址注册类
@@ -123,6 +123,6 @@ public:
     }
 };
 
-} // namespace HXHttp
+}}} // namespace HX::web::socket
 
-#endif // _HX_HXADDRESS_RESOLVER_H_
+#endif // _HX_ADDRESS_RESOLVER_H_

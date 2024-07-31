@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXRESPONSE_H_
-#define _HX_HXRESPONSE_H_
+#ifndef _HX_RESPONSE_H_
+#define _HX_RESPONSE_H_
 
 #include <string>
 #include <string_view>
@@ -181,4 +181,4 @@ public:
 
 }}}} // namespace HX::web::protocol::http
 
-#endif // _HX_HXRESPONSE_H_
+#endif // _HX_RESPONSE_H_

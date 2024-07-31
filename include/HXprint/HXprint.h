@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXPRINT_H_
-#define _HX_HXPRINT_H_
+#ifndef _HX_PRINT_H_
+#define _HX_PRINT_H_
 
 #include <iostream>
 #include <format>
@@ -289,4 +289,4 @@ void printnl(T0 const &t0, Ts const &...ts) {
 
 } // namespace HX::print
 
-#endif // _HX_HXPRINT_H_
+#endif // _HX_PRINT_H_

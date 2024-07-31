@@ -1,4 +1,4 @@
-#include <HXWeb/HXAddressResolver.h>
+#include <HXWeb/socket/AddressResolver.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -8,7 +8,7 @@
 
 #include <HXSTL/tools/ErrorHandlingTools.h>
 
-namespace HX::web {
+namespace HX { namespace web { namespace socket {
 
 int AddressResolver::AddressInfo::createSocketAndBind() const {
     int serverFd = createSocket();
@@ -63,4 +63,4 @@ AddressResolver::AddressInfo AddressResolver::resolve(
     return {_head};
 }
 
-} // namespace HXHttp
+}}} // namespace HX::web::socket

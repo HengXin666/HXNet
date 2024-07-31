@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXROUTER_H_
-#define _HX_HXROUTER_H_
+#ifndef _HX_ROUTER_H_
+#define _HX_ROUTER_H_
 
 #include <memory>
 #include <unordered_map>
@@ -86,4 +86,4 @@ public:
 
 }}} // namespace HX::web::router
 
-#endif // _HX_HXROUTER_H_
+#endif // _HX_ROUTER_H_

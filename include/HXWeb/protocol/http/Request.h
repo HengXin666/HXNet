@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXREQUEST_H_
-#define _HX_HXREQUEST_H_
+#ifndef _HX_REQUEST_H_
+#define _HX_REQUEST_H_
 
 #include <vector>
 #include <unordered_map>
@@ -150,4 +150,4 @@ public:
 
 }}}} // namespace HX::web::protocol::http
 
-#endif // _HX_HXREQUEST_H_
+#endif // _HX_REQUEST_H_

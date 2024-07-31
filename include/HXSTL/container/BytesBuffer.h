@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXBYTESBUFFER_H_
-#define _HX_HXBYTESBUFFER_H_
+#ifndef _HX_BYTESBUFFER_H_
+#define _HX_BYTESBUFFER_H_
 
 #include <vector>
 #include <string_view>
@@ -222,4 +222,4 @@ public:
 
 }}} // namespace HX::STL::container
 
-#endif // _HX_HXBYTESBUFFER_H_
+#endif // _HX_BYTESBUFFER_H_

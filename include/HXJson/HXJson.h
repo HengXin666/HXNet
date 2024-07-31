@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXJSON_H_
-#define _HX_HXJSON_H_
+#ifndef _HX_JSON_H_
+#define _HX_JSON_H_
 
 #include <variant>
 #include <vector>
@@ -218,4 +218,4 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
 
 } // namespace HXJson
 
-#endif // _HX_HXJSON_H_
+#endif // _HX_JSON_H_

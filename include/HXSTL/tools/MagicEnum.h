@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXMAGIC_ENUM_H_
-#define _HX_HXMAGIC_ENUM_H_
+#ifndef _HX_MAGIC_ENUM_H_
+#define _HX_MAGIC_ENUM_H_
 
 #include <string>
 
@@ -137,4 +137,4 @@ constexpr T nameFromEnum(const std::string& name) {
 
 }}}} // namespace HX::STL::tools::HXMagicEnum
 
-#endif // _HX_HXMAGIC_ENUM_H_
+#endif // _HX_MAGIC_ENUM_H_

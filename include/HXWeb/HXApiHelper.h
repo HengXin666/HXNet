@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXAPI_HELPER_H_
-#define _HX_HXAPI_HELPER_H_
+#ifndef _HX_API_HELPER_H_
+#define _HX_API_HELPER_H_
 
 #include <HXWeb/router/Router.h>
 #include <HXWeb/protocol/http/Request.h>
@@ -29,13 +29,13 @@
 /* 简化用户编写的 API 宏 */
 
 // 定义常用的请求类型
-#define R_GET "GET"
-#define R_POST "POST"
-#define R_PUT "PUT"
-#define R_DELETE "DELETE"
+#define API_GET "GET"
+#define API_POST "POST"
+#define API_PUT "PUT"
+#define API_DELETE "DELETE"
 
 /**
- * @brief 定义一个端点, 其中定义了`req`请求信息(HX::web::Request)
+ * @brief 定义一个端点, 其中定义了`req`请求信息(HX::web::protocol::http::Request)
  * @param METHOD 请求类型, 如"GET"
  * @param PATH 端点对应的路径, 如"/home/{id}"
  * @param FUNC_NAME 端点函数名称
@@ -88,4 +88,4 @@ std::string NAME = req.getPureRequesPath().substr(UWPIndex)
 #define GET_PARSE_QUERY_PARAMETERS(NAME) \
 auto NAME = req.getParseQueryParameters()
 
-#endif // _HX_HXAPI_HELPER_H_
+#endif // _HX_API_HELPER_H_

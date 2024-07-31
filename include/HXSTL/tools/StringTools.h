@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_HXSTRING_TOOLS_H_
-#define _HX_HXSTRING_TOOLS_H_
+#ifndef _HX_STRING_TOOLS_H_
+#define _HX_STRING_TOOLS_H_
 
 #include <vector>
 #include <string>
@@ -95,4 +95,4 @@ struct DateTimeFormat final {
 
 }}} // namespace HX::STL::tools
 
-#endif // _HX_HXSTRING_TOOLS_H_
+#endif // _HX_STRING_TOOLS_H_
