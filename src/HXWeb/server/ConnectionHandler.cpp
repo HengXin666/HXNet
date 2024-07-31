@@ -3,7 +3,7 @@
 #include <HXWeb/router/Router.h>
 #include <HXWeb/server/context/EpollContext.h>
 #include <HXSTL/container/Callback.h>
-#include <HXSTL/tools/StringTools.h>
+#include <HXSTL/utils/StringUtils.h>
 
 namespace HX { namespace web { namespace server {
 
@@ -13,7 +13,7 @@ void ConnectionHandler::start(int fd) {
 }
 
 void ConnectionHandler::read(std::size_t size /*= protocol::http::Request::BUF_SIZE*/) {
-    // printf("解析中... %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
+    // printf("解析中... %s ~\n", HX::STL::utils::DateTimeFormat::formatWithMilli().c_str());
     context::StopSource stopIO(std::in_place);    // 读写停止程序
     context::StopSource stopTimer(std::in_place); // 计时器停止程序
     // 定时器先完成时, 取消读取
@@ -59,7 +59,7 @@ void ConnectionHandler::handle() {
                  .setBodyData("<h1>404 NOT FIND PATH: [" 
                     + _request.getRequesPath() 
                     + "]</h1><h2>Now Time: " 
-                    + HX::STL::tools::DateTimeFormat::format() 
+                    + HX::STL::utils::DateTimeFormat::format() 
                     + "</h2>");
     }
     _response.createResponseBuffer();

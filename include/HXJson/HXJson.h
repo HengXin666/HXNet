@@ -94,6 +94,11 @@ std::size_t skipTail(std::string_view json, std::size_t i, char ch);
 
 // 更优性能应该使用栈实现的非递归
 
+/**
+ * @brief 解析JSON字符串
+ * @param json JSON字符串
+ * @return JSON对象, 解析的JSON内容长度
+ */
 template<bool analysisKey = false>
 std::pair<JsonObject, std::size_t> parse(std::string_view json) {
     if (json.empty()) { // 如果没有内容则返回空
@@ -101,7 +106,7 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
     } else if (std::size_t off = json.find_first_not_of(" \n\r\t\v\f\0"); off != 0 && off != json.npos) { // 去除空行
         auto [obj, eaten] = parse<analysisKey>(json.substr(off));
         return {std::move(obj), eaten + off};
-    } else if (json[0] >= '0' && json[0] <= '9' || json[0] == '+' || json[0] == '-') { // 如果为数字
+    } else if ((json[0] >= '0' && json[0] <= '9') || json[0] == '+' || json[0] == '-') { // 如果为数字
         // std::regex num_re{"[+-]?[0-9]+(\\.[0-9]*)?([eE][+-]?[0-9]+)?"};
         std::regex num_re{"[-]?[0-9]+(\\.[0-9]*)?([eE][+-]?[0-9]+)?"}; // 一个支持识别内容是否为数字的: 1e-12, 114.514, -666
         std::cmatch match; // 匹配结果

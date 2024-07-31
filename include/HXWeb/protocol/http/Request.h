@@ -108,6 +108,16 @@ public:
     }
 
     /**
+     * @brief 获取请求体 ( 临时设计的 )
+     * @return 如果没有请求体, 则返回`""`
+     */
+    std::string getRequesBody() const {
+        if (_body)
+            return *_body;
+        return "";
+    }
+
+    /**
      * @brief 获取请求PATH
      * @return 请求PATH (如: "/", "/home?loli=watasi"...)
      */

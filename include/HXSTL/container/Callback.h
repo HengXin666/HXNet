@@ -28,6 +28,10 @@ namespace HX { namespace STL { namespace container {
 // 这个`Callback`结构体模板是一种用于存储和调用可变参数回调函数的类模板
 // 它主要通过类型擦除和多态来实现这一点
 
+inline constexpr struct MultishotCallType {
+    explicit MultishotCallType() = default;
+} multishotCall;
+
 /**
  * @brief 回调函数
  */
@@ -98,13 +102,15 @@ struct Callback {
     Callback &operator=(Callback &&) = default;
 
     // @brief 调用存储的回调函数
-    void operator()(Args... args) const {
+    void operator()(Args... args) {
         assert(_base);
-        return _base->_call(std::forward<Args>(args)...);
+        _base->_call(std::forward<Args>(args)...);
+        // _base = nullptr; // 所有回调只能调用一次
     }
 
-    explicit operator bool() const noexcept {
-        return _base != nullptr;
+    void operator()(MultishotCallType, Args... args) const {
+        assert(_base);
+        _base->_call(std::forward<Args>(args)...);
     }
 
     // @brief 获取存储的具体回调实现对象
@@ -114,21 +120,27 @@ struct Callback {
         return static_cast<_CallbackImpl<F> &>(*_base);
     }
 
-    // @brief 主动内存泄漏(取消对指针的托管)
-    void *leakAddress() {
-        return static_cast<void *>(_base.release());
-    }
-
     // @brief 获取其地址(不取消对指针的托管)
     void *getAddress() {
         return static_cast<void *>(_base.get());
     }
 
+    // @brief 主动内存泄漏(取消对指针的托管)
+    void *leakAddress() {
+        return static_cast<void *>(_base.release());
+    }
+
     // @brief 恢复回调对象的地址
     static Callback fromAddress(void *addr) {
         Callback cb;
-        cb._base = std::unique_ptr<_CallbackBase>(static_cast<_CallbackBase *>(addr));
+        cb._base = std::unique_ptr<_CallbackBase>(
+            static_cast<_CallbackBase *>(addr)
+        );
         return cb;
+    }
+
+    explicit operator bool() const noexcept {
+        return _base != nullptr;
     }
 };
 

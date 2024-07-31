@@ -3,7 +3,7 @@
 #include <sys/socket.h> // 套接字
 #include <cstring>
 
-#include <HXSTL/tools/StringTools.h>
+#include <HXSTL/utils/StringUtils.h>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
@@ -15,7 +15,7 @@ std::size_t protocol::http::Request::parserRequest(HX::STL::container::ConstByte
         line = ::strtok_r(_previousData.data(), "\r\n", &tmp); // 线程安全
         if (!line)
             return protocol::http::Request::BUF_SIZE;
-        _requestLine = HX::STL::tools::StringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
+        _requestLine = HX::STL::utils::StringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
         if (_requestLine.size() != 3)
             return protocol::http::Request::BUF_SIZE;
     }
@@ -36,18 +36,18 @@ std::size_t protocol::http::Request::parserRequest(HX::STL::container::ConstByte
         do {// 解析 请求行
             // 计算当前子字符串的长度
             std::size_t length = (*tmp == '\0' ? ::strlen(line) : tmp - line - 1);
-            auto p = HX::STL::tools::StringUtil::splitAtFirst(std::string_view {line, length}, ": ");
+            auto p = HX::STL::utils::StringUtil::splitAtFirst(std::string_view {line, length}, ": ");
             if (p.first == "") { // 解析失败, 说明当前是空行, 也有可能是没有读取完毕
                 if (*line != '\r') { 
                     // 应该剩下的参与下次解析
-                    _previousData = HX::STL::tools::StringUtil::rfindAndTrim(_previousData.data(), "\r\n");
+                    _previousData = HX::STL::utils::StringUtil::rfindAndTrim(_previousData.data(), "\r\n");
                     return protocol::http::Request::BUF_SIZE;
                 }
                 // 是空行
                 _completeRequestHeader = true;
                 break;
             }
-            HX::STL::tools::StringUtil::toSmallLetter(p.first);
+            HX::STL::utils::StringUtil::toSmallLetter(p.first);
             p.second.pop_back(); // 去掉 '\r'
             _requestHeaders.insert(p);
             // printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
@@ -82,10 +82,10 @@ std::unordered_map<std::string, std::string> protocol::http::Request::getParseQu
     if (pos == std::string::npos)
         return {};
     std::string parameter = path.substr(pos + 1);
-    auto kvArr = HX::STL::tools::StringUtil::split(parameter, "&");
+    auto kvArr = HX::STL::utils::StringUtil::split(parameter, "&");
     std::unordered_map<std::string, std::string> res;
     for (const auto& it : kvArr) {
-        auto&& kvPair = HX::STL::tools::StringUtil::splitAtFirst(it, "=");
+        auto&& kvPair = HX::STL::utils::StringUtil::splitAtFirst(it, "=");
         if (kvPair.first == "")
             res.insert_or_assign(it, "");
         else

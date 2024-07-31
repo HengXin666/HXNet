@@ -24,7 +24,7 @@
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXWeb/router/RequestParsing.h>
-#include <HXSTL/tools/StringTools.h>
+#include <HXSTL/utils/StringUtils.h>
 
 /* 简化用户编写的 API 宏 */
 
@@ -59,7 +59,7 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
  */
 #define START_PARSE_PATH_PARAMS \
 static const auto wildcarIndexArr = HX::web::router::RequestTemplateParsing::getPathWildcardAnalysisArr(templatePath); \
-auto pathSplitArr = HX::STL::tools::StringUtil::split(req.getPureRequesPath(), "/")
+auto pathSplitArr = HX::STL::utils::StringUtil::split(req.getPureRequesPath(), "/")
 
 /**
  * @brief 用于解析指定索引的路径参数, 并将其转换为指定类型的变量

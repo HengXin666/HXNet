@@ -1,4 +1,4 @@
-#include <HXSTL/tools/StringTools.h>
+#include <HXSTL/utils/StringUtils.h>
 
 #include <chrono>
 #include <sstream>
@@ -18,7 +18,7 @@
 #define STOK strtok_s
 #endif
 
-namespace HX { namespace STL { namespace tools {
+namespace HX { namespace STL { namespace utils {
 
 std::vector<std::string> StringUtil::split(
     std::string_view str, 

@@ -17,14 +17,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * */
-#ifndef _HX_STRING_TOOLS_H_
-#define _HX_STRING_TOOLS_H_
+#ifndef _HX_STRING_UTILS_H_
+#define _HX_STRING_UTILS_H_
 
 #include <vector>
 #include <string>
 #include <string_view>
 
-namespace HX { namespace STL { namespace tools {
+namespace HX { namespace STL { namespace utils {
 
 /**
  * @brief 字符串操作工具类
@@ -93,6 +93,6 @@ struct DateTimeFormat final {
     static std::string formatWithMilli(const std::string& fmt = "%Y-%m-%d %H:%M:%S", const std::string msDelim = " ");
 };
 
-}}} // namespace HX::STL::tools
+}}} // namespace HX::STL::utils
 
-#endif // _HX_STRING_TOOLS_H_
+#endif // _HX_STRING_UTILS_H_

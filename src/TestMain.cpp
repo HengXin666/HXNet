@@ -37,23 +37,25 @@ void testRadixTree() {
         printf("\n没有这个\n");
 }
 
-#include <HXSTL/tools/MagicEnum.h>
+#include <HXSTL/utils/MagicEnum.h>
 /// @brief 魔法枚举测试
 void testMagicEnum() {
     enum MyEnum {
         LoLi = 1,
         imouto = 8,
     };
-    std::cout << HX::STL::tools::MagicEnum::getEnumName<MyEnum>(MyEnum::imouto) << '\n';
-    std::cout << HX::STL::tools::MagicEnum::nameFromEnum<MyEnum>("imouto") << '\n';
+    std::cout << HX::STL::utils::MagicEnum::getEnumName<MyEnum>(MyEnum::imouto) << '\n';
+    std::cout << HX::STL::utils::MagicEnum::nameFromEnum<MyEnum>("imouto") << '\n';
 }
 
 #include <HXWeb/HXApiHelper.h>
+#include <HXSTL/utils/FileUtils.h>
 #include <HXWeb/server/Acceptor.h>
 #include <HXWeb/server/context/EpollContext.h>
+#include <unistd.h>
 /// @brief 服务端测试
 void testServer() {
-
+    ::chdir("../static");
     /// @brief 编写控制器(端点)
     class MywebController {
 
@@ -61,9 +63,15 @@ void testServer() {
             HX::web::protocol::http::Response response;
             response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>这里是根目录!</h1><h2>Now Time: " 
-                    + HX::STL::tools::DateTimeFormat::format() 
-                    + "</h2>");
+                .setBodyData(HX::STL::utils::FileUtils::getFileContent("index.html"));
+            return response;
+        } ENDPOINT_END;
+
+        ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
+            HX::web::protocol::http::Response response;
+            response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+                .setContentType("image/x-icon")
+                .setBodyData(HX::STL::utils::FileUtils::getFileContent("favicon.ico"));
             return response;
         } ENDPOINT_END;
 
@@ -82,7 +90,7 @@ void testServer() {
             return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                     .setContentType("text/html", "UTF-8")
                     .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
-                                + HX::STL::tools::DateTimeFormat::formatWithMilli() 
+                                + HX::STL::utils::DateTimeFormat::formatWithMilli() 
                                 + "</h2>"));
         } ENDPOINT_END;
 
@@ -95,14 +103,14 @@ void testServer() {
             return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                     .setContentType("text/html", "UTF-8")
                     .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
-                                + HX::STL::tools::DateTimeFormat::formatWithMilli() 
+                                + HX::STL::utils::DateTimeFormat::formatWithMilli() 
                                 + "</h2>"));
         } ENDPOINT_END;
 
     public:
         static std::string execQueryHomeData() {
             return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
-                    + HX::STL::tools::DateTimeFormat::format() 
+                    + HX::STL::utils::DateTimeFormat::format() 
                     + "</h2>";
         }
     };
@@ -120,7 +128,7 @@ void testServer() {
     }
 }
 
-int main() {
-    testServer();
-    return 0;
-}
+// int main() {
+//     testServer();
+//     return 0;
+// }

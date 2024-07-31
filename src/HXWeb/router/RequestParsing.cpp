@@ -1,11 +1,11 @@
 #include <HXWeb/router/RequestParsing.h>
 
-#include <HXSTL/tools/StringTools.h>
+#include <HXSTL/utils/StringUtils.h>
 
 namespace HX { namespace web { namespace router {
 
 std::vector<int> RequestTemplateParsing::getPathWildcardAnalysisArr(std::string_view path) {
-    auto arr = HX::STL::tools::StringUtil::split(path, "/");
+    auto arr = HX::STL::utils::StringUtil::split(path, "/");
     std::vector<int> res;
     std::size_t n = arr.size();
     for (std::size_t i = 0; i < n; ++i) {
