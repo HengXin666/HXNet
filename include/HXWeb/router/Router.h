@@ -41,7 +41,7 @@ namespace HX { namespace web { namespace router {
  */
 class Router {
     /// @brief 端点函数
-    using EndpointFunc = std::function<HX::web::protocol::http::Response(const HX::web::protocol::http::Request&)>;
+    using EndpointFunc = std::function<void(const HX::web::protocol::http::Request&)>;
 
     /**
      * don't use a char * as a key

@@ -59,54 +59,6 @@ void testServer() {
     /// @brief 编写控制器(端点)
     class MywebController {
 
-        ENDPOINT_BEGIN(API_GET, "/", root) {
-            HX::web::protocol::http::Response response;
-            response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                .setContentType("text/html", "UTF-8")
-                .setBodyData(HX::STL::utils::FileUtils::getFileContent("index.html"));
-            return response;
-        } ENDPOINT_END;
-
-        ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
-            HX::web::protocol::http::Response response;
-            response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                .setContentType("image/x-icon")
-                .setBodyData(HX::STL::utils::FileUtils::getFileContent("favicon.ico"));
-            return response;
-        } ENDPOINT_END;
-
-        ENDPOINT_BEGIN(API_GET, "/op", op_fun_endpoint) {
-            HX::web::protocol::http::Response response;
-            response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                .setContentType("text/html", "UTF-8")
-                .setBodyData(execQueryHomeData());
-            return response;
-        } ENDPOINT_END;
-
-        ENDPOINT_BEGIN(API_GET, "/awa/{id}", awa_fun) {
-            START_PARSE_PATH_PARAMS;
-            PARSE_PARAM(0, int32_t, id);
-            HX::web::protocol::http::Response response;
-            return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                    .setContentType("text/html", "UTF-8")
-                    .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
-                                + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                                + "</h2>"));
-        } ENDPOINT_END;
-
-        ENDPOINT_BEGIN(API_GET, "/qwq/**", qwq_fun) {
-            PARSE_MULTI_LEVEL_PARAM(pathStr);
-            GET_PARSE_QUERY_PARAMETERS(map);
-            if (map.count("awa"))
-                printf("awa -> %s\n", map["awa"].c_str());
-            HX::web::protocol::http::Response response;
-            return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                    .setContentType("text/html", "UTF-8")
-                    .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
-                                + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                                + "</h2>"));
-        } ENDPOINT_END;
-
     public:
         static std::string execQueryHomeData() {
             return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 

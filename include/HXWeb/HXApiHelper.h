@@ -43,7 +43,7 @@
 #define ENDPOINT_BEGIN(METHOD, PATH, FUNC_NAME) \
 const int _HX_endpoint_##FUNC_NAME = []() -> int { \
     std::string templatePath = PATH; \
-    HX::web::router::Router::getSingleton().addController(METHOD, templatePath, [=](const HX::web::protocol::http::Request& req) -> HX::web::protocol::http::Response
+    HX::web::router::Router::getSingleton().addController(METHOD, templatePath, [=](const HX::web::protocol::http::Request& req) -> void
 
 /**
  * @brief 结束端点的定义
@@ -71,7 +71,7 @@ auto pathSplitArr = HX::STL::utils::StringUtil::split(req.getPureRequesPath(), "
 #define PARSE_PARAM(INDEX, TYPE, NAME) \
 auto NAME = HX::web::router::TypeInterpretation<TYPE>::wildcardElementTypeConversion(pathSplitArr[wildcarIndexArr[INDEX]]); \
 if (!NAME) \
-    return HX::web::protocol::http::Response{}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_400).setContentType("application/json", "UTF-8").setBodyData("Missing PATH parameter '"#NAME"'")
+    return req->_responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_400).setContentType("application/json", "UTF-8").setBodyData("Missing PATH parameter '"#NAME"'").writeResponse()
 
 /**
  * @brief 解析多级通配符的宏, 如 `/home/ **` 这种

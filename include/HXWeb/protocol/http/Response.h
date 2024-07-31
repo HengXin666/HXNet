@@ -28,6 +28,8 @@
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
+class Request;
+
 /**
  * @brief 服务端响应类(Response)
  */
@@ -123,7 +125,7 @@ public:
                           , _buf()
     {}
 
-    Response(const Response& response) = default;
+    Response(const Response& response) = delete;
     Response& operator=(const Response& response) = delete;
 
     Response(Response&& response) = default;
@@ -149,6 +151,8 @@ public:
             _responseHeaders["Content-Type"] = type;
         else // Content-Type: text/html; charset=UTF-8
             _responseHeaders["Content-Type"] = type + ";charset=" + encoded;
+        _responseHeaders["Connection"] = "keep-alive";
+        _responseHeaders["Server"] = "HX_Net";
         return *this;
     }
 
@@ -167,6 +171,11 @@ public:
      * @brief 生成响应字符串, 用于写入
      */
     void createResponseBuffer();
+
+    /**
+     * @brief 执行写入
+     */
+    void writeResponse(const Request& req);
 
     /**
      * @brief 清空已写入的响应, 重置状态 (复用)

@@ -8,7 +8,7 @@
 namespace HX { namespace web { namespace server {
 
 void ConnectionHandler::start(int fd) {
-    _fd = AsyncFile {fd};
+    _conn = AsyncFile {fd};
     return read();
 }
 
@@ -24,7 +24,7 @@ void ConnectionHandler::read(std::size_t size /*= protocol::http::Request::BUF_S
         },
         stopTimer
     );
-    return _fd.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (HX::STL::tools::ErrorHandlingTools::Expected<size_t> ret) {
+    return _conn.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (HX::STL::tools::ErrorHandlingTools::Expected<size_t> ret) {
         stopTimer.doRequestStop();
         
         if (ret.error()) {
@@ -48,11 +48,15 @@ void ConnectionHandler::read(std::size_t size /*= protocol::http::Request::BUF_S
 }
 
 void ConnectionHandler::handle() {
+    _request._responsePtr = &_response;
+    _request._resume = [self = shared_from_this()] {
+        self->write(self->_response._buf);
+    };
     // 交给路由处理
     auto fun = HX::web::router::Router::getSingleton().getEndpointFunc(_request.getRequesType(), _request.getRequesPath());
     // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
     if (fun) {
-        _response = fun(_request);
+        fun(_request);
     } else {
         _response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
                  .setContentType("text/html", "UTF-8")
@@ -60,15 +64,14 @@ void ConnectionHandler::handle() {
                     + _request.getRequesPath() 
                     + "]</h1><h2>Now Time: " 
                     + HX::STL::utils::DateTimeFormat::format() 
-                    + "</h2>");
+                    + "</h2>").writeResponse(_request);
     }
-    _response.createResponseBuffer();
     _request.clear(); // 本次请求使用结束, 清空, 复用
-    return write(_response._buf);
+    return;
 }
 
 void ConnectionHandler::write(HX::STL::container::ConstBytesBufferView buf) {
-    return _fd.asyncWrite(_response._buf, [self = shared_from_this(), buf] (HX::STL::tools::ErrorHandlingTools::Expected<std::size_t> ret) {
+    return _conn.asyncWrite(_response._buf, [self = shared_from_this(), buf] (HX::STL::tools::ErrorHandlingTools::Expected<std::size_t> ret) {
         if (ret.error()) {
             return;
         }

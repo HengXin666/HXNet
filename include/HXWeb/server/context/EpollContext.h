@@ -52,6 +52,10 @@ public:
     : _control(std::make_shared<_ControlBlock>()) 
     {}
 
+    static StopSource make() {
+        return StopSource(std::in_place);
+    }
+
     /**
      * @brief 是否停止请求
      * @return 是否

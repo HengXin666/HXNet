@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 
 #include <HXprint/HXprint.h>
+#include <HXWeb/protocol/http/Request.h>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
@@ -227,6 +228,11 @@ void Response::createResponseBuffer() {
     _buf.append(std::to_string(_responseBody.size()));
     _buf.append("\r\n\r\n");
     _buf.append(_responseBody);
+}
+
+void Response::writeResponse(const Request& req) {
+    createResponseBuffer();
+    req.resume();
 }
 
 }}}} // namespace HX::web::protocol::http
