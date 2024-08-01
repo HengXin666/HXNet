@@ -42,7 +42,7 @@ class StopSource {
     std::shared_ptr<_ControlBlock> _control;
 public:
 
-    explicit StopSource() = default;
+    StopSource() = default;
 
     /**
      * @brief 构造函数
@@ -132,7 +132,7 @@ public:
     void setTimeout(
         std::chrono::steady_clock::duration dt, 
         HX::STL::container::Callback<> cb, 
-        StopSource stop = StopSource {}
+        StopSource stop = {}
     );
 
     /**

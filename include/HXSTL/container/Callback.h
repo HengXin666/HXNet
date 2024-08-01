@@ -28,6 +28,10 @@ namespace HX { namespace STL { namespace container {
 // 这个`Callback`结构体模板是一种用于存储和调用可变参数回调函数的类模板
 // 它主要通过类型擦除和多态来实现这一点
 
+inline constexpr struct multishot_call_t {
+    explicit multishot_call_t() = default;
+} multishot_call;
+
 /**
  * @brief 回调函数
  */
@@ -99,6 +103,12 @@ struct Callback {
 
     // @brief 调用存储的回调函数
     void operator()(Args... args) {
+        assert(_base);
+        _base->_call(std::forward<Args>(args)...);
+        _base = nullptr;
+    }
+
+    void operator()(multishot_call_t, Args... args) {
         assert(_base);
         _base->_call(std::forward<Args>(args)...);
     }

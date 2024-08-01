@@ -81,6 +81,8 @@ class ChatController {
             recv_timeout_stop.doRequestStop();
             recv_timeout_stop = HX::web::server::context::StopSource::make();
             printf("%s\n", Message::toJson(messageArr.begin(), messageArr.end()).c_str());
+        } else {
+            printf("解析客户端出错\n");
         }
         
         return req._responsePtr
@@ -115,12 +117,6 @@ class ChatController {
                         .writeResponse(req);
                 }, recv_timeout_stop);
         }
-
-        return req._responsePtr
-            ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/plain", "UTF-8")
-            .setBodyData("[]")
-            .writeResponse(req);
     } ENDPOINT_END;
 
 public:
@@ -129,6 +125,7 @@ public:
 
 void startChatServer() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
+    messageArr.emplace_back("系统", "欢迎来到聊天室!");
     ROUTER_BIND(ChatController);
     try {
         HX::web::server::context::EpollContext ctx;
@@ -140,12 +137,10 @@ void startChatServer() {
     }
 }
 
-#include <wdf.h>
-
 int main() {
     chdir("../static");
     ROUTER_BIND(ChatController);
     startChatServer();
-    // ::server();
+    printf("放假啦~\n");
     return 0;
 }
