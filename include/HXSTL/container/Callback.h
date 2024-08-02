@@ -101,6 +101,7 @@ struct Callback {
     void operator()(Args... args) {
         assert(_base);
         _base->_call(std::forward<Args>(args)...);
+        _base = nullptr;
     }
 
     // @brief 获取存储的具体回调实现对象

@@ -140,12 +140,9 @@ void startChatServer() {
     }
 }
 
-#include <wdf.h>
 
 int main() {
     chdir("../static");
-    ROUTER_BIND(ChatController);
     startChatServer();
-    // ::server();
     return 0;
 }
