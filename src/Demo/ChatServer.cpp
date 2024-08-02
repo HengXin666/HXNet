@@ -139,8 +139,6 @@ void startChatServer() {
 
 int main() {
     chdir("../static");
-    ROUTER_BIND(ChatController);
     startChatServer();
-    printf("放假啦~\n");
     return 0;
 }
