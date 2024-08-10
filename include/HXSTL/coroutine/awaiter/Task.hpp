@@ -79,7 +79,7 @@ struct Promise<void> {
     }
 
     auto final_suspend() noexcept {
-        return HX::PreviousAwaiter(_previous);
+        return PreviousAwaiter(_previous);
     }
 
     void unhandled_exception() noexcept {

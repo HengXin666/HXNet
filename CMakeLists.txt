@@ -17,6 +17,7 @@ set(CMAKE_CXX_STANDARD 20) # 设置C++标准为C++20
 set(CMAKE_C_STANDARD 11)   # 设置C语言标准为C11
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # 指定C++标准是必需的
 set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines") # 显示启动C++协程
 
 # 设置CMake模块路径, 包含当前目录下的cmake文件夹以及之前的路径
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
