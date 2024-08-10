@@ -38,6 +38,7 @@ using EpollEventMask = uint32_t;
 class EpollLoop {
     EpollLoop& operator=(EpollLoop&&) = delete;
 
+public:
     explicit EpollLoop()
         : _epfd(HX::STL::tools::ErrorHandlingTools::convertError<int>(
             ::epoll_create1(0)).expect("epoll_create1"))
@@ -50,11 +51,10 @@ class EpollLoop {
         ::close(_epfd);
     }
 
-public:
-    static EpollLoop& get() { // TODO
-        static EpollLoop loop;
-        return loop;
-    }
+    // static EpollLoop& get() { // TODO
+    //     static EpollLoop loop;
+    //     return loop;
+    // }
 
     void removeListener(int fd) {
         ::epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, nullptr);
@@ -92,8 +92,9 @@ struct EpollFilePromise : HX::STL::coroutine::awaiter::Promise<EpollEventMask> {
 };
 
 struct EpollFileAwaiter {
-    explicit EpollFileAwaiter(int fd, EpollEventMask mask, EpollEventMask ctl) 
-        : _fd(fd)
+    explicit EpollFileAwaiter(EpollLoop &epollLoop, int fd, EpollEventMask mask, EpollEventMask ctl) 
+        : _epollLoop(epollLoop)
+        , _fd(fd)
         , _mask(mask)
         , _ctl(ctl)
     {} 
@@ -105,7 +106,7 @@ struct EpollFileAwaiter {
     void await_suspend(std::coroutine_handle<EpollFilePromise> coroutine) {
         auto &promise = coroutine.promise();
         promise._fd = _fd;
-        if (!EpollLoop::get().addListener(promise, _mask, _ctl)) {
+        if (!_epollLoop.addListener(promise, _mask, _ctl)) {
             promise._fd = -1;
             coroutine.resume();
         }
@@ -115,6 +116,7 @@ struct EpollFileAwaiter {
         return _mask;
     }
 
+    EpollLoop &_epollLoop;
     int _fd = -1;
     EpollEventMask _mask = 0;
     int _ctl = EPOLL_CTL_MOD;
@@ -122,17 +124,19 @@ struct EpollFileAwaiter {
 
 /**
  * @brief 等待文件事件: 添加fd进入epoll检测, 当epoll有事件后结束co_await
+ * @param epollLoop Epoll循环对象引用
  * @param fd 文件套接字
  * @param mask Epoll 事件掩码
  * @param ctl 如: EPOLL_CTL_MOD
  * @return HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> 
  */
 HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> waitFileEvent(
+    EpollLoop& epollLoop,
     int fd, 
     EpollEventMask mask, 
     int ctl = EPOLL_CTL_MOD
 ) {
-    co_return co_await EpollFileAwaiter(fd, mask, ctl);
+    co_return co_await EpollFileAwaiter(epollLoop, fd, mask, ctl);
 }
 
 }}}} // namespace HX::STL::coroutine::loop

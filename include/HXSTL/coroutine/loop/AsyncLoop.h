@@ -31,6 +31,10 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
  * @brief 异步循环
  */
 struct AsyncLoop {
+    explicit AsyncLoop() : _timerLoop()
+                         , _epollLoop()
+    {}
+
     void run() {
         while (true) {
             auto timeout = _timerLoop.run();

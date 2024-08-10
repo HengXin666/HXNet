@@ -59,51 +59,68 @@ public:
 
     std::optional<std::chrono::system_clock::duration> run();
 
-    static TimerLoop& getLoop() { // TODO !
-        static TimerLoop loop;
-        return loop;
-    }
+    // static TimerLoop& getLoop() { // TODO !
+    //     static TimerLoop loop;
+    //     return loop;
+    // }
 
 private:
     /**
      * @brief 暂停者
      */
     struct SleepAwaiter { // 使用 co_await 则需要定义这 3 个固定函数
+        explicit SleepAwaiter(
+            TimerLoop& timerLoop,
+            std::chrono::system_clock::time_point expireTime
+        ) : _timerLoop(timerLoop)
+          , _expireTime(expireTime)
+        {}
+
         bool await_ready() const noexcept { // 暂停
             return false;
         }
 
         void await_suspend(std::coroutine_handle<> coroutine) const { // `await_ready`后执行: 添加计时器
-            TimerLoop::getLoop().addTimer(_expireTime, coroutine);
+            _timerLoop.addTimer(_expireTime, coroutine);
         }
 
         void await_resume() const noexcept { // 计时结束
         }
 
+        TimerLoop& _timerLoop;
         std::chrono::system_clock::time_point _expireTime; // 过期时间
     };
 
 public:
     /**
      * @brief 暂停指定时间点
+     * @param timerLoop 计时器循环对象
      * @param expireTime 时间点, 如 2024-8-4 22:12:23
      */
-    HX::STL::coroutine::awaiter::Task<void> static sleep_until(std::chrono::system_clock::time_point expireTime) {
-        co_await SleepAwaiter(expireTime);
+    HX::STL::coroutine::awaiter::Task<void> static sleep_until(
+        TimerLoop& timerLoop,
+        std::chrono::system_clock::time_point expireTime
+    ) {
+        co_await SleepAwaiter(timerLoop, expireTime);
     }
 
     /**
      * @brief 暂停一段时间
+     * @param timerLoop 计时器循环对象
      * @param duration 比如 3s
      */
-    HX::STL::coroutine::awaiter::Task<void> static sleep_for(std::chrono::system_clock::duration duration) {
-        co_await SleepAwaiter(std::chrono::system_clock::now() + duration);
+    HX::STL::coroutine::awaiter::Task<void> static sleep_for(
+        TimerLoop& timerLoop,
+        std::chrono::system_clock::duration duration
+    ) {
+        co_await SleepAwaiter(timerLoop, std::chrono::system_clock::now() + duration);
     }
 
-private:
     explicit TimerLoop() : _timerRBTree()
                          , _taskQueue()
     {}
+
+private:
 
     TimerLoop& operator=(TimerLoop&&) = delete;
 
