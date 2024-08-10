@@ -23,6 +23,7 @@ void Acceptor::accept() {
     return _serverFd.asyncAccept(_addr, [self = shared_from_this()] (HX::STL::tools::ErrorHandlingTools::Expected<int> ret) {
         int fd = ret.expect("accept");
         // printf("建立连接成功... %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
+        LOG_WARNING("有新的连接: %d", fd);
         ConnectionHandler::make()->start(fd); // 开始读取
         return self->accept(); // 继续回调(如果没有就挂起, 就返回了)
     });

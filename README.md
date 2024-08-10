@@ -14,55 +14,7 @@
 > 仍然在开发, 非最终产品
 
 - 编写端点
-```cpp
-#include <HXWeb/HXApiHelper.h> // 包含了控制器编写的宏
 
-/// @brief 编写控制器(端点)
-class MywebController {
-
-    ENDPOINT_BEGIN(API_GET, "/", root) { // 绑定 `/` 路径, 并且监听GET请求
-        HX::web::protocol::http::Response response;
-        response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/html", "UTF-8")
-            .setBodyData("<h1>这里是根目录!</h1><h2>Now Time: " 
-                + HX::STL::utils::DateTimeFormat::format() 
-                + "</h2>");
-        return response;
-    } ENDPOINT_END;
-
-    ENDPOINT_BEGIN(API_GET, "/awa/{id}", awa_fun) { // 支持解析路径参数
-        START_PARSE_PATH_PARAMS;     // 开始解析路径参数
-        PARSE_PARAM(0, int32_t, id); // 解析第一个路径参数{id}, 命名为id, 类型为 int32_t
-        HX::web::protocol::http::Response response;
-        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
-                            + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
-    } ENDPOINT_END;
-
-    ENDPOINT_BEGIN(API_GET, "/qwq/**", qwq_fun) { // 支持解析多级通配符路径参数(/**这种)
-        PARSE_MULTI_LEVEL_PARAM(pathStr); // 开始解析多级通配符路径参数, 并且解析得到string, 并且命名为 pathStr
-
-        GET_PARSE_QUERY_PARAMETERS(map);  // 解析请求(如 /?awa=xxx 这种), 返回的是 unordered_map<string, string>
-        if (map.count("awa"))
-            printf("awa -> %s\n", map["awa"].c_str());
-        HX::web::protocol::http::Response response;
-        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
-                            + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
-    } ENDPOINT_END;
-
-public:
-    static std::string execQueryHomeData() { // 在端点内调用的函数应该是静态函数
-        return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
-                + HX::STL::utils::DateTimeFormat::format() 
-                + "</h2>";
-    }
-};
-```
 
 - 绑定控制器到全局路由
 ```cpp
@@ -72,19 +24,6 @@ ROUTER_BIND(MywebController); // 这个类在上面声明过了
 ```
 
 - 启动服务器, 并且监听 0.0.0.0:28205
-```cpp
-#include <HXWeb/server/Acceptor.h>
-#include <HXWeb/server/context/EpollContext.h>
-
-try { // TOOD: 到时候应该还会进一步封装这个东西...
-    HX::web::server::context::EpollContext ctx;
-    auto ptr = HX::web::server::Acceptor::make();
-    ptr->start("0.0.0.0", "28205");
-    ctx.join();
-} catch(const std::system_error &e) {
-    std::cerr << e.what() << '\n';
-}
-```
 
 ## 目录结构
 
@@ -146,11 +85,7 @@ try { // TOOD: 到时候应该还会进一步封装这个东西...
     - [x] 实现基于红黑树实现定时中断, 超时自动终止任务 (类似于Linux内核的“完全公平调度”)
     - [x] 用户自定义路由 | 控制器
     - [ ] 客户端
-
-- 阶段性BUG:
-    - [ ] 首次建立连接的延迟居然有300ms, 但是之后的响应才几ms, 而重新连接又是tm的300ms...
-        - DE半天了, 找不到bug..
-        - 奇怪的问题.. >> tmd 等我以后学了协程的, 重构你!
+    - [ ] 重构为基于协程的epoll
 
 ```sh
 ╰─ wrk -c200 -d30s http://localhost:28205 # wsl Arth Linux 渣机

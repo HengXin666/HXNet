@@ -1,5 +1,4 @@
-# 设置CMake的最低版本要求为3.18
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.20.0)
 # 定义工程名称, 并指定语言为C++
 project(HXNet LANGUAGES CXX)
 
@@ -15,6 +14,7 @@ else()
 endif()
 
 set(CMAKE_CXX_STANDARD 20) # 设置C++标准为C++20
+set(CMAKE_C_STANDARD 11)   # 设置C语言标准为C11
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # 指定C++标准是必需的
 set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
 
