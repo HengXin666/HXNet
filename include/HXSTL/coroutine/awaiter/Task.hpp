@@ -33,7 +33,7 @@ struct Promise {
     }
 
     auto final_suspend() noexcept {
-        return HX::PreviousAwaiter(_previous);
+        return PreviousAwaiter(_previous);
     }
 
     void unhandled_exception() noexcept {
@@ -66,7 +66,7 @@ struct Promise {
 
     Promise &operator=(Promise &&) = delete;
 
-    HX::Uninitialized<T> _res;
+    Uninitialized<T> _res;
     
     std::coroutine_handle<> _previous {}; // 上一个协程句柄
     std::exception_ptr _exception {}; // 异常信息

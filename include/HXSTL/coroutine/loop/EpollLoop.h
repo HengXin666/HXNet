@@ -1,0 +1,140 @@
+#pragma once
+/*
+ * Copyright Heng_Xin. All rights reserved.
+ *
+ * @Author: Heng_Xin
+ * @Date: 2024-08-10 22:12:01
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *	  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef _HX_EPOLL_LOOP_H_
+#define _HX_EPOLL_LOOP_H_
+
+#include <optional>
+#include <vector>
+#include <chrono>
+#include <sys/epoll.h>
+
+#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/tools/ErrorHandlingTools.h>
+
+namespace HX { namespace STL { namespace coroutine { namespace loop {
+
+/**
+ * @brief Epoll 事件掩码
+ */
+using EpollEventMask = uint32_t;
+
+class EpollLoop {
+    EpollLoop& operator=(EpollLoop&&) = delete;
+
+    explicit EpollLoop()
+        : _epfd(HX::STL::tools::ErrorHandlingTools::convertError<int>(
+            ::epoll_create1(0)).expect("epoll_create1"))
+        , _evs()
+    {
+        _evs.resize(64);
+    }
+
+    ~EpollLoop() {
+        ::close(_epfd);
+    }
+
+public:
+    static EpollLoop& get() { // TODO
+        static EpollLoop loop;
+        return loop;
+    }
+
+    void removeListener(int fd) {
+        ::epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, nullptr);
+        --_count;
+    }
+
+    bool addListener(class EpollFilePromise &promise, EpollEventMask mask, int ctl);
+
+    bool run(std::optional<std::chrono::system_clock::duration> timeout);
+
+    bool hasEvent() const noexcept {
+        return _count != 0;
+    }
+
+    int _epfd = -1;
+    int _count = 0;
+private:
+    std::vector<struct ::epoll_event> _evs;
+};
+
+struct EpollFilePromise : HX::STL::coroutine::awaiter::Promise<EpollEventMask> {
+    auto get_return_object() {
+        return std::coroutine_handle<EpollFilePromise>::from_promise(*this);
+    }
+
+    EpollFilePromise &operator=(EpollFilePromise &&) = delete;
+
+    ~EpollFilePromise() {
+        // if (_fd != -1) {
+        //     EpollLoop::get().removeListener(_fd);
+        // }
+    }
+
+    int _fd = -1;
+};
+
+struct EpollFileAwaiter {
+    explicit EpollFileAwaiter(int fd, EpollEventMask mask, EpollEventMask ctl) 
+        : _fd(fd)
+        , _mask(mask)
+        , _ctl(ctl)
+    {} 
+
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    void await_suspend(std::coroutine_handle<EpollFilePromise> coroutine) {
+        auto &promise = coroutine.promise();
+        promise._fd = _fd;
+        if (!EpollLoop::get().addListener(promise, _mask, _ctl)) {
+            promise._fd = -1;
+            coroutine.resume();
+        }
+    }
+
+    EpollEventMask await_resume() const noexcept {
+        return _mask;
+    }
+
+    int _fd = -1;
+    EpollEventMask _mask = 0;
+    int _ctl = EPOLL_CTL_MOD;
+};
+
+/**
+ * @brief 等待文件事件: 添加fd进入epoll检测, 当epoll有事件后结束co_await
+ * @param fd 文件套接字
+ * @param mask Epoll 事件掩码
+ * @param ctl 如: EPOLL_CTL_MOD
+ * @return HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> 
+ */
+HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> waitFileEvent(
+    int fd, 
+    EpollEventMask mask, 
+    int ctl = EPOLL_CTL_MOD
+) {
+    co_return co_await EpollFileAwaiter(fd, mask, ctl);
+}
+
+}}}} // namespace HX::STL::coroutine::loop
+
+#endif // !_HX_EPOLL_LOOP_H_
