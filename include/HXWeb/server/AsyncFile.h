@@ -23,6 +23,8 @@
 #include <HXSTL/container/Callback.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXSTL/container/BytesBuffer.h>
+#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXWeb/socket/FileDescriptor.h>
 #include <HXWeb/socket/AddressResolver.h>
 #include <HXWeb/server/context/EpollContext.h>
@@ -33,12 +35,6 @@ namespace HX { namespace web { namespace server {
  * @brief 异步文件操作类
  */
 class AsyncFile : public HX::web::socket::FileDescriptor {
-
-    void _epollCallback(
-        HX::STL::container::Callback<> &&resume, 
-        uint32_t events,
-        context::StopSource stop
-    );
 public:
     AsyncFile() = default;
 
@@ -68,43 +64,44 @@ public:
     /**
      * @brief 异步建立连接
      * @param addr [out] 用于记录`客户端`信息
-     * @param cd 连接成功的回调函数
+     * @return 连接成功的客户端fd
      */
-    void asyncAccept(
-        HX::web::socket::AddressResolver::Address& addr, 
-        HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<int>> cd,
-        context::StopSource stop = context::StopSource {}
+    HX::STL::coroutine::awaiter::Task<
+        int, 
+        HX::STL::coroutine::loop::EpollFilePromise
+    > asyncAccept(
+        HX::web::socket::AddressResolver::Address& addr
     );
 
     /**
      * @brief 异步读取
      * @param buf 存放所有读取到的数据
      * @param count 期望读取的字节数
-     * @param cd 读取成功的回调函数
      */
-    void asyncRead(
+    HX::STL::coroutine::awaiter::Task<
+        size_t, 
+        HX::STL::coroutine::loop::EpollFilePromise
+    > asyncRead(
         HX::STL::container::BytesBuffer& buf,
-        std::size_t count,
-        HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<size_t>> cd,
-        context::StopSource stop = context::StopSource {}
+        std::size_t count
     );
 
     /**
      * @brief 异步写入
      * @param buf 存放需要写入的数据
-     * @param cd 写入成功的回调函数
      */
-    void asyncWrite(
-        HX::STL::container::ConstBytesBufferView buf,
-        HX::STL::container::Callback<HX::STL::tools::ErrorHandlingTools::Expected<size_t>> cd,
-        context::StopSource stop = context::StopSource {}
+    HX::STL::coroutine::awaiter::Task<
+        size_t, 
+        HX::STL::coroutine::loop::EpollFilePromise
+    > asyncWrite(
+        HX::STL::container::ConstBytesBufferView buf
     );
 
     ~AsyncFile() {
         if (_fd == -1) {
             return;
         }
-        ::epoll_ctl(context::EpollContext::get()._epfd, EPOLL_CTL_DEL, _fd, nullptr);
+        
     }
 
     explicit operator bool() const noexcept {

@@ -30,10 +30,18 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
 /**
  * @brief 异步循环
  */
-struct AsyncLoop {
+class AsyncLoop {
     explicit AsyncLoop() : _timerLoop()
                          , _epollLoop()
     {}
+public:
+
+    AsyncLoop& operator=(AsyncLoop&&) = delete;
+
+    static AsyncLoop& getLoop() {
+        static AsyncLoop loop;
+        return loop;
+    }
 
     void run() {
         while (true) {
