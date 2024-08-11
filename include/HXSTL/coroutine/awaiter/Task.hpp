@@ -23,6 +23,8 @@
 #include <HXSTL/coroutine/awaiter/Uninitialized.hpp>
 #include <HXSTL/coroutine/awaiter/RepeatAwaiter.hpp>
 #include <HXSTL/coroutine/awaiter/PreviousAwaiter.hpp>
+#include <HXSTL/coroutine/awaiter/ExitAwaiter.hpp>
+#include <HXSTL/coroutine/awaiter/ReturnToParentAwaiter.hpp>
 
 namespace HX { namespace STL { namespace coroutine { namespace awaiter {
 
@@ -117,69 +119,11 @@ struct Promise<void, ifSuspend> {
 };
 
 /**
- * @brief 默认的协程控制: 暂停则暂停整个调用链
- */
-template <class T, class P>
-struct Awaiter {
-    using promise_type = P;
-
-    bool await_ready() const noexcept { 
-        return false; 
-    }
-
-    /**
-     * @brief 挂起当前协程
-     * @param coroutine 这个是`co_await`的协程句柄 (而不是 _coroutine)
-     * @return std::coroutine_handle<promise_type> 
-     */
-    std::coroutine_handle<promise_type> await_suspend(
-        std::coroutine_handle<> coroutine
-    ) const noexcept {
-        _coroutine.promise()._previous = coroutine; // 此处记录 co_await 之前的协程, 方便恢复
-        return _coroutine;
-    }
-
-    T await_resume() const noexcept {
-        return _coroutine.promise().result();
-    }
-
-    std::coroutine_handle<promise_type> _coroutine;
-};
-
-/**
- * @brief 协程控制: 暂停则回到父级await进行执行
- */
-template <class T, class P>
-struct ReturnToParentAwaiter {
-    using promise_type = P;
-    explicit ReturnToParentAwaiter() = default;
-
-    explicit ReturnToParentAwaiter(std::coroutine_handle<promise_type>) // 适配器模式 (这个实际上是无用参数)
-    {}
-
-    bool await_ready() const noexcept { 
-        return false; 
-    }
-
-    /**
-     * @brief 挂起当前协程
-     * @param coroutine 这个是`co_await`的协程句柄 (而不是 _coroutine)
-     * @return std::coroutine_handle<promise_type> 
-     */
-    bool await_suspend(std::coroutine_handle<>) const noexcept {
-        return false;
-    }
-
-    void await_resume() const noexcept {
-    }
-};
-
-/**
  * @brief 协程任务类: 直接返回, 而不是马上执行
  * @tparam T 协程的返回值类型
  * @tparam P 协程的`promise_type`类型
  */
-template <class T = void, class P = Promise<T>, class A = Awaiter<T, P>>
+template <class T = void, class P = Promise<T>, class A = ExitAwaiter<T, P>>
 struct [[nodiscard]] Task {
     using promise_type = P;
 
@@ -217,18 +161,16 @@ private:
  * @brief 协程任务类: 会立马开始执行
  * @tparam T 
  * @tparam P 
- * @tparam false
  * @tparam A 
- * @tparam P
  */
-template <class T = void, class P = Promise<T, false>, class A = Awaiter<T, P>>
+template <class T = void, class P = Promise<T, false>, class A = ExitAwaiter<T, P>>
 struct [[nodiscard]] TaskSuspend {
     using promise_type = P;
 
     TaskSuspend(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
         : _coroutine(coroutine) {}
 
-    // Task(Task &&) = delete;
+    // TaskSuspend(TaskSuspend &&) = delete;
 
     TaskSuspend(TaskSuspend &&that) noexcept : _coroutine(that._coroutine) {
         that._coroutine = nullptr;

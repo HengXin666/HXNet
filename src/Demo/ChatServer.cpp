@@ -108,10 +108,7 @@ class ChatController {
                     .setContentType("text/plain", "UTF-8")
                     .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
             else {
-                co_await HX::STL::coroutine::loop::TimerLoop::sleep_for(
-                    HX::STL::coroutine::loop::AsyncLoop::getLoop(),
-                    3s
-                );
+                co_await HX::STL::coroutine::loop::TimerLoop::sleep_for(3s);
                 std::vector<Message> submessages;
                 printf("回复~\n");
                 co_return req._responsePtr
@@ -147,16 +144,26 @@ HX::STL::coroutine::awaiter::TaskSuspend<
     void,
     HX::STL::coroutine::awaiter::Promise<void>,
     HX::STL::coroutine::awaiter::ReturnToParentAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
+> C() {
+    std::cout << "\t\tC start\n";
+    co_await HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().sleep_for(3s); // Simulate an asynchronous operation
+    std::cout << "\t\tC continues\n";
+}
+
+HX::STL::coroutine::awaiter::TaskSuspend<
+    void,
+    HX::STL::coroutine::awaiter::Promise<void>,
+    HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
 > B() {
-    std::cout << "B start\n";
-    co_await HX::STL::coroutine::awaiter::ReturnToParentAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>(); // Simulate an asynchronous operation
-    std::cout << "B continues\n";
+    std::cout << "\tB start\n";
+    co_await C(); // Simulate an asynchronous operation
+    std::cout << "\tB continues\n";
 }
 
 HX::STL::coroutine::awaiter::Task<
     void,
     HX::STL::coroutine::awaiter::Promise<void>,
-    HX::STL::coroutine::awaiter::ReturnToParentAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
+    HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
 > A() {
     std::cout << "A start\n";
     co_await B();
@@ -165,13 +172,9 @@ HX::STL::coroutine::awaiter::Task<
 
 int main() {
     chdir("../static");
-    auto a = A();
-    a._coroutine.resume();
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    return 0;
-    // HX::STL::coroutine::awaiter::run_task(
-    //     HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
-    //     A()
-    // );
+    HX::STL::coroutine::awaiter::run_task(
+        HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
+        A()
+    );
     return 0;
 }

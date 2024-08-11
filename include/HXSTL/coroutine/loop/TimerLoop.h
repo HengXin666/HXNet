@@ -31,6 +31,7 @@
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 class TimerLoop {
+public:
     /**
      * @brief 添加计时器
      * @param expireTime 计时器结束时间点
@@ -43,7 +44,6 @@ class TimerLoop {
         _timerRBTree.insert({expireTime, coroutine});
     }
 
-public:
     /**
      * @brief 添加任务
      * @param coroutine 协程任务句柄
@@ -98,23 +98,16 @@ public:
      * @param expireTime 时间点, 如 2024-8-4 22:12:23
      */
     HX::STL::coroutine::awaiter::Task<void> static sleep_until(
-        TimerLoop& timerLoop,
         std::chrono::system_clock::time_point expireTime
-    ) {
-        co_await SleepAwaiter(timerLoop, expireTime);
-    }
+    );
 
     /**
      * @brief 暂停一段时间
-     * @param timerLoop 计时器循环对象
      * @param duration 比如 3s
      */
     HX::STL::coroutine::awaiter::Task<void> static sleep_for(
-        TimerLoop& timerLoop,
         std::chrono::system_clock::duration duration
-    ) {
-        co_await SleepAwaiter(timerLoop, std::chrono::system_clock::now() + duration);
-    }
+    );
 
     explicit TimerLoop() : _timerRBTree()
                          , _taskQueue()
