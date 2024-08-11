@@ -5,7 +5,10 @@
 
 namespace HX { namespace web { namespace server {
 
-void Acceptor::start(const std::string& name, const std::string& port) {
+HX::STL::coroutine::awaiter::Task<> Acceptor::start(
+    const std::string& name,
+    const std::string& port
+) {
     socket::AddressResolver resolver;
     auto entry = resolver.resolve(name, port);
     _serverFd = AsyncFile::asyncBind(entry);
@@ -15,18 +18,12 @@ void Acceptor::start(const std::string& name, const std::string& port) {
         name.c_str(),
         port.c_str()
     );
-    return accept();
-}
 
-void Acceptor::accept() {
-    // printf(">>> %s <<<\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
-    return _serverFd.asyncAccept(_addr, [self = shared_from_this()] (HX::STL::tools::ErrorHandlingTools::Expected<int> ret) {
-        int fd = ret.expect("accept");
-        // printf("建立连接成功... %s ~\n", HX::STL::tools::DateTimeFormat::formatWithMilli().c_str());
+    while (true) {
+        int fd = co_await _serverFd.asyncAccept(_addr);
         LOG_WARNING("有新的连接: %d", fd);
-        ConnectionHandler::make()->start(fd); // 开始读取
-        return self->accept(); // 继续回调(如果没有就挂起, 就返回了)
-    });
+        co_await ConnectionHandler::make()->start(fd); // 开始读取
+    }
 }
 
 }}} // namespace HX::web::server

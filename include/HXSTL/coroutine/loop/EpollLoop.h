@@ -136,7 +136,7 @@ struct EpollFileAwaiter {
  * @param ctl 如: EPOLL_CTL_MOD
  * @return HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> 
  */
-HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> waitFileEvent(
+inline HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> waitFileEvent(
     EpollLoop& epollLoop,
     int fd, 
     EpollEventMask mask, 

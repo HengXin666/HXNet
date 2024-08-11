@@ -162,20 +162,14 @@ public:
      * @return [this&] 可以链式调用
      * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
      */
-    Response& setBodyData(const std::string& data) {
+    void setBodyData(const std::string& data) {
         _responseBody = data;
-        return *this;
     }
 
     /**
      * @brief 生成响应字符串, 用于写入
      */
     void createResponseBuffer();
-
-    /**
-     * @brief 执行写入
-     */
-    void writeResponse(const Request& req);
 
     /**
      * @brief 清空已写入的响应, 重置状态 (复用)

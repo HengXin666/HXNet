@@ -20,9 +20,6 @@
 #ifndef _HX_CONNECTION_HANDLER_H_
 #define _HX_CONNECTION_HANDLER_H_
 
-// #include <cassert>
-#include <memory>
-
 #include <HXSTL/container/BytesBuffer.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXWeb/server/AsyncFile.h>
@@ -34,7 +31,7 @@ namespace HX { namespace web { namespace server {
 /**
  * @brief 连接处理类
  */
-struct ConnectionHandler : std::enable_shared_from_this<ConnectionHandler> {
+struct ConnectionHandler {
     AsyncFile _conn;            // 连接上的客户端的套接字
     // 缓存一次接收到的信息
     HX::STL::container::BytesBuffer _buf{ protocol::http::Request::BUF_SIZE };
@@ -58,23 +55,7 @@ struct ConnectionHandler : std::enable_shared_from_this<ConnectionHandler> {
      * @brief 开始处理连接
      * @param fd 客户端套接字
      */
-    void start(int fd);
-
-    /**
-     * @brief 开始读取
-     * @param size 读取的数据字节大小
-     */
-    void read(std::size_t size = protocol::http::Request::BUF_SIZE);
-
-    /**
-     * @brief 处理请求, 返回响应
-     */
-    void handle();
-
-    /**
-     * @brief 开始写入
-     */
-    void write(HX::STL::container::ConstBytesBufferView buf);
+    HX::STL::coroutine::awaiter::Task<> start(int fd);
 };
 
 }}} // namespace HX::web::server

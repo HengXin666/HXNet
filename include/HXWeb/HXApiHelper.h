@@ -24,6 +24,7 @@
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXWeb/router/RequestParsing.h>
+#include <HXSTL/coroutine/awaiter/Task.hpp>
 #include <HXSTL/utils/StringUtils.h>
 
 /* 简化用户编写的 API 宏 */
@@ -43,7 +44,7 @@
 #define ENDPOINT_BEGIN(METHOD, PATH, FUNC_NAME) \
 const int _HX_endpoint_##FUNC_NAME = []() -> int { \
     std::string templatePath = PATH; \
-    HX::web::router::Router::getSingleton().addController(METHOD, templatePath, [=](const HX::web::protocol::http::Request& req) -> void
+    HX::web::router::Router::getSingleton().addController(METHOD, templatePath, [=](const HX::web::protocol::http::Request& req) -> HX::STL::coroutine::awaiter::Task<>
 
 /**
  * @brief 结束端点的定义

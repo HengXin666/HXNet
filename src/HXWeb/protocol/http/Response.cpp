@@ -230,9 +230,4 @@ void Response::createResponseBuffer() {
     _buf.append(_responseBody);
 }
 
-void Response::writeResponse(const Request& req) {
-    createResponseBuffer();
-    req.resume();
-}
-
 }}}} // namespace HX::web::protocol::http

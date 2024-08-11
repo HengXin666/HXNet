@@ -62,13 +62,7 @@ public:
     /// @brief 缓冲区大小: 第一次recv的大小, 以及存放其值的缓冲区数组的大小
     static constexpr std::size_t BUF_SIZE = 1024ULL;
 
-    mutable HX::STL::container::Callback<> _resume;
-
     Response* _responsePtr = nullptr;
-
-    void resume() const {
-        _resume();
-    }
 
     /**
      * @brief 请求类型枚举

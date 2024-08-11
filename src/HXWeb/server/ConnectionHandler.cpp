@@ -7,84 +7,58 @@
 
 namespace HX { namespace web { namespace server {
 
-void ConnectionHandler::start(int fd) {
+HX::STL::coroutine::awaiter::Task<> ConnectionHandler::start(int fd) {
     _conn = AsyncFile {fd};
-    return read();
-}
-
-void ConnectionHandler::read(std::size_t size /*= protocol::http::Request::BUF_SIZE*/) {
-    // printf("解析中... %s ~\n", HX::STL::utils::DateTimeFormat::formatWithMilli().c_str());
-    context::StopSource stopIO(std::in_place);    // 读写停止程序
-    context::StopSource stopTimer(std::in_place); // 计时器停止程序
-    // 定时器先完成时, 取消读取
-    context::EpollContext::get()._timer.setTimeout(
-        std::chrono::seconds(30),  // 定时为 30 s, 后期改为宏定义或者constexpr吧
-        [stopIO] {
-            stopIO.doRequestStop();
-        },
-        stopTimer
-    );
-    return _conn.asyncRead(_buf, size, [self = shared_from_this(), stopTimer] (HX::STL::tools::ErrorHandlingTools::Expected<size_t> ret) {
-        stopTimer.doRequestStop();
-        
-        if (ret.error()) {
-            return;
-        }
-
-        size_t n = ret.value(); // 读取到的字节数
-        if (n == 0) {
-            // 断开连接
-            LOG_INFO("客户端已断开连接!");
-            return;
-        }
-        
-        // 进行解析
-        if (std::size_t size = self->_request.parserRequest(HX::STL::container::ConstBytesBufferView {self->_buf.data(), n})) {
-            self->read(std::min(size, protocol::http::Request::BUF_SIZE)); // 继续读取
-        } else {
-            self->handle(); // 开始响应
-        }
-    }, stopIO);
-}
-
-void ConnectionHandler::handle() {
     _request._responsePtr = &_response;
-    _request._resume = [self = shared_from_this()] {
-        self->write(self->_response._buf);
-    };
-    // 交给路由处理
-    auto fun = HX::web::router::Router::getSingleton().getEndpointFunc(_request.getRequesType(), _request.getRequesPath());
-    // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
-    if (fun) {
-        fun(_request);
-    } else {
-        _response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
-                 .setContentType("text/html", "UTF-8")
-                 .setBodyData("<h1>404 NOT FIND PATH: [" 
-                    + _request.getRequesPath() 
-                    + "]</h1><h2>Now Time: " 
-                    + HX::STL::utils::DateTimeFormat::format() 
-                    + "</h2>").writeResponse(_request);
+    
+    while (true) {
+        // === 读取 ===
+        LOG_INFO("%d 等待消息可读中...", fd);
+        size_t n = co_await _conn.asyncRead(_buf, protocol::http::Request::BUF_SIZE); // 读取到的字节数
+        while (true) {
+            if (n == 0) {
+                // 断开连接
+                LOG_INFO("客户端已断开连接!");
+                co_return;
+            }
+
+            if (std::size_t size = _request.parserRequest(HX::STL::container::ConstBytesBufferView {_buf.data(), n})) {
+                n = co_await _conn.asyncRead(_buf, std::min(size, protocol::http::Request::BUF_SIZE));
+                continue;
+            }
+            break;
+        }
+
+        // === 路由解析 ===
+        // 交给路由处理
+        auto fun = HX::web::router::Router::getSingleton().getEndpointFunc(_request.getRequesType(), _request.getRequesPath());
+        printf("cli -> url: %s\n", _request.getRequesPath().c_str());
+        if (fun) {
+            co_await fun(_request);
+        } else {
+            _response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
+                    .setContentType("text/html", "UTF-8")
+                    .setBodyData("<h1>404 NOT FIND PATH: [" 
+                        + _request.getRequesPath() 
+                        + "]</h1><h2>Now Time: " 
+                        + HX::STL::utils::DateTimeFormat::format() 
+                        + "</h2>");
+        }
+        _response.createResponseBuffer();
+        _request.clear(); // 本次请求使用结束, 清空, 复用
+
+        // === 响应 ===
+        HX::STL::container::ConstBytesBufferView buf = _response._buf;
+        n = co_await _conn.asyncWrite(buf); // 已经写入的字节数
+        while (true) {
+            if (n == buf.size()) {
+                // 全部写入啦
+                _response.clear();
+                break;
+            }
+            n = co_await _conn.asyncWrite(buf = buf.subspan(n));
+        }
     }
-    _request.clear(); // 本次请求使用结束, 清空, 复用
-    return;
-}
-
-void ConnectionHandler::write(HX::STL::container::ConstBytesBufferView buf) {
-    return _conn.asyncWrite(_response._buf, [self = shared_from_this(), buf] (HX::STL::tools::ErrorHandlingTools::Expected<std::size_t> ret) {
-        if (ret.error()) {
-            return;
-        }
-
-        size_t n = ret.value(); // 已经写入的字节数
-        if (n == self->_response._buf.size()) {
-            // 全部写入啦
-            self->_response.clear();
-            return self->read(); // 开始读取
-        }
-
-        return self->write(buf.subspan(n));
-    });
 }
 
 }}} // namespace HX::web::server

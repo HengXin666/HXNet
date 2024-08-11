@@ -7,6 +7,8 @@
 #include <HXJson/HXJson.h>
 #include <chrono>
 
+using namespace std::chrono;
+
 /**
  * @brief 实现一个轮询的聊天室 By Http服务器
  * 
@@ -53,24 +55,24 @@ HX::web::server::context::StopSource recv_timeout_stop = HX::web::server::contex
 class ChatController {
 
     ENDPOINT_BEGIN(API_GET, "/", root) {
-        return req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+        req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
             // .setBodyData("<h1>根目录</h1><h2>Now Time: " 
             //                     + HX::STL::utils::DateTimeFormat::formatWithMilli() 
             //                     + "</h2>");
-            .setBodyData(HX::STL::utils::FileUtils::getFileContent("index.html"))
-            .writeResponse(req);
+            .setBodyData(HX::STL::utils::FileUtils::getFileContent("index.html"));
+        co_return;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
-        return req._responsePtr
+        req._responsePtr
             ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("image/x-icon")
-            .setBodyData(HX::STL::utils::FileUtils::getFileContent("favicon.ico"))
-            .writeResponse(req);
+            .setBodyData(HX::STL::utils::FileUtils::getFileContent("favicon.ico"));
+        co_return;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(API_POST, "/send", send) { // 客户端发送消息过来
+    ENDPOINT_BEGIN(API_POST, "/send1", send) { // 客户端发送消息过来
         auto body = req.getRequesBody();
         auto jsonPair = HX::Json::parse(body);
         if (jsonPair.second) {
@@ -85,13 +87,13 @@ class ChatController {
             printf("解析客户端出错\n");
         }
         
-        return req._responsePtr
+        req._responsePtr
             ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/plain", "UTF-8")
-            .writeResponse(req);
+            .setContentType("text/plain", "UTF-8");
+        co_return;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(API_POST, "/recv", recv) { // 发送内容给客户端
+    ENDPOINT_BEGIN(API_POST, "/recv1", recv) { // 发送内容给客户端
         using namespace std::chrono_literals;
 
         auto body = req.getRequesBody();
@@ -102,20 +104,21 @@ class ChatController {
             int len = jsonPair.first.get<HX::Json::JsonDict>()["first"].get<int>();
             printf("内容是: %d\n", len);
             if (len < (int)messageArr.size())
-                return req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+                co_return req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                     .setContentType("text/plain", "UTF-8")
-                    .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()))
-                    .writeResponse(req);
-            else
-                HX::web::server::context::EpollContext::get()._timer.setTimeout(3s, [&req, len] {
-                    std::vector<Message> submessages;
-                    printf("回复~\n");
-                    return req._responsePtr
-                        ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                        .setContentType("text/plain", "UTF-8")
-                        .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()))
-                        .writeResponse(req);
-                }, recv_timeout_stop);
+                    .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
+            else {
+                co_await HX::STL::coroutine::loop::TimerLoop::sleep_for(
+                    HX::STL::coroutine::loop::AsyncLoop::getLoop(),
+                    3s
+                );
+                std::vector<Message> submessages;
+                printf("回复~\n");
+                co_return req._responsePtr
+                    ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+                    .setContentType("text/plain", "UTF-8")
+                    .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
+            }
         }
     } ENDPOINT_END;
 
@@ -123,22 +126,24 @@ public:
 
 };
 
-void startChatServer() {
+HX::STL::coroutine::awaiter::Task<> startChatServer() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
     messageArr.emplace_back("系统", "欢迎来到聊天室!");
     ROUTER_BIND(ChatController);
     try {
-        HX::web::server::context::EpollContext ctx;
         auto ptr = HX::web::server::Acceptor::make();
-        ptr->start("0.0.0.0", "28205");
-        ctx.join();
+        co_await ptr->start("0.0.0.0", "28205");
     } catch(const std::system_error &e) {
         std::cerr << e.what() << '\n';
     }
+    co_return;
 }
 
 int main() {
     chdir("../static");
-    startChatServer();
+    HX::STL::coroutine::awaiter::run_task(
+        HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
+        startChatServer()
+    );
     return 0;
 }

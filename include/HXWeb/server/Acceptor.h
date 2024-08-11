@@ -20,8 +20,6 @@
 #ifndef _HX_ACCEPTOR_H_
 #define _HX_ACCEPTOR_H_
 
-#include <memory>
-
 #include <HXWeb/server/AsyncFile.h>
 #include <HXWeb/socket/AddressResolver.h>
 
@@ -30,9 +28,9 @@ namespace HX { namespace web { namespace server {
 /**
  * @brief 连接接受类
  */
-class Acceptor : public std::enable_shared_from_this<Acceptor> {
-    AsyncFile _serverFd;              // 服务器套接字
-    socket::AddressResolver::Address _addr;   // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
+class Acceptor {
+    AsyncFile _serverFd;                    // 服务器套接字
+    socket::AddressResolver::Address _addr; // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
     using pointer = std::shared_ptr<Acceptor>;
 public:
     /**
@@ -48,12 +46,12 @@ public:
      * @param name 主机名或地址字符串(IPv4 的点分十进制表示或 IPv6 的十六进制表示)
      * @param port 服务名可以是十进制的端口号, 也可以是已知的服务名称, 如 ftp、http 等
      */
-    void start(const std::string& name, const std::string& port);
+    HX::STL::coroutine::awaiter::Task<> start(const std::string& name, const std::string& port);
 
     /**
      * @brief 进行连接 -> 调用异步的进行连接
      */
-    void accept();
+    HX::STL::coroutine::awaiter::Task<> accept();
 };
 
 }}} // namespace HX::web::server
