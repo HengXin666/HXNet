@@ -139,11 +139,39 @@ HX::STL::coroutine::awaiter::Task<> startChatServer() {
     co_return;
 }
 
+#include <chrono>
+
+using namespace std::chrono;
+
+HX::STL::coroutine::awaiter::TaskSuspend<
+    void,
+    HX::STL::coroutine::awaiter::Promise<void>,
+    HX::STL::coroutine::awaiter::ReturnToParentAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
+> B() {
+    std::cout << "B start\n";
+    co_await HX::STL::coroutine::awaiter::ReturnToParentAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>(); // Simulate an asynchronous operation
+    std::cout << "B continues\n";
+}
+
+HX::STL::coroutine::awaiter::Task<
+    void,
+    HX::STL::coroutine::awaiter::Promise<void>,
+    HX::STL::coroutine::awaiter::ReturnToParentAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
+> A() {
+    std::cout << "A start\n";
+    co_await B();
+    std::cout << "A continues\n";
+}
+
 int main() {
     chdir("../static");
-    HX::STL::coroutine::awaiter::run_task(
-        HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
-        startChatServer()
-    );
+    auto a = A();
+    a._coroutine.resume();
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    return 0;
+    // HX::STL::coroutine::awaiter::run_task(
+    //     HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
+    //     A()
+    // );
     return 0;
 }

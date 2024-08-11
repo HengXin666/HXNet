@@ -20,6 +20,7 @@ HX::STL::coroutine::awaiter::Task<> Acceptor::start(
     );
 
     while (true) {
+        LOG_INFO("等待连接...");
         int fd = co_await _serverFd.asyncAccept(_addr);
         LOG_WARNING("有新的连接: %d", fd);
         co_await ConnectionHandler::make()->start(fd); // 开始读取

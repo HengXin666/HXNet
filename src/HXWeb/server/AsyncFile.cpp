@@ -36,7 +36,7 @@ AsyncFile::AsyncFile(int fd) : FileDescriptor(fd)
 }
 
 HX::STL::coroutine::awaiter::Task<
-    int, 
+    int,
     HX::STL::coroutine::loop::EpollFilePromise
 > AsyncFile::asyncAccept(
     socket::AddressResolver::Address& addr
@@ -45,11 +45,11 @@ HX::STL::coroutine::awaiter::Task<
         ::accept(_fd, &addr._addr, &addr._addrlen)
     );
 
-    while (ret.isError(EAGAIN)) { // 是EAGAIN错误
+    while (ret.error()) { // 是EAGAIN错误
         co_await HX::STL::coroutine::loop::waitFileEvent(
             HX::STL::coroutine::loop::AsyncLoop::getLoop(),
             _fd,
-            EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT
+            EPOLLIN | EPOLLERR | EPOLLET | EPOLLONESHOT
         );
         ret = HX::STL::tools::ErrorHandlingTools::convertError<int>(
             ::accept(_fd, &addr._addr, &addr._addrlen)
@@ -69,7 +69,7 @@ HX::STL::coroutine::awaiter::Task<
         ::read(_fd, buf.data(), count)
     );
 
-    while (ret.isError(EAGAIN)) { // 是EAGAIN错误
+    while (ret.error()) { // 是EAGAIN错误
         co_await HX::STL::coroutine::loop::waitFileEvent(
             HX::STL::coroutine::loop::AsyncLoop::getLoop(),
             _fd,
@@ -92,7 +92,7 @@ HX::STL::coroutine::awaiter::Task<
         ::write(_fd, buf.data(), buf.size())
     );
 
-    while (ret.isError(EAGAIN)) { // 是EAGAIN错误
+    while (ret.error()) { // 是EAGAIN错误
         co_await HX::STL::coroutine::loop::waitFileEvent(
             HX::STL::coroutine::loop::AsyncLoop::getLoop(),
             _fd,
