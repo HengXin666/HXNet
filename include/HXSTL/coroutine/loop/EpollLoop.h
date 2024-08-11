@@ -56,6 +56,12 @@ public:
     //     return loop;
     // }
 
+    /**
+     * @brief 注册套接字到epoll检测
+     * @param fd 
+     */
+    void addEpollCtl(int fd);
+
     void removeListener(int fd) {
         ::epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, nullptr);
         --_count;

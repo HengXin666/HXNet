@@ -46,7 +46,7 @@ public:
         return *this;
     }
 
-    ~FileDescriptor() {
+    virtual ~FileDescriptor() {
         if (_fd == -1) {
             return;
         }

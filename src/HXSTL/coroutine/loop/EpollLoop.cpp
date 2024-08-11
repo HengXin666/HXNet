@@ -2,6 +2,23 @@
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
+void EpollLoop::addEpollCtl(int fd) {
+    struct epoll_event event;
+    event.events = EPOLLET;
+    event.data.ptr = nullptr;
+
+    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        ::epoll_ctl(
+            _epfd,
+            EPOLL_CTL_ADD,
+            fd,
+            &event
+        )
+    ).expect("EPOLL_CTL_ADD");
+
+    ++_count;
+}
+
 bool EpollLoop::addListener(EpollFilePromise &promise, EpollEventMask mask, int ctl) {
     struct ::epoll_event event;
     event.events = mask;

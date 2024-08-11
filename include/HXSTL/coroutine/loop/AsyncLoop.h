@@ -56,8 +56,16 @@ public:
         }
     }
 
+    TimerLoop& getTimerLoop() {
+        return _timerLoop;
+    }
+
     operator TimerLoop &() {
         return _timerLoop;
+    }
+
+    EpollLoop& getEpollLoop() {
+        return _epollLoop;
     }
 
     operator EpollLoop &() {

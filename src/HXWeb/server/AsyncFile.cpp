@@ -1,10 +1,26 @@
 #include <HXWeb/server/AsyncFile.h>
 
-#include <HXSTL/coroutine/loop/AsyncLoop.h>
-
 #include <fcntl.h>
 
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
+#include <HXSTL/tools/ErrorHandlingTools.h>
+
 namespace HX { namespace web { namespace server {
+
+AsyncFile AsyncFile::asyncBind(HX::web::socket::AddressResolver::AddressInfo const &addr) {
+    auto sock = AsyncFile{addr.createSocket()};
+    auto serve_addr = addr.getAddress();
+    int on = 1;
+    setsockopt(sock._fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    setsockopt(sock._fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
+    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        ::bind(sock._fd, serve_addr._addr, serve_addr._addrlen)
+    ).expect("bind");
+    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        ::listen(sock._fd, SOMAXCONN)
+    ).expect("listen");
+    return sock;
+}
 
 AsyncFile::AsyncFile(int fd) : FileDescriptor(fd)
 {
@@ -16,17 +32,7 @@ AsyncFile::AsyncFile(int fd) : FileDescriptor(fd)
         ::fcntl(_fd, F_SETFL, flags)
     ).expect("F_SETFL");
 
-    struct epoll_event event;
-    event.events = EPOLLET;
-    event.data.ptr = nullptr;
-    HX::STL::tools::ErrorHandlingTools::convertError<int>(
-        ::epoll_ctl(
-            ((HX::STL::coroutine::loop::EpollLoop &)HX::STL::coroutine::loop::AsyncLoop::getLoop())._epfd,
-            EPOLL_CTL_ADD,
-            _fd,
-            &event
-        )
-    ).expect("EPOLL_CTL_ADD");
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().addEpollCtl(_fd);
 }
 
 HX::STL::coroutine::awaiter::Task<
@@ -97,6 +103,13 @@ HX::STL::coroutine::awaiter::Task<
         );
     }
     co_return ret.value();
+}
+
+AsyncFile::~AsyncFile() {
+    if (_fd == -1) {
+        return;
+    }
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().removeListener(_fd);
 }
 
 }}} // namespace HX::web::server

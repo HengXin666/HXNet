@@ -20,14 +20,11 @@
 #ifndef _HX_ASYNC_FILE_H_
 #define _HX_ASYNC_FILE_H_
 
-#include <HXSTL/container/Callback.h>
-#include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXSTL/container/BytesBuffer.h>
 #include <HXSTL/coroutine/awaiter/Task.hpp>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXWeb/socket/FileDescriptor.h>
 #include <HXWeb/socket/AddressResolver.h>
-#include <HXWeb/server/context/EpollContext.h>
 
 namespace HX { namespace web { namespace server {
 
@@ -46,20 +43,7 @@ public:
     /**
      * @brief 建立连接
      */
-    static AsyncFile asyncBind(HX::web::socket::AddressResolver::AddressInfo const &addr) {
-        auto sock = AsyncFile{addr.createSocket()};
-        auto serve_addr = addr.getAddress();
-        int on = 1;
-        setsockopt(sock._fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-        setsockopt(sock._fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
-        HX::STL::tools::ErrorHandlingTools::convertError<int>(
-            ::bind(sock._fd, serve_addr._addr, serve_addr._addrlen)
-        ).expect("bind");
-        HX::STL::tools::ErrorHandlingTools::convertError<int>(
-            ::listen(sock._fd, SOMAXCONN)
-        ).expect("listen");
-        return sock;
-    }
+    static AsyncFile asyncBind(HX::web::socket::AddressResolver::AddressInfo const &addr);
 
     /**
      * @brief 异步建立连接
@@ -97,12 +81,7 @@ public:
         HX::STL::container::ConstBytesBufferView buf
     );
 
-    ~AsyncFile() {
-        if (_fd == -1) {
-            return;
-        }
-        
-    }
+    ~AsyncFile();
 
     explicit operator bool() const noexcept {
         return _fd != -1;
