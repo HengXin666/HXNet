@@ -122,6 +122,7 @@ struct Promise<void, ifSuspend> {
  * @brief 协程任务类: 直接返回, 而不是马上执行
  * @tparam T 协程的返回值类型
  * @tparam P 协程的`promise_type`类型
+ * @tparam A 被`co_await`时的行为
  */
 template <class T = void, class P = Promise<T>, class A = ExitAwaiter<T, P>>
 struct [[nodiscard]] Task {
@@ -159,9 +160,9 @@ private:
 
 /**
  * @brief 协程任务类: 会立马开始执行
- * @tparam T 
- * @tparam P 
- * @tparam A 
+ * @tparam T 协程的返回值类型
+ * @tparam P 协程的`promise_type`类型
+ * @tparam A 被`co_await`时的行为
  */
 template <class T = void, class P = Promise<T, false>, class A = ExitAwaiter<T, P>>
 struct [[nodiscard]] TaskSuspend {
@@ -193,8 +194,8 @@ struct [[nodiscard]] TaskSuspend {
         return _coroutine;
     }
 
-    std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
 private:
+    std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
 };
 
 template <class Loop, class T, class P, class A>

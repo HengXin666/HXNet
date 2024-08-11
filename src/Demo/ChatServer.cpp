@@ -156,8 +156,15 @@ HX::STL::coroutine::awaiter::TaskSuspend<
     HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
 > B() {
     std::cout << "\tB start\n";
-    co_await C(); // Simulate an asynchronous operation
+    auto task = C();
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
+        std::chrono::system_clock::now(),
+        task
+    );
     std::cout << "\tB continues\n";
+    // co_await std::suspend_always{};  // 等待协程 C 完成
+    std::cout << "\tB end\n";
+    co_return;
 }
 
 HX::STL::coroutine::awaiter::Task<
@@ -167,7 +174,7 @@ HX::STL::coroutine::awaiter::Task<
 > A() {
     std::cout << "A start\n";
     co_await B();
-    std::cout << "A continues\n";
+    std::cout << "A end\n";
 }
 
 int main() {

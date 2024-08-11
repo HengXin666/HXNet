@@ -53,10 +53,11 @@ struct ReturnToParentAwaiter {
     ) const noexcept {
         _coroutine.promise()._previous = coroutine;
         HX::STL::tools::ForwardCoroutineTools::TimerLoopAddTask(coroutine);
-        return true;
+        return false;
     }
 
     void await_resume() const noexcept {
+        printf("恢复...\n");
         return _coroutine.promise().result();
     }
 

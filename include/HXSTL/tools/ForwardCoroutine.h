@@ -28,6 +28,10 @@ namespace HX { namespace STL { namespace tools {
  * @brief 协程转发 (为了防止相互依赖而搞的函数)
  */
 struct ForwardCoroutineTools {
+    /**
+     * @brief 转移句柄执行权到计时器
+     * @param coroutine 
+     */
     static void TimerLoopAddTask(std::coroutine_handle<> coroutine);
 };
 
