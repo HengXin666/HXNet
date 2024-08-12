@@ -35,7 +35,7 @@ AsyncFile::AsyncFile(int fd) : FileDescriptor(fd)
         ::fcntl(_fd, F_SETFL, flags)
     ).expect("F_SETFL");
 
-    // HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().addEpollCtl(_fd);
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().addEpollCtl(_fd);
 }
 
 HX::STL::coroutine::awaiter::Task<
@@ -68,36 +68,26 @@ HX::STL::coroutine::awaiter::Task<
     std::span<char> buf,
     std::size_t count
 ) { // EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT
-    auto ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
-        ::read(_fd, buf.data(), count)
-    );
-  
-    while (ret.isError(EAGAIN)) { // 是EAGAIN错误
-        printf("EAGAIN 挂起\n");
-        // auto x = 
-        co_await HX::STL::coroutine::loop::waitFileEvent(
-            HX::STL::coroutine::loop::AsyncLoop::getLoop(),
-            _fd,
-            EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT
-        );
-        // if (x <= 0)
-        //     co_return 0;
-        
-        ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
+    try {
+        auto ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
             ::read(_fd, buf.data(), count)
         );
+    
+        while (ret.isError(EAGAIN)) { // 是EAGAIN错误
+            co_await HX::STL::coroutine::loop::waitFileEvent(
+                HX::STL::coroutine::loop::AsyncLoop::getLoop(),
+                _fd,
+                EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT
+            );
+            
+            ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
+                ::read(_fd, buf.data(), count)
+            );
+        }
+        co_return ret.value();
+    } catch (...) {
+        co_return 0; // 关闭连接
     }
-    // printf("%llu\n", ret.value());
-
-    // // 服了, 怎么会读取到`\0`
-    // if (buf.size() != ::strlen(buf.data())) {
-    //     printf("Error: The /0 is Fxxk is Data!\n");
-    //     for (int i = 0; i < buf.size(); ++i) {
-    //         printf("%c", buf.data()[i]);
-    //     }
-    // }
-
-    co_return ret.value();
 }
 
 HX::STL::coroutine::awaiter::Task<
@@ -128,6 +118,7 @@ AsyncFile::~AsyncFile() {
         return;
     }
     // 有可能它退出了, 但是还在等待吗?
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().removeListener(_fd);
 }
 
 }}} // namespace HX::web::server

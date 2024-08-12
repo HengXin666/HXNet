@@ -1,7 +1,7 @@
 # HXNet
-学习现代Cpp的代码存放库, 事件循环epoll, 基于压缩前缀树的路由, http解析, Json解析, 万用print等
+学习现代Cpp的代码存放库, epoll + 协程的http服务器, 基于压缩前缀树的路由, http解析, Json解析, 万用print等
 
-> 目标是写一个基于epoll事件循环的 Web Http 后端
+> 目标是写一个epoll协程的 Web Http 后端
 
 ## 构建要求
 
@@ -89,21 +89,29 @@ ROUTER_BIND(MywebController); // 这个类在上面声明过了
     - [x] 重构为基于协程的epoll
 
 ### 协程epoll服务端BUG汇总
-1. 读取数据的时候, 有时候无法读取到正确的数据 (某些值被换成了`\0`)
+1. [x] 读取数据的时候, 有时候无法读取到正确的数据 (某些值被换成了`\0`)
     - 解决方案: 使用`std::span<char>`和`std::vector<char>`配合, 而不是自制`buf`类, 它他妈居然又读取到?!?
-2. 无法正确的断开连接: 明明客户端已经关闭, 而服务端却没有反应 | 实际上`::Accept`已经重新复用那个已经关闭的套接字, 但是`co_await`读取, 它没有反应, 一直卡在那里!
-3. 玄学的`include/HXSTL/coroutine/loop/EpollLoop.h`的`await_suspend`的`fd == -1`的问题, 可能和2有关?!?!
+2. [x] 无法正确的断开连接: 明明客户端已经关闭, 而服务端却没有反应 | 实际上`::Accept`已经重新复用那个已经关闭的套接字, 但是`co_await`读取, 它没有反应, 一直卡在那里!
+    - 解决方案: `include/HXWeb/server/ConnectionHandler.h`实际上`make`创建的是智能指针, 而我们只是需要其协程, 故不需要其对象的成员, 导致`AsyncFile`无法因协程退出而析构
+3. [x] 玄学的`include/HXSTL/coroutine/loop/EpollLoop.h`的`await_suspend`的`fd == -1`的问题, 可能和2有关?!?!
+    - 离奇的修复啦?!
+---
+4. 在`AsyncFile::asyncRead`加入了`try`以处理`[ERROR]: 连接被对方重置`, 是否有非`try`的解决方案?!
+
+5. 依旧不能很好的实现html基于轮询的聊天室, 我都怀疑是html+js的问题了...(明明和基于回调的事件循环差不多, 都是这个问题..)
+
+- 协程版本: (基准: 别人22w/s的并发的程序在我这里一样的参数也就3w+/s..)
 
 ```sh
-╰─ wrk -c200 -d30s http://localhost:28205 # wsl Arth Linux 渣机
-Running 30s test @ http://localhost:28205
-  2 threads and 200 connections
+╰─ wrk -c1000 -d15s http://localhost:28205/home/qwq # 垃圾wsl Linux Arth (不知道哪里限制了, cpu似乎没有跑满?)
+Running 15s test @ http://localhost:28205/home/qwq
+  2 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     6.25ms  609.54us  47.83ms   89.89%
-    Req/Sec    16.08k   747.80    17.86k    69.33%
-  959976 requests in 30.05s, 130.00MB read
-Requests/sec:  31950.71
-Transfer/sec:      4.33MB
+    Latency    24.99ms    3.10ms 143.43ms   97.32%
+    Req/Sec    20.13k     1.00k   22.70k    81.88%
+  596765 requests in 15.00s, 84.80MB read
+Requests/sec:  39780.51
+Transfer/sec:      5.65MB
 ```
 
 ---

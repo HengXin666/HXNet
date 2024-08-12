@@ -27,7 +27,7 @@ HX::STL::coroutine::awaiter::Task<> Acceptor::start(
             std::chrono::system_clock::now(),
             nullptr,
             std::make_shared<HX::STL::coroutine::awaiter::TimerTask>(
-                ConnectionHandler::make()->start(fd)
+                ConnectionHandler::start(fd)
             )
         );
     }

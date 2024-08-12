@@ -12,13 +12,14 @@ std::size_t protocol::http::Request::parserRequest(
     HX::STL::container::ConstBytesBufferView buf
 ) {
     _previousData.append(buf);
-    // if (buf.size() != ::strlen(buf.data())) {
-        printf("Error: The /0 is Fxxk is Data!\n\n");
-        std::cout << std::string(buf.data(), buf.size()) << "\n\n";
-        for (int i = 0; i < buf.size(); ++i) {
-            printf("%d(%c) ", buf.data()[i], buf.data()[i]);
-        }
-    // }
+    // TODO: DEBUG #1
+    // // if (buf.size() != ::strlen(buf.data())) {
+    //     printf("Error: The /0 is Fxxk is Data!\n\n");
+    //     std::cout << std::string(buf.data(), buf.size()) << "\n\n";
+    //     for (int i = 0; i < buf.size(); ++i) {
+    //         printf("%d(%c) ", buf.data()[i], buf.data()[i]);
+    //     }
+    // // }
     char *tmp = nullptr;
     char *line = nullptr;
     if (_requestLine.empty()) { // 请求行还未解析

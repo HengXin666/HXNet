@@ -62,10 +62,7 @@ public:
      */
     void addEpollCtl(int fd);
 
-    void removeListener(int fd) {
-        ::epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, nullptr);
-        --_count;
-    }
+    void removeListener(int fd);
 
     bool addListener(class EpollFilePromise &promise, EpollEventMask mask, int ctl);
 
@@ -127,7 +124,7 @@ struct EpollFileAwaiter {
     EpollLoop &_epollLoop;
     int _fd = -1;
     EpollEventMask _mask = 0;
-    int _ctl = EPOLL_CTL_ADD;
+    int _ctl = EPOLL_CTL_MOD;
 };
 
 /**
@@ -142,7 +139,7 @@ inline HX::STL::coroutine::awaiter::Task<int, EpollFilePromise> waitFileEvent(
     EpollLoop& epollLoop,
     int fd, 
     EpollEventMask mask, 
-    int ctl = EPOLL_CTL_ADD
+    int ctl = EPOLL_CTL_MOD
 ) {
     co_return co_await EpollFileAwaiter(epollLoop, fd, mask, ctl);
 }

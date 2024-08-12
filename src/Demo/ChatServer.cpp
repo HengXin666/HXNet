@@ -72,6 +72,14 @@ class ChatController {
         co_return;
     } ENDPOINT_END;
 
+    ENDPOINT_BEGIN(API_GET, "/home/**", home) {
+        req._responsePtr
+            ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+            .setContentType("text/html", "UTF-8")
+            .setBodyData("<h1> Home URL is " + req.getRequesPath() + "</h1>");
+        co_return;
+    } ENDPOINT_END;
+
     ENDPOINT_BEGIN(API_POST, "/send", send) { // 客户端发送消息过来
         auto body = req.getRequesBody();
         auto jsonPair = HX::Json::parse(body);

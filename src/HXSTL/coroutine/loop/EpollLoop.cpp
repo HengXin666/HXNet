@@ -21,17 +21,25 @@ void EpollLoop::addEpollCtl(int fd) {
     ++_count;
 }
 
+void EpollLoop::removeListener(int fd) {
+    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        ::epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, nullptr)
+    ).expect("EPOLL_CTL_DEL");
+    --_count;
+}
+
 bool EpollLoop::addListener(EpollFilePromise &promise, EpollEventMask mask, int ctl) {
     struct ::epoll_event event;
     event.events = mask;
     event.data.ptr = &promise;
     
+    // printf("开始侦测: %d\n", promise._fd);
     HX::STL::tools::ErrorHandlingTools::convertError<int>(
         ::epoll_ctl(_epfd, ctl, promise._fd, &event)
     ).expect("addListener: epoll_ctl");
 
-    if (ctl == EPOLL_CTL_ADD)
-        ++_count;
+    // if (ctl == EPOLL_CTL_ADD)
+    //     ++_count;
     return true;
 }
 
@@ -60,8 +68,8 @@ bool EpollLoop::run(std::optional<std::chrono::system_clock::duration> timeout) 
 
 EpollFilePromise::~EpollFilePromise() {
     if (_fd != -1) {
-        printf("结束侦测: %d\n", _fd);
-        HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().removeListener(_fd);
+        // printf("结束侦测: %d\n", _fd);
+        // HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().removeListener(_fd);
     }
 }
 
