@@ -27,6 +27,7 @@
 #include <utility>
 #include <thread>
 
+#include <HXSTL/coroutine/awaiter/TimerTask.hpp>
 #include <HXSTL/coroutine/awaiter/Task.hpp>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
@@ -34,20 +35,29 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
 class TimerLoop {
 public:
     /**
+     * @brief 协程智能指针, 用于维护被`Timer`托管的协程的生命周期
+     */
+    using CoroutinePtr = std::shared_ptr<HX::STL::coroutine::awaiter::TimerTask>;
+
+    /**
      * @brief 添加计时器
      * @param expireTime 计时器结束时间点
      * @param coroutine 结束时候进行执行的协程句柄
+     * @param task 需要被`Timer`控制执行权的协程(`TimerTask`)智能指针
      */
     void addTimer(
         std::chrono::system_clock::time_point expireTime, 
         std::coroutine_handle<> coroutine,
-        std::shared_ptr<HX::STL::coroutine::awaiter::Task<void>> task = {}
+        CoroutinePtr task = {}
     ) {
         auto&& v = std::make_pair<
             std::coroutine_handle<>, 
-            std::shared_ptr<HX::STL::coroutine::awaiter::Task<void>>
-        > (std::move(task != nullptr ? task->_coroutine : coroutine), std::move(task));
-        _timerRBTree.insert({expireTime, v}); // 到时候改为智能指针!
+            CoroutinePtr
+        > (
+            task != nullptr ? (void)(task->_ptr = task), task->_coroutine : coroutine, 
+            std::move(task)
+        );
+        _timerRBTree.insert({expireTime, v});
     }
 
     /**
@@ -128,7 +138,7 @@ private:
         std::chrono::system_clock::time_point, 
         std::pair<
             std::coroutine_handle<>, 
-            std::shared_ptr<HX::STL::coroutine::awaiter::Task<void>>
+            CoroutinePtr
         >
     > _timerRBTree;
 

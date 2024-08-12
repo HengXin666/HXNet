@@ -22,12 +22,12 @@
 
 #include <coroutine>
 
-#include <HXSTL/tools/ForwardCoroutine.h>
+#include <HXSTL/coroutine/loop/TimerLoop.h>
 
 namespace HX { namespace STL { namespace coroutine { namespace awaiter {
 
 /**
- * @brief 协程控制: 暂停则回到父级`await`继续执行; 其控制交给`Loop`
+ * @brief 协程控制: 暂停则回到父级`await`继续执行; 其控制权交给`Loop`
  */
 template <class T, class P>
 struct ReturnToParentAwaiter {
@@ -37,6 +37,7 @@ struct ReturnToParentAwaiter {
     explicit ReturnToParentAwaiter(
         std::coroutine_handle<promise_type> coroutine
     ) : _coroutine(coroutine)
+      , _coroutinePtr(coroutinePtr)
     {}
 
     bool await_ready() const noexcept { 
@@ -57,7 +58,6 @@ struct ReturnToParentAwaiter {
     }
 
     void await_resume() const noexcept {
-        printf("恢复...\n");
         return _coroutine.promise().result();
     }
 

@@ -20,103 +20,10 @@
 #ifndef _HX_TASK_H_
 #define _HX_TASK_H_
 
-#include <HXSTL/coroutine/awaiter/Uninitialized.hpp>
-#include <HXSTL/coroutine/awaiter/RepeatAwaiter.hpp>
-#include <HXSTL/coroutine/awaiter/PreviousAwaiter.hpp>
+#include <HXSTL/coroutine/awaiter/Promise.hpp>
 #include <HXSTL/coroutine/awaiter/ExitAwaiter.hpp>
-#include <HXSTL/coroutine/awaiter/ReturnToParentAwaiter.hpp>
 
 namespace HX { namespace STL { namespace coroutine { namespace awaiter {
-
-/**
- * @brief 
- * @tparam T 
- * @tparam bool 第一次创建时候是否暂停协程 (默认暂停`true`)
- */
-template <class T, bool ifSuspend = true>
-struct Promise {
-    auto initial_suspend() { 
-        if constexpr (ifSuspend)
-            return std::suspend_always(); // 第一次创建, 直接挂起
-        else
-            return std::suspend_never();
-    }
-
-    auto final_suspend() noexcept {
-        return PreviousAwaiter(_previous);
-    }
-
-    void unhandled_exception() noexcept {
-        _exception = std::current_exception();
-    }
-
-    void return_value(T&& res) {
-        _res.putVal(std::move(res));
-    }
-
-    void return_value(const T& res) {
-        _res.putVal(res);
-    }
-
-    auto yield_value(T&& res) {
-        _res.putVal(res);
-        return std::suspend_always(); // 挂起协程
-    }
-
-    T result() {
-        if (_exception) [[unlikely]] {
-            std::rethrow_exception(_exception);
-        }
-        return _res.moveVal();
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<Promise>::from_promise(*this);
-    }
-
-    Promise &operator=(Promise &&) = delete;
-
-    Uninitialized<T> _res;
-    
-    std::coroutine_handle<> _previous {}; // 上一个协程句柄
-    std::exception_ptr _exception {}; // 异常信息
-};
-
-template <bool ifSuspend>
-struct Promise<void, ifSuspend> {
-    auto initial_suspend() { 
-        if constexpr (ifSuspend)
-            return std::suspend_always(); // 第一次创建, 直接挂起
-        else
-            return std::suspend_never();
-    }
-
-    auto final_suspend() noexcept {
-        return PreviousAwaiter(_previous);
-    }
-
-    void unhandled_exception() noexcept {
-        _exception = std::current_exception();
-    }
-
-    void return_void() noexcept {
-    }
-
-    void result() {
-        if (_exception) [[unlikely]] {
-            std::rethrow_exception(_exception);
-        }
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<Promise>::from_promise(*this);
-    }
-
-    Promise &operator=(Promise &&) = delete;
-    
-    std::coroutine_handle<> _previous {}; // 上一个协程句柄
-    std::exception_ptr _exception {}; // 异常信息
-};
 
 /**
  * @brief 协程任务类: 直接返回, 而不是马上执行
@@ -139,6 +46,7 @@ struct [[nodiscard]] Task {
 
     Task &operator=(Task &&that) noexcept {
         std::swap(_coroutine, that._coroutine);
+        return *this;
     }
 
     ~Task() {
@@ -179,6 +87,7 @@ struct [[nodiscard]] TaskSuspend {
 
     TaskSuspend &operator=(TaskSuspend &&that) noexcept {
         std::swap(_coroutine, that._coroutine);
+        return *this;
     }
 
     ~TaskSuspend() {
