@@ -7,7 +7,7 @@
 
 namespace HX { namespace web { namespace server {
 
-HX::STL::coroutine::awaiter::Task<> ConnectionHandler::start(int fd) {
+HX::STL::coroutine::awaiter::Task<void> ConnectionHandler::start(int fd) {
     _conn = AsyncFile {fd};
     _request._responsePtr = &_response;
     

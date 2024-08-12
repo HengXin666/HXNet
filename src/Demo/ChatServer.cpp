@@ -140,11 +140,7 @@ HX::STL::coroutine::awaiter::Task<> startChatServer() {
 
 using namespace std::chrono;
 
-HX::STL::coroutine::awaiter::TaskSuspend<
-    void,
-    HX::STL::coroutine::awaiter::Promise<void>,
-    HX::STL::coroutine::awaiter::ReturnToParentAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
-> C() {
+HX::STL::coroutine::awaiter::Task<void> C() {
     std::cout << "\t\tC start\n";
     co_await HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().sleep_for(3s); // Simulate an asynchronous operation
     std::cout << "\t\tC continues\n";
@@ -156,13 +152,14 @@ HX::STL::coroutine::awaiter::TaskSuspend<
     HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
 > B() {
     std::cout << "\tB start\n";
-    auto task = C();
+    // auto task = C(); // 需要保证 task 未被销毁!
     HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
         std::chrono::system_clock::now(),
-        task
+        nullptr,
+        std::make_shared<HX::STL::coroutine::awaiter::Task<void>>(C())
     );
     std::cout << "\tB continues\n";
-    // co_await std::suspend_always{};  // 等待协程 C 完成
+    co_await std::suspend_always{};  // 等待协程 C 完成
     std::cout << "\tB end\n";
     co_return;
 }

@@ -55,7 +55,7 @@ struct ConnectionHandler {
      * @brief 开始处理连接
      * @param fd 客户端套接字
      */
-    HX::STL::coroutine::awaiter::Task<> start(int fd);
+    HX::STL::coroutine::awaiter::Task<void> start(int fd);
 };
 
 }}} // namespace HX::web::server

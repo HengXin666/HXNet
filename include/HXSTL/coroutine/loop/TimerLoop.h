@@ -24,6 +24,7 @@
 #include <map>
 #include <optional>
 #include <chrono>
+#include <utility>
 #include <thread>
 
 #include <HXSTL/coroutine/awaiter/Task.hpp>
@@ -39,9 +40,14 @@ public:
      */
     void addTimer(
         std::chrono::system_clock::time_point expireTime, 
-        std::coroutine_handle<> coroutine
+        std::coroutine_handle<> coroutine,
+        std::shared_ptr<HX::STL::coroutine::awaiter::Task<void>> task = {}
     ) {
-        _timerRBTree.insert({expireTime, coroutine});
+        auto&& v = std::make_pair<
+            std::coroutine_handle<>, 
+            std::shared_ptr<HX::STL::coroutine::awaiter::Task<void>>
+        > (std::move(task != nullptr ? task->_coroutine : coroutine), std::move(task));
+        _timerRBTree.insert({expireTime, v}); // 到时候改为智能指针!
     }
 
     /**
@@ -118,7 +124,13 @@ private:
     TimerLoop& operator=(TimerLoop&&) = delete;
 
     /// @brief 计时器红黑树
-    std::multimap<std::chrono::system_clock::time_point, std::coroutine_handle<>> _timerRBTree;
+    std::multimap<
+        std::chrono::system_clock::time_point, 
+        std::pair<
+            std::coroutine_handle<>, 
+            std::shared_ptr<HX::STL::coroutine::awaiter::Task<void>>
+        >
+    > _timerRBTree;
 
     /// @brief 任务队列
     std::queue<std::coroutine_handle<>> _taskQueue;

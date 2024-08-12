@@ -18,7 +18,7 @@ void TimerLoop::runAll() {
             auto it = _timerRBTree.begin();
             if (now >= it->first) {
                 do {
-                    it->second.resume();
+                    it->second.first.resume();
                     _timerRBTree.erase(it);
                     if (_timerRBTree.empty())
                         break;
@@ -36,8 +36,8 @@ std::optional<std::chrono::system_clock::duration> TimerLoop::run() {
         auto nowTime = std::chrono::system_clock::now();
         auto it = _timerRBTree.begin();
         if (it->first < nowTime) {
+            it->second.first.resume();
             _timerRBTree.erase(it);
-            it->second.resume();
         } else {
             return it->first - nowTime;
         }
