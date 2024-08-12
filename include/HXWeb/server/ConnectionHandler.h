@@ -34,7 +34,7 @@ namespace HX { namespace web { namespace server {
 struct ConnectionHandler {
     AsyncFile _conn;            // 连接上的客户端的套接字
     // 缓存一次接收到的信息
-    HX::STL::container::BytesBuffer _buf{ protocol::http::Request::BUF_SIZE };
+    // HX::STL::container::BytesBuffer _buf{ protocol::http::Request::BUF_SIZE};
     
     using pointer = std::shared_ptr<ConnectionHandler>;
 

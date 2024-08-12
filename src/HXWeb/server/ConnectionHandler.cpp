@@ -13,8 +13,9 @@ HX::STL::coroutine::awaiter::TimerTask ConnectionHandler::start(int fd) {
     
     while (true) {
         // === 读取 ===
+        std::vector<char> buff(protocol::http::Request::BUF_SIZE);
         LOG_INFO("读取中...");
-        size_t n = co_await _conn.asyncRead(_buf, protocol::http::Request::BUF_SIZE); // 读取到的字节数
+        size_t n = co_await _conn.asyncRead(buff, protocol::http::Request::BUF_SIZE); // 读取到的字节数
         while (true) {
             if (n == 0) {
                 // 断开连接
@@ -24,10 +25,10 @@ HX::STL::coroutine::awaiter::TimerTask ConnectionHandler::start(int fd) {
 
             LOG_INFO("读取一次结束... (%llu)", n);
             if (std::size_t size = _request.parserRequest(
-                HX::STL::container::ConstBytesBufferView {_buf.data(), n}
+                HX::STL::container::ConstBytesBufferView {buff.data(), n}
             )) {
                 LOG_INFO("二次读取中...");
-                n = co_await _conn.asyncRead(_buf, std::min(size, protocol::http::Request::BUF_SIZE));
+                n = co_await _conn.asyncRead(buff, std::min(size, protocol::http::Request::BUF_SIZE));
                 continue;
             }
             break;

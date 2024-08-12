@@ -68,7 +68,7 @@ public:
         size_t, 
         HX::STL::coroutine::loop::EpollFilePromise
     > asyncRead(
-        HX::STL::container::BytesBuffer& buf,
+        std::span<char> buf,
         std::size_t count
     );
 

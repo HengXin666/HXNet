@@ -147,6 +147,8 @@ public:
 
     explicit BytesBuffer(size_t n) : _data(n) {}
 
+    explicit BytesBuffer(size_t n, char c) : _data(n, c) {}
+
     const char *data() const noexcept {
         return _data.data();
     }

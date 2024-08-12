@@ -65,14 +65,15 @@ HX::STL::coroutine::awaiter::Task<
     size_t, 
     HX::STL::coroutine::loop::EpollFilePromise
 > AsyncFile::asyncRead(
-    HX::STL::container::BytesBuffer& buf,
+    std::span<char> buf,
     std::size_t count
 ) { // EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT
     auto ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
         ::read(_fd, buf.data(), count)
     );
-
+  
     while (ret.isError(EAGAIN)) { // 是EAGAIN错误
+        printf("EAGAIN 挂起\n");
         // auto x = 
         co_await HX::STL::coroutine::loop::waitFileEvent(
             HX::STL::coroutine::loop::AsyncLoop::getLoop(),
@@ -86,6 +87,7 @@ HX::STL::coroutine::awaiter::Task<
             ::read(_fd, buf.data(), count)
         );
     }
+    // printf("%llu\n", ret.value());
 
     // // 服了, 怎么会读取到`\0`
     // if (buf.size() != ::strlen(buf.data())) {
@@ -126,7 +128,6 @@ AsyncFile::~AsyncFile() {
         return;
     }
     // 有可能它退出了, 但是还在等待吗?
-    // printf("%d 已经从 Epoll中删除啦~\n\n", _fd);
 }
 
 }}} // namespace HX::web::server

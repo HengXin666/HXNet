@@ -90,6 +90,7 @@ ROUTER_BIND(MywebController); // 这个类在上面声明过了
 
 ### 协程epoll服务端BUG汇总
 1. 读取数据的时候, 有时候无法读取到正确的数据 (某些值被换成了`\0`)
+    - 解决方案: 使用`std::span<char>`和`std::vector<char>`配合, 而不是自制`buf`类, 它他妈居然又读取到?!?
 2. 无法正确的断开连接: 明明客户端已经关闭, 而服务端却没有反应 | 实际上`::Accept`已经重新复用那个已经关闭的套接字, 但是`co_await`读取, 它没有反应, 一直卡在那里!
 3. 玄学的`include/HXSTL/coroutine/loop/EpollLoop.h`的`await_suspend`的`fd == -1`的问题, 可能和2有关?!?!
 
