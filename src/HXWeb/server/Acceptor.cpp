@@ -20,15 +20,16 @@ HX::STL::coroutine::awaiter::Task<> Acceptor::start(
     );
 
     while (true) {
-        LOG_INFO("等待连接...");
         int fd = co_await _serverFd.asyncAccept(_addr);
         LOG_WARNING("有新的连接: %d", fd);
-        // auto task = ; // 开始读取 这个要改!!!!
-        // HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
-        //     std::chrono::system_clock::now(),
-        //     nullptr,
-        //     std::make_shared<HX::STL::coroutine::awaiter::Task<void>>(ConnectionHandler::make()->start(fd))
-        // );
+        // 开始读取
+        HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
+            std::chrono::system_clock::now(),
+            nullptr,
+            std::make_shared<HX::STL::coroutine::awaiter::TimerTask>(
+                ConnectionHandler::make()->start(fd)
+            )
+        );
     }
 }
 

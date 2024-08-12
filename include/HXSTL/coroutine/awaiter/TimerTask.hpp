@@ -33,11 +33,14 @@ class TimerLoop;
 namespace HX { namespace STL { namespace coroutine { namespace awaiter {
 
 struct TimerPromis {
+    friend struct TimerTask;
+
     auto initial_suspend() { 
         return std::suspend_always(); // 第一次创建, 直接挂起
     }
 
     auto final_suspend() noexcept {
+        // printf("\t\t结束拉~\n");
         return std::suspend_never(); // 销毁
     }
 
@@ -87,9 +90,9 @@ struct [[nodiscard]] TimerTask {
     }
 
     ~TimerTask() {
-        if (_coroutine)
+        if (_coroutine) {
             _coroutine.destroy();
-        // _ptr = nullptr;
+        }
     }
 
     // 不提供
@@ -104,7 +107,7 @@ struct [[nodiscard]] TimerTask {
 private:
     friend HX::STL::coroutine::loop::TimerLoop;
     std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
-    std::shared_ptr<TimerTask> _ptr;                // 用于管理自己生命周期的
+    std::shared_ptr<TimerTask> _ptr = nullptr;      // 用于管理自己生命周期的
 };
 
 }}}} // namespace HX::STL::coroutine::awaiter

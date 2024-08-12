@@ -47,11 +47,6 @@ public:
      * @param port 服务名可以是十进制的端口号, 也可以是已知的服务名称, 如 ftp、http 等
      */
     HX::STL::coroutine::awaiter::Task<> start(const std::string& name, const std::string& port);
-
-    /**
-     * @brief 进行连接 -> 调用异步的进行连接
-     */
-    HX::STL::coroutine::awaiter::Task<> accept();
 };
 
 }}} // namespace HX::web::server

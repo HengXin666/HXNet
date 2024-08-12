@@ -44,7 +44,7 @@ public:
             ::epoll_create1(0)).expect("epoll_create1"))
         , _evs()
     {
-        _evs.resize(64);
+        _evs.resize(128);
     }
 
     ~EpollLoop() {
@@ -88,11 +88,7 @@ struct EpollFilePromise : HX::STL::coroutine::awaiter::Promise<EpollEventMask> {
 
     EpollFilePromise &operator=(EpollFilePromise &&) = delete;
 
-    ~EpollFilePromise() {
-        // if (_fd != -1) {
-        //     EpollLoop::get().removeListener(_fd);
-        // }
-    }
+    ~EpollFilePromise();
 
     int _fd = -1;
 };
@@ -111,6 +107,12 @@ struct EpollFileAwaiter {
 
     void await_suspend(std::coroutine_handle<EpollFilePromise> coroutine) {
         auto &promise = coroutine.promise();
+        // if (_fd <= -1) {
+        //     printf(__FILE__": Error _fd %d\n", _fd);
+        //     // promise._fd = -1;
+        //     coroutine.resume();
+        //     return;
+        // }
         promise._fd = _fd;
         if (!_epollLoop.addListener(promise, _mask, _ctl)) {
             promise._fd = -1;
@@ -118,14 +120,14 @@ struct EpollFileAwaiter {
         }
     }
 
-    EpollEventMask await_resume() const noexcept {
-        return _mask;
+    int await_resume() const noexcept {
+        return _fd;
     }
 
     EpollLoop &_epollLoop;
     int _fd = -1;
     EpollEventMask _mask = 0;
-    int _ctl = EPOLL_CTL_MOD;
+    int _ctl = EPOLL_CTL_ADD;
 };
 
 /**
@@ -133,14 +135,14 @@ struct EpollFileAwaiter {
  * @param epollLoop Epoll循环对象引用
  * @param fd 文件套接字
  * @param mask Epoll 事件掩码
- * @param ctl 如: EPOLL_CTL_MOD
- * @return HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> 
+ * @param ctl 如: EPOLL_CTL_ADD
+ * @return HX::STL::coroutine::awaiter::Task<int, EpollFilePromise> 
  */
-inline HX::STL::coroutine::awaiter::Task<EpollEventMask, EpollFilePromise> waitFileEvent(
+inline HX::STL::coroutine::awaiter::Task<int, EpollFilePromise> waitFileEvent(
     EpollLoop& epollLoop,
     int fd, 
     EpollEventMask mask, 
-    int ctl = EPOLL_CTL_MOD
+    int ctl = EPOLL_CTL_ADD
 ) {
     co_return co_await EpollFileAwaiter(epollLoop, fd, mask, ctl);
 }

@@ -86,7 +86,12 @@ ROUTER_BIND(MywebController); // 这个类在上面声明过了
     - [x] 实现基于红黑树实现定时中断, 超时自动终止任务 (类似于Linux内核的“完全公平调度”)
     - [x] 用户自定义路由 | 控制器
     - [ ] 客户端
-    - [ ] 重构为基于协程的epoll
+    - [x] 重构为基于协程的epoll
+
+### 协程epoll服务端BUG汇总
+1. 读取数据的时候, 有时候无法读取到正确的数据 (某些值被换成了`\0`)
+2. 无法正确的断开连接: 明明客户端已经关闭, 而服务端却没有反应 | 实际上`::Accept`已经重新复用那个已经关闭的套接字, 但是`co_await`读取, 它没有反应, 一直卡在那里!
+3. 玄学的`include/HXSTL/coroutine/loop/EpollLoop.h`的`await_suspend`的`fd == -1`的问题, 可能和2有关?!?!
 
 ```sh
 ╰─ wrk -c200 -d30s http://localhost:28205 # wsl Arth Linux 渣机

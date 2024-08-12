@@ -43,7 +43,9 @@ public:
     /**
      * @brief 建立连接
      */
-    static AsyncFile asyncBind(HX::web::socket::AddressResolver::AddressInfo const &addr);
+    static AsyncFile asyncBind(
+        HX::web::socket::AddressResolver::AddressInfo const &addr
+    );
 
     /**
      * @brief 异步建立连接

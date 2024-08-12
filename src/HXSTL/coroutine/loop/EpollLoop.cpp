@@ -1,5 +1,7 @@
 #include <HXSTL/coroutine/loop/EpollLoop.h>
 
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
+
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 void EpollLoop::addEpollCtl(int fd) {
@@ -26,10 +28,10 @@ bool EpollLoop::addListener(EpollFilePromise &promise, EpollEventMask mask, int 
     
     HX::STL::tools::ErrorHandlingTools::convertError<int>(
         ::epoll_ctl(_epfd, ctl, promise._fd, &event)
-    ).expect("epoll_pwait2");
+    ).expect("addListener: epoll_ctl");
 
-    // if (ctl == EPOLL_CTL_ADD)
-    //     ++_count;
+    if (ctl == EPOLL_CTL_ADD)
+        ++_count;
     return true;
 }
 
@@ -54,6 +56,13 @@ bool EpollLoop::run(std::optional<std::chrono::system_clock::duration> timeout) 
         std::coroutine_handle<EpollFilePromise>::from_promise(promise).resume();
     }
     return true;
+}
+
+EpollFilePromise::~EpollFilePromise() {
+    if (_fd != -1) {
+        printf("结束侦测: %d\n", _fd);
+        HX::STL::coroutine::loop::AsyncLoop::getLoop().getEpollLoop().removeListener(_fd);
+    }
 }
 
 }}}} // namespace HX::STL::coroutine::loop

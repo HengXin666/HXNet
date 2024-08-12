@@ -151,7 +151,7 @@ public:
         return _data.data();
     }
 
-    char *data() noexcept {
+    constexpr char *data() noexcept {
         return _data.data();
     }
 

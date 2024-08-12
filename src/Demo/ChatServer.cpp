@@ -72,7 +72,7 @@ class ChatController {
         co_return;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(API_POST, "/send1", send) { // 客户端发送消息过来
+    ENDPOINT_BEGIN(API_POST, "/send", send) { // 客户端发送消息过来
         auto body = req.getRequesBody();
         auto jsonPair = HX::Json::parse(body);
         if (jsonPair.second) {
@@ -93,7 +93,7 @@ class ChatController {
         co_return;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(API_POST, "/recv1", recv) { // 发送内容给客户端
+    ENDPOINT_BEGIN(API_POST, "/recv", recv) { // 发送内容给客户端
         using namespace std::chrono_literals;
 
         auto body = req.getRequesBody();
@@ -103,20 +103,26 @@ class ChatController {
         if (jsonPair.second) {
             int len = jsonPair.first.get<HX::Json::JsonDict>()["first"].get<int>();
             printf("内容是: %d\n", len);
-            if (len < (int)messageArr.size())
-                co_return req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+            if (len < (int)messageArr.size()) {
+                req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                     .setContentType("text/plain", "UTF-8")
                     .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
+                co_return;
+            }
             else {
                 co_await HX::STL::coroutine::loop::TimerLoop::sleep_for(3s);
                 std::vector<Message> submessages;
                 printf("回复~\n");
-                co_return req._responsePtr
+                req._responsePtr
                     ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                     .setContentType("text/plain", "UTF-8")
                     .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
+                co_return;
             }
+        } else {
+            printf("啥也没有...\n");
         }
+        co_return;
     } ENDPOINT_END;
 
 public:
@@ -176,7 +182,7 @@ int main() {
     chdir("../static");
     HX::STL::coroutine::awaiter::run_task(
         HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
-        A()
+        startChatServer()
     );
     return 0;
 }

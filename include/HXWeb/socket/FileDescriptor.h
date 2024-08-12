@@ -30,11 +30,11 @@ namespace HX { namespace web { namespace socket {
  */
 class FileDescriptor {
 protected:
-    int _fd = -1;
 public:
+    int _fd = -1;
     FileDescriptor() = default;
 
-    explicit FileDescriptor(int fd) : _fd(fd) 
+    explicit FileDescriptor(int fd) : _fd(fd)
     {}
 
     FileDescriptor(FileDescriptor &&that) noexcept : _fd(that._fd) {
