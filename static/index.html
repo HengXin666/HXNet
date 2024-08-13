@@ -98,7 +98,7 @@
                         messages_first++;
                         var extra_class = '';
                         if (message.user == current_user)
-                        extra_class = ' message-current-user';
+                        extra_class = 'message-current-user';
                         $("#messages").append(`<div class="message"><p class="message-user${extra_class}">${message.user}:</p><p class="message-content">${message.content}<p></div>`);
                     }
                     poll();

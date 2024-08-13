@@ -47,7 +47,7 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
     HX::web::router::Router::getSingleton().addController( \
         METHOD,\
         templatePath,\
-        [=](const HX::web::protocol::http::Request& req) -> HX::STL::coroutine::awaiter::Task<>
+        [=](const HX::web::protocol::http::Request& req) -> HX::STL::coroutine::awaiter::Task<void>
 
 /**
  * @brief 结束端点的定义

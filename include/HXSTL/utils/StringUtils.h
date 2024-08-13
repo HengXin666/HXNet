@@ -37,7 +37,11 @@ struct StringUtil final {
      * @param res 待返回数组, 你可以事先在前面插入元素
      * @return 分割后的数组
      */
-    static std::vector<std::string> split(std::string_view str, std::string_view delim, std::vector<std::string> res = std::vector<std::string>{});
+    static std::vector<std::string> split(
+        std::string_view str,
+        std::string_view delim, 
+        std::vector<std::string> res = std::vector<std::string>{}
+    );
 
     /**
      * @brief 将字符串按从左到右第一个`delimiter`分割为两半
@@ -45,7 +49,10 @@ struct StringUtil final {
      * @param delimiter 分割字符
      * @return 分割后的数组, 失败返回: `{"", ""}`
      */
-    static std::pair<std::string, std::string> splitAtFirst(std::string_view str, std::string_view delim);
+    static std::pair<std::string, std::string> splitAtFirst(
+        std::string_view str,
+        std::string_view delim
+    );
 
     /**
      * @brief 将字符串转为小写字母

@@ -185,6 +185,14 @@ public:
         _data.insert(_data.end(), chunk.begin(), chunk.end());
     }
 
+    void push_back(char c) {
+        _data.push_back(c);
+    }
+
+    void pop_back() {
+        return _data.pop_back();
+    }
+
     template <std::size_t N>
     void append(const char (&chunk)[N]) {
         append(std::string_view{chunk, N - 1});
@@ -199,10 +207,17 @@ public:
     }
 
     /**
-     * @brief 清楚容器数据
+     * @brief 清除容器数据
      */
     void clear() {
         _data.clear();
+    }
+
+    /**
+     * @brief 完全删除原来的元素, 应该叫`reInit`重新初始化可能跟贴切!
+     */
+    void deleteCompletely() {
+        _data = std::vector<char>(_data.size());
     }
 
     /**

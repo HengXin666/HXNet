@@ -112,15 +112,17 @@ class ChatController {
             int len = jsonPair.first.get<HX::Json::JsonDict>()["first"].get<int>();
             printf("内容是: %d\n", len);
             if (len < (int)messageArr.size()) {
+                printf("立马回复, 是新消息~\n");
                 req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                     .setContentType("text/plain", "UTF-8")
                     .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
                 co_return;
             }
             else {
+                printf("等我3秒~\n");
                 co_await HX::STL::coroutine::loop::TimerLoop::sleep_for(3s);
                 std::vector<Message> submessages;
-                printf("回复~\n");
+                printf("3秒之期已到, 马上回复~\n");
                 req._responsePtr
                     ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                     .setContentType("text/plain", "UTF-8")
