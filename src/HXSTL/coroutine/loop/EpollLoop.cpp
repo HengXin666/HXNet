@@ -2,6 +2,15 @@
 
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 
+/**
+ * @brief 判断是否有 epoll_pwait2
+ */
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 28))
+#define HAVE_EPOLL_PWAIT2 1
+#else
+#define HAVE_EPOLL_PWAIT2 0
+#endif
+
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 void EpollLoop::addEpollCtl(int fd) {
@@ -46,17 +55,31 @@ bool EpollLoop::addListener(EpollFilePromise &promise, EpollEventMask mask, int 
 bool EpollLoop::run(std::optional<std::chrono::system_clock::duration> timeout) {
     if (!_count)
         return false;
-    
-    int epollTimeOut = -1;
+
+#if HAVE_EPOLL_PWAIT2
+    struct timespec epollTimeOut;
+    struct timespec* epollTimeOutPtr = nullptr;
     if (timeout) {
-        epollTimeOut = timeout->count();
+        auto secs = std::chrono::duration_cast<std::chrono::seconds>(*timeout);
+        auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(*timeout - secs);
+        epollTimeOut.tv_sec = secs.count();
+        epollTimeOut.tv_nsec = ns.count();
+        epollTimeOutPtr = &epollTimeOut;
     }
 
     // TODO 这里是否需要修改为 epoll_pwait2 有待商榷
     int len = HX::STL::tools::ErrorHandlingTools::convertError<int>(
-        ::epoll_wait(_epfd, _evs.data(), _evs.size(), epollTimeOut)
-    ).expect("epoll_wait");
-
+        ::epoll_pwait2(_epfd, _evs.data(), _evs.size(), epollTimeOutPtr, nullptr)
+    ).expect("epoll_pwait2");
+#else
+    int epollTimeOut = -1;
+    if (timeout) {
+        epollTimeOut = std::chrono::duration_cast<std::chrono::milliseconds>(*timeout).count();
+    }
+    int len = HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        epoll_pwait(_epfd, _evs.data(), _evs.size(), epollTimeOut, nullptr)
+    ).expect("epoll_pwait");
+#endif
     for (int i = 0; i < len; ++i) {
         auto& event = _evs[i];
         // ((EpollFilePromise *)event.data.ptr)->_previous.resume(); // 下面的更标准
