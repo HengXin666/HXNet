@@ -12,6 +12,8 @@
 ## 快速开始
 > [!TIP]
 > 仍然在开发, 非最终产品
+>
+> 到时候应该使用宏再度封装 return req._responsePtr-> ... .writeResponse(req); 部分, 不过当前版本分支已被弃用, 因为我为了修复bug写了个协程的..然而bug并不是协程修改的部分引发..
 
 - 编写端点
 ```cpp
@@ -20,25 +22,25 @@
 /// @brief 编写控制器(端点)
 class MywebController {
 
-    ENDPOINT_BEGIN(API_GET, "/", root) { // 绑定 `/` 路径, 并且监听GET请求
-        HX::web::protocol::http::Response response;
-        response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+    ENDPOINT_BEGIN(API_GET, "/", root) {
+        return req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
-            .setBodyData("<h1>这里是根目录!</h1><h2>Now Time: " 
-                + HX::STL::utils::DateTimeFormat::format() 
-                + "</h2>");
-        return response;
+            // .setBodyData("<h1>根目录</h1><h2>Now Time: " 
+            //                     + HX::STL::utils::DateTimeFormat::formatWithMilli() 
+            //                     + "</h2>");
+            .setBodyData(HX::STL::utils::FileUtils::getFileContent("index.html"))
+            .writeResponse(req);
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/awa/{id}", awa_fun) { // 支持解析路径参数
         START_PARSE_PATH_PARAMS;     // 开始解析路径参数
         PARSE_PARAM(0, int32_t, id); // 解析第一个路径参数{id}, 命名为id, 类型为 int32_t
-        HX::web::protocol::http::Response response;
-        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+        return req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>/home/{id}/123 哇!</h1><h2>Now Time: " 
-                            + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
+                .setBodyData("<h1>awa/" + id + "</h1><h2>Now Time: " 
+                                    + HX::STL::utils::DateTimeFormat::formatWithMilli() 
+                                    + "</h2>");
+                .writeResponse(req);
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/qwq/**", qwq_fun) { // 支持解析多级通配符路径参数(/**这种)
@@ -47,12 +49,12 @@ class MywebController {
         GET_PARSE_QUERY_PARAMETERS(map);  // 解析请求(如 /?awa=xxx 这种), 返回的是 unordered_map<string, string>
         if (map.count("awa"))
             printf("awa -> %s\n", map["awa"].c_str());
-        HX::web::protocol::http::Response response;
-        return std::move(HX::web::protocol::http::Response {}.setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+        return req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                 .setContentType("text/html", "UTF-8")
-                .setBodyData("<h1>"+ pathStr +" 哇!</h1><h2>Now Time: " 
-                            + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                            + "</h2>"));
+                .setBodyData("<h1>qwq/" + pathStr + "</h1><h2>Now Time: " 
+                                    + HX::STL::utils::DateTimeFormat::formatWithMilli() 
+                                    + "</h2>");
+                .writeResponse(req);
     } ENDPOINT_END;
 
 public:
