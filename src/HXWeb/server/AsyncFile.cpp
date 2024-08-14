@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <string.h>
 
-// #include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 
 namespace HX { namespace web { namespace server {

@@ -20,10 +20,10 @@
 #ifndef _HX_FILE_UTILS_H_
 #define _HX_FILE_UTILS_H_
 
-#include <fstream>
 #include <string>
 #include <string_view>
-#include <algorithm>
+
+#include <HXSTL/coroutine/awaiter/Task.hpp>
 
 namespace HX { namespace STL { namespace utils {
 
@@ -31,21 +31,28 @@ namespace HX { namespace STL { namespace utils {
  * @brief 文件操作类
  */
 struct FileUtils {
-    static std::string getFileContent(const std::string& path) {
-        std::ifstream file(path);
-        if (!file.is_open()) {
-            throw std::system_error(errno, std::generic_category());
-        }
-        return std::string {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-    }
+    /**
+     * @brief [同步的]读取文件内容
+     * @param path 文件路径
+     * @return std::string 文件内容
+     */
+    static std::string getFileContent(const std::string& path);
 
-    static void putFileContent(const std::string& path, std::string_view content) {
-        std::ofstream file(path);
-        if (!file.is_open()) {
-            throw std::system_error(errno, std::generic_category());
-        }
-        std::copy(content.begin(), content.end(), std::ostreambuf_iterator<char>(file));
-    }
+    /**
+     * @brief [同步的]向文件写入数据
+     * @param path 文件路径
+     * @param content 需要写入的数据
+     */
+    static void putFileContent(const std::string& path, std::string_view content);
+
+    /**
+     * @brief [异步的]读取文件内容
+     * @param path 文件路径
+     * @return std::string 文件内容
+     */
+    static HX::STL::coroutine::awaiter::Task<std::string> asyncGetFileContent(
+        const std::string& path
+    );
 };
 
 }}} // namespace HX::STL::utils

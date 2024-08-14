@@ -57,9 +57,6 @@ class ChatController {
     ENDPOINT_BEGIN(API_GET, "/", root) {
         req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
-            // .setBodyData("<h1>根目录</h1><h2>Now Time: " 
-            //                     + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-            //                     + "</h2>");
             .setBodyData(HX::STL::utils::FileUtils::getFileContent("index.html"));
         co_return;
     } ENDPOINT_END;
