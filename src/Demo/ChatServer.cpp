@@ -52,6 +52,8 @@ std::vector<Message> messageArr;
 
 HX::web::server::context::StopSource recv_timeout_stop = HX::web::server::context::StopSource::make();
 
+#include <liburing.h>
+
 class ChatController {
 
     ENDPOINT_BEGIN(API_GET, "/", root) {

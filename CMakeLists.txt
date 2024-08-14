@@ -43,6 +43,27 @@ file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
 # 编译可执行文件
 add_executable (${appName} ${srcs})
 
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if (HX_NET_FIND_LIBURING)
+    include(FindPkgConfig)
+    pkg_check_modules(LIBURING liburing)
+        if (NOT LIBURING_FOUND)
+            find_path(LIBURING_INCLUDE_DIR NAMES liburing.h)
+            find_library(LIBURING_LIBRARY NAMES liburing.a)
+            if (NOT LIBURING_INCLUDE_DIR OR NOT LIBURING_LIBRARY)
+                message(FATAL_ERROR "liburing not found")
+            endif()
+            set(LIBURING_LIBRARIES ${LIBURING_LIBRARY})
+            set(LIBURING_INCLUDE_DIRS ${LIBURING_INCLUDE_DIR})
+        endif()
+        target_link_libraries(HXNet PUBLIC ${LIBURING_LIBRARIES})
+        target_include_directories(HXNet PUBLIC ${LIBURING_INCLUDE_DIRS})
+    else()
+        target_sources(HXNet PRIVATE lib/liburing/liburing.cpp)
+        target_include_directories(HXNet PUBLIC lib/liburing/include)
+    endif()
+endif()
+
 # 设置头文件路径
 include_directories(${ROOT_PATH}/include)
 

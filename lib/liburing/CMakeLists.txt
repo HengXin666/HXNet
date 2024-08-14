@@ -1,0 +1,3 @@
+add_library(HXNet_Liburing INTERFACE)
+target_sources(HXNet_Liburing INTERFACE liburing.cpp)
+target_include_directories(HXNet_Liburing INTERFACE include)
