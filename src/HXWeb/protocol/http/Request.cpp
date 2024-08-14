@@ -4,11 +4,23 @@
 #include <cstring>
 
 #include <HXSTL/utils/StringUtils.h>
+#include <iostream>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
-std::size_t protocol::http::Request::parserRequest(HX::STL::container::ConstBytesBufferView buf) {
+std::size_t protocol::http::Request::parserRequest(
+    HX::STL::container::ConstBytesBufferView buf
+) {
     _previousData.append(buf);
+    _previousData.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 但是 char * 需要
+    // TODO: DEBUG #1
+    // // if (buf.size() != ::strlen(buf.data())) {
+    //     printf("Error: The /0 is Fxxk is Data!\n\n");
+    //     std::cout << std::string(buf.data(), buf.size()) << "\n\n";
+    //     for (int i = 0; i < buf.size(); ++i) {
+    //         printf("%d(%c) ", buf.data()[i], buf.data()[i]);
+    //     }
+    // // }
     char *tmp = nullptr;
     char *line = nullptr;
     if (_requestLine.empty()) { // 请求行还未解析
@@ -41,6 +53,7 @@ std::size_t protocol::http::Request::parserRequest(HX::STL::container::ConstByte
                 if (*line != '\r') { 
                     // 应该剩下的参与下次解析
                     _previousData = HX::STL::utils::StringUtil::rfindAndTrim(_previousData.data(), "\r\n");
+                    _previousData.pop_back();
                     return protocol::http::Request::BUF_SIZE;
                 }
                 // 是空行
@@ -57,12 +70,21 @@ std::size_t protocol::http::Request::parserRequest(HX::STL::container::ConstByte
     if (_requestHeaders.count("content-length")) { // 存在请求体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
         if (!_remainingBodyLen.has_value()) {
-            _remainingBodyLen = std::stoll(_requestHeaders["content-length"]) 
-                              - static_cast<ssize_t>(::strlen(tmp));
             _body = std::string {tmp};
+            _remainingBodyLen = std::stoll(_requestHeaders["content-length"]) 
+                              - _body->size();
+            // std::cout << std::stoll(_requestHeaders["content-length"]) << ' ' 
+            //           << ::strlen(tmp) << ' '
+            //           << _body->size() << '\n';
         } else {
             *_remainingBodyLen -= buf.size();
-            _body->append(HX::STL::container::ConstBytesBufferView {_previousData.data(), _previousData.size()});
+            _previousData.pop_back();
+            _body->append(
+                std::string_view {
+                    _previousData.data(), 
+                    _previousData.size()
+                }
+            );
         }
 
         if (*_remainingBodyLen != 0) {
