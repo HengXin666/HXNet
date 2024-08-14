@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.20.0)
 # 定义工程名称, 并指定语言为C++
 project(HXNet LANGUAGES CXX)
 
+# 是否开启 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
+set(IO_URING_DIRECT ON)
+
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
 if (NOT CMAKE_BUILD_TYPE)
@@ -42,6 +45,10 @@ file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
 
 # 编译可执行文件
 add_executable (${appName} ${srcs})
+
+if (IO_URING_DIRECT)
+    target_compile_definitions(HXNet PUBLIC IO_URING_DIRECT)
+endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 if (HX_NET_FIND_LIBURING)

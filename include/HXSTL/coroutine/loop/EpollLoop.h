@@ -37,10 +37,9 @@ using EpollEventMask = uint32_t;
 
 class EpollLoop {
     EpollLoop& operator=(EpollLoop&&) = delete;
-
 public:
     explicit EpollLoop()
-        : _epfd(HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        : _epfd(HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
             ::epoll_create1(0)).expect("epoll_create1"))
         , _evs()
     {
@@ -50,11 +49,6 @@ public:
     ~EpollLoop() {
         ::close(_epfd);
     }
-
-    // static EpollLoop& get() { // TODO
-    //     static EpollLoop loop;
-    //     return loop;
-    // }
 
     /**
      * @brief 注册套接字到epoll检测

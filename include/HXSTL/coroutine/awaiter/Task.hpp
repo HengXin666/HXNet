@@ -107,9 +107,21 @@ private:
     std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
 };
 
+/**
+ * @brief 启动协程任务
+ * @tparam Loop 用于监测的循环的类型, 需要提供`.run()`方法
+ * @tparam T 协程任务的返回类型
+ * @tparam P 协程的`promise_type`类型
+ * @tparam A 被`co_await`时的行为
+ * @param loop 监测者Loop
+ * @param t 协程任务
+ * @return T 协程任务的返回值
+ */
 template <class Loop, class T, class P, class A>
-T run_task(Loop &loop, Task<T, P, A> const &t) {
+T runTask(Loop &loop, Task<T, P, A> const &t) {
     auto a = t.operator co_await();
+    // 为什么是`std::noop_coroutine()`呢? 因为 Task 是可以恢复到父协程继续执行的
+    // 而如果这个协程它就是根协程呢? 那么就定义它的父协程是这个, 故而执行但是马上就退出啦~
     a.await_suspend(std::noop_coroutine()).resume();
     loop.run();
     return a.await_resume();

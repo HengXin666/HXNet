@@ -24,6 +24,7 @@
 
 #include <HXSTL/coroutine/loop/TimerLoop.h>
 #include <HXSTL/coroutine/loop/EpollLoop.h>
+#include <HXSTL/coroutine/loop/IoUringLoop.h>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
@@ -38,7 +39,7 @@ public:
 
     AsyncLoop& operator=(AsyncLoop&&) = delete;
 
-    static AsyncLoop& getLoop() {
+    [[gnu::hot]] static AsyncLoop& getLoop() {
         static AsyncLoop loop;
         return loop;
     }
@@ -56,7 +57,7 @@ public:
         }
     }
 
-    TimerLoop& getTimerLoop() {
+    [[gnu::hot]] TimerLoop& getTimerLoop() {
         return _timerLoop;
     }
 
@@ -64,7 +65,7 @@ public:
         return _timerLoop;
     }
 
-    EpollLoop& getEpollLoop() {
+    [[gnu::hot]] EpollLoop& getEpollLoop() {
         return _epollLoop;
     }
 
@@ -72,9 +73,18 @@ public:
         return _epollLoop;
     }
 
+    [[gnu::hot]] IoUringLoop& getIoUringLoop() {
+        return _ioUringLoop;
+    }
+
+    operator IoUringLoop &() {
+        return _ioUringLoop;
+    }
+
 private:
     TimerLoop _timerLoop;
     EpollLoop _epollLoop;
+    IoUringLoop _ioUringLoop;
 };
 
 }}}} // namespace HX::STL::coroutine::loop

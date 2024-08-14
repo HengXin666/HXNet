@@ -28,7 +28,7 @@ HX::STL::coroutine::awaiter::Task<std::string> FileUtils::asyncGetFileContent(
     const std::string& path
 ) {
     // 这个是错误的!!!, epoll 不能监测普通文件...
-    auto fd = HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    auto fd = HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::open(path.c_str(), O_RDONLY)
     ).expect("open: O_RDONLY");
     std::string res;

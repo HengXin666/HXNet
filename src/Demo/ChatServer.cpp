@@ -52,8 +52,6 @@ std::vector<Message> messageArr;
 
 HX::web::server::context::StopSource recv_timeout_stop = HX::web::server::context::StopSource::make();
 
-#include <liburing.h>
-
 class ChatController {
 
     ENDPOINT_BEGIN(API_GET, "/", root) {
@@ -187,9 +185,73 @@ HX::STL::coroutine::awaiter::Task<
     std::cout << "A end\n";
 }
 
+#include <liburing.h>
+#include <string.h>
+
+#include <liburing.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <arpa/inet.h>
+
+#define QUEUE_SIZE 32
+#define PORT 12345
+#define BUFFER_SIZE 1024
+
+// 错误处理宏
+#define ERROR_EXIT(msg) \
+    do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
 int main() {
+    io_uring ring;
+    /**
+     * @brief 初始化长度为 32 (一般是2的幂) 的环型队列
+     * 给 ring,
+     * tag 是 0, 即没有标志
+     */
+    io_uring_queue_init(32, &ring, 0);
+    // 获取任务队列
+    io_uring_sqe* sqe = io_uring_get_sqe(&ring);
+    char buf[16];
+    /**
+     * @brief 向任务队列添加异步读任务
+     * sqe 需要添加任务的任务队列指针
+     * STDIN_FILENO (输入流) fd (启动程序系统自动打开的文件)
+     * buf 存放读取结果的数组
+     * 16 一般是需要读取的长度(buf.size())
+     * 0 文件偏移量
+     */
+    // sqe->user_data = (u_int32_t)&A; 可以存放用户数据
+    io_uring_prep_read(sqe, STDIN_FILENO, buf, 16, 0);
+
+    // 提交任务队列给内核 (为什么不是sqe, 因为sqe是从ring中get出来的, 故其本身就包含了sqe)
+    io_uring_submit(&ring);
+
+    io_uring_cqe* cqe = nullptr;
+
+    // 阻塞等待内核, 返回是错误码; cqe是完成队列, 为传出参数
+    io_uring_wait_cqe(&ring, &cqe);
+    // io_uring_wait_cqe_timeout() 有带超时时间的
+
+    // 在销毁之前, 我们需要取出数据
+    int res = cqe->res; // 这个就是对应任务的返回值(read的返回值, 即读取的字节数)
+    // cqe->user_data 这个是 u_int64_t 到时候就可以放置指针, 从而回复协程 
+
+    // 销毁完成队列, 不然会一直在里面滞留(占用空间)
+    io_uring_cqe_seen(&ring, cqe);
+
+    LOG_INFO("输入 [%s], 长度是 %d", buf, res);
+
+    // C语言魅力时刻 (因为他们没有析构函数)
+    io_uring_queue_exit(&ring);
+    return 0;
+}
+
+int _main() {
     chdir("../static");
-    HX::STL::coroutine::awaiter::run_task(
+    HX::STL::coroutine::awaiter::runTask(
         HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
         startChatServer()
     );

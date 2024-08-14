@@ -13,10 +13,10 @@ AsyncFile AsyncFile::asyncBind(HX::web::socket::AddressResolver::AddressInfo con
     int on = 1;
     setsockopt(sock._fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
     setsockopt(sock._fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
-    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::bind(sock._fd, serve_addr._addr, serve_addr._addrlen)
     ).expect("bind");
-    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::listen(sock._fd, SOMAXCONN)
     ).expect("listen");
     return sock;
@@ -24,13 +24,13 @@ AsyncFile AsyncFile::asyncBind(HX::web::socket::AddressResolver::AddressInfo con
 
 AsyncFile::AsyncFile(int fd) : FileDescriptor(fd)
 {
-    int flags = HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    int flags = HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::fcntl(_fd, F_GETFL)
     ).expect("F_GETFL");
 
     flags |= O_NONBLOCK;
 
-    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::fcntl(_fd, F_SETFL, flags)
     ).expect("F_SETFL");
 
@@ -43,7 +43,7 @@ HX::STL::coroutine::awaiter::Task<
 > AsyncFile::asyncAccept(
     socket::AddressResolver::Address& addr
 ) { // EPOLLIN | EPOLLERR | EPOLLET | EPOLLONESHOT
-    auto ret = HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    auto ret = HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::accept(_fd, &addr._addr, &addr._addrlen)
     );
 
@@ -53,7 +53,7 @@ HX::STL::coroutine::awaiter::Task<
             _fd,
             EPOLLIN | EPOLLERR | EPOLLET | EPOLLONESHOT
         );
-        ret = HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        ret = HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
             ::accept(_fd, &addr._addr, &addr._addrlen)
         );
     }
@@ -68,7 +68,7 @@ HX::STL::coroutine::awaiter::Task<
     std::size_t count
 ) { // EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT
     try {
-        auto ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
+        auto ret = HX::STL::tools::LinuxErrorHandlingTools::convertError<size_t>(
             ::read(_fd, buf.data(), count)
         );
     
@@ -79,7 +79,7 @@ HX::STL::coroutine::awaiter::Task<
                 EPOLLIN | EPOLLET | EPOLLERR | EPOLLONESHOT
             );
             
-            ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
+            ret = HX::STL::tools::LinuxErrorHandlingTools::convertError<size_t>(
                 ::read(_fd, buf.data(), count)
             );
         }
@@ -95,7 +95,7 @@ HX::STL::coroutine::awaiter::Task<
 > AsyncFile::asyncWrite(
     HX::STL::container::ConstBytesBufferView buf
 ) { // EPOLLOUT | EPOLLERR | EPOLLET | EPOLLONESHOT
-    auto ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
+    auto ret = HX::STL::tools::LinuxErrorHandlingTools::convertError<size_t>(
         ::write(_fd, buf.data(), buf.size())
     );
 
@@ -105,7 +105,7 @@ HX::STL::coroutine::awaiter::Task<
             _fd,
             EPOLLOUT | EPOLLERR | EPOLLET | EPOLLONESHOT
         );
-        ret = HX::STL::tools::ErrorHandlingTools::convertError<size_t>(
+        ret = HX::STL::tools::LinuxErrorHandlingTools::convertError<size_t>(
             ::write(_fd, buf.data(), buf.size())
         );
     }

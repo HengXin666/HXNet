@@ -18,7 +18,7 @@ void EpollLoop::addEpollCtl(int fd) {
     event.events = EPOLLET;
     event.data.ptr = nullptr;
 
-    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::epoll_ctl(
             _epfd,
             EPOLL_CTL_ADD,
@@ -31,7 +31,7 @@ void EpollLoop::addEpollCtl(int fd) {
 }
 
 void EpollLoop::removeListener(int fd) {
-    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, nullptr)
     ).expect("EPOLL_CTL_DEL");
     --_count;
@@ -43,7 +43,7 @@ bool EpollLoop::addListener(EpollFilePromise &promise, EpollEventMask mask, int 
     event.data.ptr = &promise;
     
     // printf("开始侦测: %d\n", promise._fd);
-    HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::epoll_ctl(_epfd, ctl, promise._fd, &event)
     ).expect("addListener: epoll_ctl");
 
@@ -68,7 +68,7 @@ bool EpollLoop::run(std::optional<std::chrono::system_clock::duration> timeout) 
     }
 
     // TODO 这里是否需要修改为 epoll_pwait2 有待商榷
-    int len = HX::STL::tools::ErrorHandlingTools::convertError<int>(
+    int len = HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         ::epoll_pwait2(_epfd, _evs.data(), _evs.size(), epollTimeOutPtr, nullptr)
     ).expect("epoll_pwait2");
 #else

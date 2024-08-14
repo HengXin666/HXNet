@@ -44,7 +44,7 @@ void EpollContext::join() {
             timeoutp = &timeout;
         }
         // printf("===阻塞(%d)====================\n", epollCnt);
-        int len = HX::STL::tools::ErrorHandlingTools::convertError<int>(
+        int len = HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
             epoll_pwait2(_epfd, evs.data(), evs.size(), timeoutp, nullptr)
         ).expect("epoll_pwait2");
         // printf("Linux通知: ... %s ~\n", HX::STL::utils::DateTimeFormat::formatWithMilli().c_str());

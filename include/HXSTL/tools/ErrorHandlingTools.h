@@ -30,9 +30,10 @@
 namespace HX { namespace STL { namespace tools {
 
 /**
- * @brief 错误处理工具类
+ * @brief Linux系错误处理工具类
+ * 即返回`-1`代表错误, 具体是什么错误得查表, 这种返回方式
  */
-struct ErrorHandlingTools {
+struct LinuxErrorHandlingTools {
 
     /**
      * @brief 安全的错误码模版类
@@ -165,6 +166,25 @@ public:
         return instance; // 使用: std::error_code(err, gai_category())
     }
 
+};
+
+/**
+ * @brief io_uring的错误处理工具
+ * 可以用于所有以负数(< 0)表示错误的类型, 如返回 err, 其错误码就是 -err, 这种
+ */
+struct UringErrorHandlingTools {
+
+    /**
+     * @brief 如果`res`是负数, 则抛出`-res`为错误码的错误
+     * @param res 可能的错误码
+     * @return int 显然不是错误的值(原正常的返回值)
+     */
+    static int throwingError(int res) {
+        if (res < 0) [[unlikely]] {
+            throw std::system_error(-res, std::system_category());
+        }
+        return res;
+    }
 };
 
 #define SOURCE_INFO_IMPL_2(file, line) "In " file ":" #line ": "

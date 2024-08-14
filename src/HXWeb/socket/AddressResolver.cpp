@@ -57,7 +57,7 @@ AddressResolver::AddressInfo AddressResolver::resolve(
      */
     int err = getaddrinfo(name.c_str(), service.c_str(), nullptr, &_head);
     if (err) {
-        auto ec = std::error_code(err, HX::STL::tools::ErrorHandlingTools::gaiCategory());
+        auto ec = std::error_code(err, HX::STL::tools::LinuxErrorHandlingTools::gaiCategory());
         throw std::system_error(ec, name + ":" + service);
     }
     return {_head};

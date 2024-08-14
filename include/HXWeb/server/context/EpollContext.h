@@ -164,7 +164,7 @@ public:
     inline static thread_local EpollContext *G_instance = nullptr;
 
     EpollContext() 
-    : _epfd(HX::STL::tools::ErrorHandlingTools::convertError<int>(::epoll_create1(0)).expect("epoll_create1")) 
+    : _epfd(HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(::epoll_create1(0)).expect("epoll_create1")) 
     , _timer() {
         G_instance = this;
     }
