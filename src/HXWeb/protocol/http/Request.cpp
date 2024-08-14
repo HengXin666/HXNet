@@ -12,15 +12,8 @@ std::size_t protocol::http::Request::parserRequest(
     HX::STL::container::ConstBytesBufferView buf
 ) {
     _previousData.append(buf);
-    _previousData.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 但是 char * 需要
-    // TODO: DEBUG #1
-    // // if (buf.size() != ::strlen(buf.data())) {
-    //     printf("Error: The /0 is Fxxk is Data!\n\n");
-    //     std::cout << std::string(buf.data(), buf.size()) << "\n\n";
-    //     for (int i = 0; i < buf.size(); ++i) {
-    //         printf("%d(%c) ", buf.data()[i], buf.data()[i]);
-    //     }
-    // // }
+    _previousData.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 
+                                   // 但是 char * 需要
     char *tmp = nullptr;
     char *line = nullptr;
     if (_requestLine.empty()) { // 请求行还未解析
@@ -73,9 +66,9 @@ std::size_t protocol::http::Request::parserRequest(
             _body = std::string {tmp};
             _remainingBodyLen = std::stoll(_requestHeaders["content-length"]) 
                               - _body->size();
-            std::cout << std::stoll(_requestHeaders["content-length"]) << ' ' 
-                      << ::strlen(tmp) << ' '
-                      << _body->size() << '\n';
+            // std::cout << std::stoll(_requestHeaders["content-length"]) << ' ' 
+            //           << ::strlen(tmp) << ' '
+            //           << _body->size() << '\n';
         } else {
             *_remainingBodyLen -= buf.size();
             _previousData.pop_back();
