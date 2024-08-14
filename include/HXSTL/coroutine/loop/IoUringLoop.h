@@ -21,24 +21,10 @@
 #define _HX_IO_URING_LOOP_H_
 
 #include <liburing.h>
+#include <coroutine>
 #include <chrono>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
-
-// 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
-#if IO_URING_DIRECT
-static constexpr size_t kOpenModeDefaultFlags = O_LARGEFILE | O_CLOEXEC | O_DIRECT;
-#else
-static constexpr size_t kOpenModeDefaultFlags = O_LARGEFILE | O_CLOEXEC;
-#endif
-
-enum class OpenMode : int {
-    Read = O_RDONLY | kOpenModeDefaultFlags,
-    Write = O_WRONLY | O_TRUNC | O_CREAT | kOpenModeDefaultFlags,
-    ReadWrite = O_RDWR | O_CREAT | kOpenModeDefaultFlags,
-    Append = O_WRONLY | O_APPEND | O_CREAT | kOpenModeDefaultFlags,
-    Directory = O_RDONLY | O_DIRECTORY | kOpenModeDefaultFlags,
-};
 
 class IoUringLoop {
     IoUringLoop& operator=(IoUringLoop&&) = delete;
@@ -219,6 +205,24 @@ public:
         int flags
     ) && {
         ::io_uring_prep_recv(_sqe, fd, buf.data(), buf.size(), flags);
+        return std::move(*this);
+    }
+
+    /**
+     * @brief 异步读取网络套接字文件
+     * @param fd 文件描述符
+     * @param buf [out] 读取到的数据
+     * @param size 需要读取的大小
+     * @param flags 
+     * @return IoUringTask&& 
+     */
+    IoUringTask &&prepRecv(
+        int fd,
+        std::span<char> buf,
+        std::size_t size,
+        int flags
+    ) && {
+        ::io_uring_prep_recv(_sqe, fd, buf.data(), size, flags);
         return std::move(*this);
     }
 

@@ -7,9 +7,12 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 IoUringLoop::IoUringLoop(unsigned int entries) : _ring() {
     unsigned int flags = 0;
+
+// 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
 #if IO_URING_DIRECT
     flags |= IORING_SETUP_IOPOLL;
 #endif
+
     HX::STL::tools::UringErrorHandlingTools::throwingError(
         ::io_uring_queue_init(entries, &_ring, flags)
     );
@@ -29,7 +32,7 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     }
 
     // 阻塞等待内核, 返回是错误码; cqe是完成队列, 为传出参数
-    int res = io_uring_wait_cqe_timeout(&_ring, &cqe, &timespec);
+    int res = io_uring_submit_and_wait_timeout(&_ring, &cqe, 1, &timespec, nullptr);
     if (res == -ETIME) {
         return false;
     } else if (res < 0) [[unlikely]] {
@@ -44,7 +47,7 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     io_uring_for_each_cqe(&_ring, head, cqe) {
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
         task->_res = cqe->res;
-        tasks.emplace_back(task);
+        tasks.emplace_back(task->_previous);
         ++numGot;
     }
 

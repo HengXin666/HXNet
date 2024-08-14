@@ -198,7 +198,7 @@ struct UringErrorHandlingTools {
  * @param ... func 的参数
  * @return 报错就抛出异常, 如果`erron == Except`则会返回`-1`而不会终止程序, 否则只是转发`func`的`返回值`
  */
-#define CHECK_CALL_EXCEPT(except, func, ...) HX::STL::tools::ErrorHandlingTools::checkError<except>(SOURCE_INFO() #func, func(__VA_ARGS__))
+#define CHECK_CALL_EXCEPT(except, func, ...) HX::STL::tools::LinuxErrorHandlingTools::checkError<except>(SOURCE_INFO() #func, func(__VA_ARGS__))
 
 /**
  * @brief 判断是否是错误: 专门伺候Linux的系统函数(即返回`-1`代表错误, 而错误原因在`erron`)
@@ -206,7 +206,7 @@ struct UringErrorHandlingTools {
  * @param ... func 的参数
  * @return 报错就抛出异常, 否则只是转发`func`的`返回值`
  */
-#define CHECK_CALL(func, ...) HX::STL::tools::ErrorHandlingTools::checkError(SOURCE_INFO(#func), func(__VA_ARGS__))
+#define CHECK_CALL(func, ...) HX::STL::tools::LinuxErrorHandlingTools::checkError(SOURCE_INFO(#func), func(__VA_ARGS__))
 
 }}} // namespace HX::STL::tools
 

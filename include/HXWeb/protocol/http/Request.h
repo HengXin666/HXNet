@@ -60,7 +60,7 @@ class Request {
     bool _completeRequestHeader = false;
 public:
     /// @brief 缓冲区大小: 第一次recv的大小, 以及存放其值的缓冲区数组的大小
-    static constexpr std::size_t BUF_SIZE = 1024;
+    static constexpr std::size_t BUF_SIZE = 4096;
 
     Response* _responsePtr = nullptr;
 

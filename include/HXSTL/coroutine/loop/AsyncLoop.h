@@ -33,7 +33,7 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
  */
 class AsyncLoop {
     explicit AsyncLoop() : _timerLoop()
-                         , _epollLoop()
+                         , _ioUringLoop()
     {}
 public:
 
@@ -47,8 +47,8 @@ public:
     void run() {
         while (true) {
             auto timeout = _timerLoop.run();
-            if (_epollLoop.hasEvent()) {
-                _epollLoop.run(timeout);
+            if (_ioUringLoop.hasEvent()) {
+                _ioUringLoop.run(timeout);
             } else if (timeout) {
                 std::this_thread::sleep_for(*timeout);
             } else {

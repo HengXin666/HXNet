@@ -186,25 +186,8 @@ HX::STL::coroutine::awaiter::Task<
 }
 
 #include <liburing.h>
-#include <string.h>
 
-#include <liburing.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-
-#define QUEUE_SIZE 32
-#define PORT 12345
-#define BUFFER_SIZE 1024
-
-// 错误处理宏
-#define ERROR_EXIT(msg) \
-    do { perror(msg); exit(EXIT_FAILURE); } while (0)
-
-int main() {
+int _main() {
     io_uring ring;
     /**
      * @brief 初始化长度为 32 (一般是2的幂) 的环型队列
@@ -249,7 +232,7 @@ int main() {
     return 0;
 }
 
-int _main() {
+int main() {
     chdir("../static");
     HX::STL::coroutine::awaiter::runTask(
         HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
