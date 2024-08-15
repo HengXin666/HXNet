@@ -41,13 +41,12 @@ class MyWebController {
         // 另一种响应宏, 只会设置响应编码, 但是返回的是 Response &, 可以链式调用
         RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
                             .setBodyData("<h1> files URL is " + path + "</h1>");
-        co_return;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/home/{id}/{name}", getIdAndNameByHome) {
         START_PARSE_PATH_PARAMS; // 开始解析请求路径参数
         PARSE_PARAM(0, u_int32_t, id);     // 解析第一个路径参数{id}, 解析为 u_int32_t类型, 命名为 id
-        PARSE_PARAM(1, std::string, name); // 解析第一个路径参数{name}
+        PARSE_PARAM(1, std::string, name); // 解析第二个路径参数{name}
 
         // 解析查询参数为键值对; ?awa=xxx 这种
         GET_PARSE_QUERY_PARAMETERS(queryMap);
@@ -62,7 +61,6 @@ class MyWebController {
             + req.getRequesPath() + " 的解析</h2>", // 默认`ENDPOINT_BEGIN`会传入 Request& req, 您可以对其进行更细致的操作
             "text/html", "UTF-8"
         );
-        co_return;
     } ENDPOINT_END;
 };
 ```
@@ -99,6 +97,12 @@ int main() {
     return 0;
 }
 ```
+
+## 相关依赖
+
+|依赖库|说明|备注|
+|---|---|---|
+|liburing|io_uring|https://github.com/axboe/liburing|
 
 ## 代码规范
 > 几乎是谷歌C++规范
