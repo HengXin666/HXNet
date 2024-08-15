@@ -20,7 +20,7 @@
 #ifndef _HX_CONNECTION_HANDLER_H_
 #define _HX_CONNECTION_HANDLER_H_
 
-#include <HXWeb/server/AsyncFile.h>
+#include <HXSTL/coroutine/loop/TimerLoop.h>
 
 namespace HX { namespace web { namespace server {
 

@@ -109,6 +109,24 @@ private:
 
 public:
     /**
+     * @brief 异步打开文件
+     * @param dirfd 目录文件描述符, 它表示相对路径的基目录; `AT_FDCWD`, 则表示相对于当前工作目录
+     * @param path 文件路径
+     * @param flags 指定文件打开的方式, 比如 `O_RDONLY`
+     * @param mode 文件权限模式, 仅在文件创建时有效 (一般写`0644`)
+     * @return IoUringTask&& 
+     */
+    IoUringTask &&prepOpenat(
+        int dirfd, 
+        char const *path, 
+        int flags,
+        mode_t mode
+    ) && {
+        ::io_uring_prep_openat(_sqe, dirfd, path, flags, mode);
+        return std::move(*this);
+    }
+
+    /**
      * @brief 异步创建一个套接字
      * @param domain 指定 socket 的协议族 (AF_INET(ipv4)/AF_INET6(ipv6)/AF_UNIX/AF_LOCAL(本地))
      * @param type 套接字类型 SOCK_STREAM(tcp)/SOCK_DGRAM(udp)/SOCK_RAW(原始)

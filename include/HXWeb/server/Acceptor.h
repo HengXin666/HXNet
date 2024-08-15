@@ -20,7 +20,9 @@
 #ifndef _HX_ACCEPTOR_H_
 #define _HX_ACCEPTOR_H_
 
-#include <HXWeb/server/AsyncFile.h>
+#include <memory>
+
+#include <HXSTL/coroutine/awaiter/Task.hpp>
 #include <HXWeb/socket/AddressResolver.h>
 
 namespace HX { namespace web { namespace server {
@@ -29,7 +31,6 @@ namespace HX { namespace web { namespace server {
  * @brief 连接接受类
  */
 class Acceptor {
-    AsyncFile _serverFd;                    // 服务器套接字
     socket::AddressResolver::Address _addr; // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
     using pointer = std::shared_ptr<Acceptor>;
 public:

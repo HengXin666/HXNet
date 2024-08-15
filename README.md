@@ -87,9 +87,9 @@ ROUTER_BIND(MywebController); // 这个类在上面声明过了
     - [x] 用户自定义路由 | 控制器
     - [ ] 客户端
     - [x] 重构为基于协程的epoll
-    - [ ] 修改为使用 io_uring 驱动!!
+    - [x] 修改为使用 io_uring 驱动!!
         - [ ] 支持多线程并且不突出
-    - [ ] 实现文件的异步读写
+    - [x] 实现文件的异步读写
     - [ ] 实现协程TimerLoop的对于ABCT任务(其中T是计时任务(?必须吗)), 任意一个完成, 则返回(打断其他), 这个功能
 
 ### 协程epoll服务端BUG汇总
@@ -108,15 +108,15 @@ ROUTER_BIND(MywebController); // 这个类在上面声明过了
 - 协程版本: (基准: 别人22w/s的并发的程序在我这里一样的参数也就3w+/s..)
 
 ```sh
-╰─ wrk -c1000 -d15s http://localhost:28205/home/qwq # 垃圾wsl Linux Arth (不知道哪里限制了, cpu似乎没有跑满?)
-Running 15s test @ http://localhost:28205/home/qwq
+╰─ wrk -c1000 -d15s http://localhost:28205/ # WSL Arth 测试的 (感觉性能还没有跑到尽头)
+Running 15s test @ http://localhost:28205/
   2 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    24.99ms    3.10ms 143.43ms   97.32%
-    Req/Sec    20.13k     1.00k   22.70k    81.88%
-  596765 requests in 15.00s, 84.80MB read
-Requests/sec:  39780.51
-Transfer/sec:      5.65MB
+    Latency    43.61ms   99.59ms   1.78s    98.21%
+    Req/Sec    15.30k     0.96k   26.51k    87.96%
+  455707 requests in 15.09s, 1.69GB read # 异步的文件读写 | 目前服务端还只是单线程
+Requests/sec:  30190.88
+Transfer/sec:    114.62MB
 ```
 
 ---

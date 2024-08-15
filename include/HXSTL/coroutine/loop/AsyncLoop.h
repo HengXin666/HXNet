@@ -64,15 +64,6 @@ public:
     operator TimerLoop &() {
         return _timerLoop;
     }
-
-    [[gnu::hot]] EpollLoop& getEpollLoop() {
-        return _epollLoop;
-    }
-
-    operator EpollLoop &() {
-        return _epollLoop;
-    }
-
     [[gnu::hot]] IoUringLoop& getIoUringLoop() {
         return _ioUringLoop;
     }
@@ -83,7 +74,6 @@ public:
 
 private:
     TimerLoop _timerLoop;
-    EpollLoop _epollLoop;
     IoUringLoop _ioUringLoop;
 };
 

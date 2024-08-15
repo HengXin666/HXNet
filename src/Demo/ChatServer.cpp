@@ -2,8 +2,8 @@
 
 #include <HXWeb/HXApiHelper.h>
 #include <HXSTL/utils/FileUtils.h>
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXWeb/server/Acceptor.h>
-#include <HXWeb/server/context/EpollContext.h>
 #include <HXJson/HXJson.h>
 #include <chrono>
 
@@ -50,14 +50,12 @@ struct Message {
 
 std::vector<Message> messageArr;
 
-HX::web::server::context::StopSource recv_timeout_stop = HX::web::server::context::StopSource::make();
-
 class ChatController {
 
     ENDPOINT_BEGIN(API_GET, "/", root) {
         req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("text/html", "UTF-8")
-            .setBodyData(HX::STL::utils::FileUtils::getFileContent("index.html"));
+            .setBodyData(co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"));
         co_return;
     } ENDPOINT_END;
 
@@ -65,7 +63,7 @@ class ChatController {
         req._responsePtr
             ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
             .setContentType("image/x-icon")
-            .setBodyData(HX::STL::utils::FileUtils::getFileContent("favicon.ico"));
+            .setBodyData(co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"));
         co_return;
     } ENDPOINT_END;
 
@@ -85,8 +83,6 @@ class ChatController {
                 jsonPair.first.get<HX::Json::JsonDict>()["user"].get<std::string>(),
                 jsonPair.first.get<HX::Json::JsonDict>()["content"].get<std::string>()
             );
-            recv_timeout_stop.doRequestStop();
-            recv_timeout_stop = HX::web::server::context::StopSource::make();
             printf("%s\n", Message::toJson(messageArr.begin(), messageArr.end()).c_str());
         } else {
             printf("解析客户端出错\n");

@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include <HXSTL/tools/ErrorHandlingTools.h>
-#include <HXWeb/server/AsyncFile.h>
+#include <HXSTL/coroutine/loop/IoUringLoop.h>
 
 namespace HX { namespace STL { namespace utils {
 
@@ -27,18 +27,21 @@ void FileUtils::putFileContent(const std::string& path, std::string_view content
 HX::STL::coroutine::awaiter::Task<std::string> FileUtils::asyncGetFileContent(
     const std::string& path
 ) {
-    // 这个是错误的!!!, epoll 不能监测普通文件...
-    auto fd = HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
-        ::open(path.c_str(), O_RDONLY)
-    ).expect("open: O_RDONLY");
+    int fd = co_await HX::STL::coroutine::loop::IoUringTask().prepOpenat(
+        AT_FDCWD, path.c_str(), O_RDONLY, 0644
+    );
     std::string res;
     std::vector<char> buf(1024);
-    HX::web::server::AsyncFile file {fd};
-    while (co_await file.asyncRead(buf, buf.size()) != buf.size()) {
+    std::size_t len = 0;
+    uint64_t offset = 0;
+    while ((len = static_cast<std::size_t>(
+            co_await HX::STL::coroutine::loop::IoUringTask().prepRead(fd, buf, offset)
+        )) == buf.size()) {
         res += std::string_view {buf.data(), buf.size()};
-        buf.clear();
+        offset += buf.size();
     }
-    co_return res += std::string_view {buf.data(), buf.size()};
+    co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+    co_return (res.append(std::string_view {buf.data(), len}));
 }
 
 }}} // namespace HX::STL::utils

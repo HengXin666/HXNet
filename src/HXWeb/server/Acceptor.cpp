@@ -1,6 +1,7 @@
 #include <HXWeb/server/Acceptor.h>
 
 #include <HXSTL/tools/ErrorHandlingTools.h>
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXWeb/server/ConnectionHandler.h>
 
 namespace HX { namespace web { namespace server {
