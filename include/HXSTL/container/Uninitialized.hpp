@@ -23,28 +23,9 @@
 #include <utility>
 #include <memory>
 
+#include <HXSTL/container/NonVoidHelper.hpp>
+
 namespace HX { namespace STL { namespace container {
-
-template <class T = void>
-struct NonVoidHelper {
-    using Type = T;
-};
-
-template <>
-struct NonVoidHelper<void> {
-    using Type = NonVoidHelper;
-
-    explicit NonVoidHelper() = default;
-
-    template <class T>
-    constexpr friend T &&operator,(T &&t, NonVoidHelper) {
-        return std::forward<T>(t);
-    }
-
-    char const *repr() const noexcept {
-        return "NonVoidHelper";
-    }
-};
 
 /**
  * @brief 一个未初始化的值 (用于延迟初始化)

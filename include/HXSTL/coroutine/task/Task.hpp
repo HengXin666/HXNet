@@ -31,7 +31,11 @@ namespace HX { namespace STL { namespace coroutine { namespace task {
  * @tparam P 协程的`promise_type`类型
  * @tparam A 被`co_await`时的行为
  */
-template <class T = void, class P = HX::STL::coroutine::promise::Promise<T>, class A = HX::STL::coroutine::awaiter::ExitAwaiter<T, P>>
+template <
+    class T = void, 
+    class P = HX::STL::coroutine::promise::Promise<T>, 
+    class A = HX::STL::coroutine::awaiter::ExitAwaiter<T, P>
+>
 struct [[nodiscard]] Task {
     using promise_type = P;
 
@@ -62,8 +66,8 @@ struct [[nodiscard]] Task {
         return _coroutine;
     }
 
-    std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
 private:
+    std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
 };
 
 /**
@@ -72,25 +76,29 @@ private:
  * @tparam P 协程的`promise_type`类型
  * @tparam A 被`co_await`时的行为
  */
-template <class T = void, class P = HX::STL::coroutine::promise::Promise<T, false>, class A = HX::STL::coroutine::awaiter::ExitAwaiter<T, P>>
-struct [[nodiscard]] TaskSuspend {
+template <
+    class T = void, 
+    class P = HX::STL::coroutine::promise::Promise<T, false>, 
+    class A = HX::STL::coroutine::awaiter::ExitAwaiter<T, P>
+>
+struct [[nodiscard]] ImmediatelyTask {
     using promise_type = P;
 
-    TaskSuspend(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
+    ImmediatelyTask(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
         : _coroutine(coroutine) {}
 
-    // TaskSuspend(TaskSuspend &&) = delete;
+    // ImmediatelyTask(ImmediatelyTask &&) = delete;
 
-    TaskSuspend(TaskSuspend &&that) noexcept : _coroutine(that._coroutine) {
+    ImmediatelyTask(ImmediatelyTask &&that) noexcept : _coroutine(that._coroutine) {
         that._coroutine = nullptr;
     }
 
-    TaskSuspend &operator=(TaskSuspend &&that) noexcept {
+    ImmediatelyTask &operator=(ImmediatelyTask &&that) noexcept {
         std::swap(_coroutine, that._coroutine);
         return *this;
     }
 
-    ~TaskSuspend() {
+    ~ImmediatelyTask() {
         if (_coroutine)
             _coroutine.destroy();
     }

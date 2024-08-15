@@ -175,7 +175,7 @@ HX::STL::coroutine::task::TimerTask C() {
     std::cout << "\t\tC continues\n";
 }
 
-HX::STL::coroutine::task::TaskSuspend<
+HX::STL::coroutine::task::ImmediatelyTask<
     void,
     HX::STL::coroutine::promise::Promise<void>,
     HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::promise::Promise<void>>
@@ -248,7 +248,153 @@ int _main() {
     return 0;
 }
 
+// 看不懂思密达~
+#include <variant>
+#include <HXSTL/coroutine/awaiter/AwaiterConcept.hpp>
+
+struct ReturnPreviousPromise {
+    auto initial_suspend() noexcept {
+        return std::suspend_always();
+    }
+
+    auto final_suspend() noexcept {
+        return HX::STL::coroutine::awaiter::PreviousAwaiter(mPrevious);
+    }
+
+    void unhandled_exception() {
+        throw;
+    }
+
+    void return_value(std::coroutine_handle<> previous) noexcept {
+        mPrevious = previous;
+    }
+
+    auto get_return_object() {
+        return std::coroutine_handle<ReturnPreviousPromise>::from_promise(
+            *this);
+    }
+
+    std::coroutine_handle<> mPrevious{};
+
+    ReturnPreviousPromise &operator=(ReturnPreviousPromise &&) = delete;
+};
+
+struct ReturnPreviousTask {
+    using promise_type = ReturnPreviousPromise;
+
+    ReturnPreviousTask(std::coroutine_handle<promise_type> coroutine) noexcept
+        : mCoroutine(coroutine) {}
+
+    ReturnPreviousTask(ReturnPreviousTask &&) = delete;
+
+    ~ReturnPreviousTask() {
+        mCoroutine.destroy();
+    }
+
+    std::coroutine_handle<promise_type> mCoroutine;
+};
+
+struct WhenAnyCtlBlock {
+    static constexpr std::size_t kNullIndex = std::size_t(-1);
+
+    std::size_t mIndex{kNullIndex};
+    std::coroutine_handle<> mPrevious{};
+    std::exception_ptr mException{};
+};
+
+struct WhenAnyAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<> coroutine) const {
+        if (mTasks.empty()) return coroutine;
+        mControl.mPrevious = coroutine;
+        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
+            t.mCoroutine.resume();
+        return mTasks.back().mCoroutine;
+    }
+
+    void await_resume() const {
+        if (mControl.mException) [[unlikely]] {
+            std::rethrow_exception(mControl.mException);
+        }
+    }
+
+    WhenAnyCtlBlock &mControl;
+    std::span<ReturnPreviousTask const> mTasks;
+};
+
+template <class T>
+ReturnPreviousTask whenAnyHelper(auto const &t, WhenAnyCtlBlock &control,
+                                 HX::STL::container::Uninitialized<T> &result, std::size_t index) {
+    try {
+        result.putValue(co_await t);
+    } catch (...) {
+        control.mException = std::current_exception();
+        co_return control.mPrevious;
+    }
+    --control.mIndex = index;
+    co_return control.mPrevious;
+}
+
+template <std::size_t... Is, class... Ts>
+HX::STL::coroutine::task::Task<std::variant<typename HX::STL::coroutine::awaiter::AwaitableTraits<Ts>::NonVoidRetType...>>
+whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
+    WhenAnyCtlBlock control{};
+    std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
+    ReturnPreviousTask taskArray[]{whenAnyHelper(ts, control, std::get<Is>(result), Is)...};
+    co_await WhenAnyAwaiter(control, taskArray);
+    Uninitialized<std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...>> varResult;
+    ((control.mIndex == Is && (varResult.putValue(
+        std::in_place_index<Is>, std::get<Is>(result).moveValue()), 0)), ...);
+    co_return varResult.moveValue();
+}
+
+template <HX::STL::coroutine::awaiter::Awaitable... Ts>
+    requires(sizeof...(Ts) != 0)
+auto when_any(Ts &&...ts) {
+    return whenAnyImpl(std::make_index_sequence<sizeof...(Ts)>{},
+                       std::forward<Ts>(ts)...);
+}
+
+template <HX::STL::coroutine::awaiter::Awaitable T1, HX::STL::coroutine::awaiter::Awaitable T2>
+HX::STL::coroutine::task::Task<
+    std::variant<
+        typename HX::STL::coroutine::awaiter::AwaitableTraits<T1>::NonVoidRetType, 
+        typename HX::STL::coroutine::awaiter::AwaitableTraits<T2>::NonVoidRetType
+    >
+> whenAny(
+    T1&& t1,
+    T2&& t2
+) {
+
+}
+
+// 完成任意任务就返回
+
+HX::STL::coroutine::task::Task<> he1() {
+    std::cout << "睡觉 1s 或者 2s\n";
+    auto x = co_await whenAny(
+        HX::STL::coroutine::loop::TimerLoop::sleep_for(1s),
+        HX::STL::coroutine::loop::TimerLoop::sleep_for(2s)
+    );
+    typename HX::STL::coroutine::awaiter::AwaitableTraits<
+        decltype(HX::STL::coroutine::loop::TimerLoop::sleep_for(1s))
+    >::NonVoidRetType a;
+    std::cout << "好啦 1s\n";
+    co_return;
+}
+
 int main() {
+    auto task = he1();
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(task);
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().runAll();
+    return 0;
+}
+
+int __main() {
     chdir("../static");
     HX::STL::coroutine::task::runTask(
         HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
