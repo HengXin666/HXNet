@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20.0)
 project(HXNet LANGUAGES CXX)
 
 # 是否开启 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
-# set(IO_URING_DIRECT ON)
+# set(IO_URING_DIRECT ON) # 有BUG 先不要用
 
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定

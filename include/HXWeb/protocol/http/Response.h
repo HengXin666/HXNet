@@ -162,8 +162,9 @@ public:
      * @return [this&] 可以链式调用
      * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
      */
-    void setBodyData(const std::string& data) {
+    Response& setBodyData(const std::string& data) {
         _responseBody = data;
+        return *this;
     }
 
     /**

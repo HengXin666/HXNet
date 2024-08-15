@@ -96,6 +96,7 @@ std::unordered_map<std::string, std::string> protocol::http::Request::getParseQu
     std::size_t pos = path.find('?'); // 没必要反向查找
     if (pos == std::string::npos)
         return {};
+    // 如果有#这种, 要删除: 无需处理, 这个只是存在于客户端, 不会传输到服务端(?)至少path没有
     std::string parameter = path.substr(pos + 1);
     auto kvArr = HX::STL::utils::StringUtil::split(parameter, "&");
     std::unordered_map<std::string, std::string> res;

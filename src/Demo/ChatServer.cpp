@@ -51,27 +51,46 @@ struct Message {
 std::vector<Message> messageArr;
 
 class ChatController {
-
     ENDPOINT_BEGIN(API_GET, "/", root) {
-        req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/html", "UTF-8")
-            .setBodyData(co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"));
+        RESPONSE_DATA(
+            200,
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"),
+            "text/html", "UTF-8"
+        );
         co_return;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
-        req._responsePtr
-            ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("image/x-icon")
-            .setBodyData(co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"));
+        RESPONSE_DATA(
+            200, 
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
+            "image/x-icon"
+        );
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/files/**", files) {
+        PARSE_MULTI_LEVEL_PARAM(path);
+        RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
+                            .setBodyData("<h1> files URL is " + path + "</h1>");
         co_return;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(API_GET, "/home/**", home) {
-        req._responsePtr
-            ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/html", "UTF-8")
-            .setBodyData("<h1> Home URL is " + req.getRequesPath() + "</h1>");
+    ENDPOINT_BEGIN(API_GET, "/home/{id}/{name}", getIdAndNameByHome) {
+        START_PARSE_PATH_PARAMS; // 开始解析请求路径参数
+        PARSE_PARAM(0, u_int32_t, id);
+        PARSE_PARAM(1, std::string, name);
+
+        // 解析查询参数为键值对; ?awa=xxx 这种
+        GET_PARSE_QUERY_PARAMETERS(queryMap);
+
+        if (queryMap.count("loli")) // 如果解析到 ?loli=xxx
+            std::cout << queryMap["loli"] << '\n'; // xxx 的值
+
+        RESPONSE_DATA(
+            200, 
+            "<h1> Home id 是 " + std::to_string(*id) + ", 而名字是 " + *name + "</h1><h2> 来自 URL: " + req.getRequesPath() + " 的解析</h2>",
+            "text/html", "UTF-8"
+        );
         co_return;
     } ENDPOINT_END;
 
@@ -88,9 +107,7 @@ class ChatController {
             printf("解析客户端出错\n");
         }
         
-        req._responsePtr
-            ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-            .setContentType("text/plain", "UTF-8");
+        RESPONSE_STATUS(200).setContentType("text/plain", "UTF-8");
         co_return;
     } ENDPOINT_END;
 
@@ -106,9 +123,11 @@ class ChatController {
             printf("内容是: %d\n", len);
             if (len < (int)messageArr.size()) {
                 printf("立马回复, 是新消息~\n");
-                req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                    .setContentType("text/plain", "UTF-8")
-                    .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
+                RESPONSE_DATA(
+                    200,
+                    Message::toJson(messageArr.begin() + len, messageArr.end()),
+                    "text/plain", "UTF-8"
+                );
                 co_return;
             }
             else {
@@ -116,10 +135,11 @@ class ChatController {
                 co_await HX::STL::coroutine::loop::TimerLoop::sleep_for(3s);
                 std::vector<Message> submessages;
                 printf("3秒之期已到, 马上回复~\n");
-                req._responsePtr
-                    ->setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                    .setContentType("text/plain", "UTF-8")
-                    .setBodyData(Message::toJson(messageArr.begin() + len, messageArr.end()));
+                RESPONSE_DATA(
+                    200,
+                    Message::toJson(messageArr.begin() + len, messageArr.end()),
+                    "text/plain", "UTF-8"
+                );
                 co_return;
             }
         } else {

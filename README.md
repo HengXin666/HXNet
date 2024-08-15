@@ -1,7 +1,5 @@
 # HXNet
-学习现代Cpp的代码存放库, epoll + 协程的http服务器, 基于压缩前缀树的路由, http解析, Json解析, 万用print等
-
-> 目标是写一个epoll协程的 Web Http 后端
+学习现代Cpp的代码存放库, io_uring + 协程的http服务器, 基于压缩前缀树的路由, http解析, Json解析, 万用print等
 
 ## 构建要求
 
@@ -13,58 +11,93 @@
 > [!TIP]
 > 仍然在开发, 非最终产品
 
-- 编写端点
+- 编写端点 (提供了简化使用的 API 宏)
+```cpp
+#include <HXWeb/HXApiHelper.h> // 使用简化的api
 
+// 用户定义的控制器
+class MyWebController {
+
+    // 定义端点函数
+    ENDPOINT_BEGIN(API_GET, "/", root) { // 注册get请求, 接收`/`路径请求
+        RESPONSE_DATA( // 响应数据
+            200, // 状态码
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"), // (body数据) 异步(协程)读取文件
+            "text/html", "UTF-8" // (响应类型), 以及响应编码
+        );
+        co_return; // 注意, 端点函数是协程, 得使用 co_return 而不是return (返回值是 void)
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
+        RESPONSE_DATA(
+            200, 
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
+            "image/x-icon" // 响应编码 可以不写
+        );
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/files/**", files) { // 支持通配符路径
+        PARSE_MULTI_LEVEL_PARAM(path); // 解析通配符 (**)
+        // 另一种响应宏, 只会设置响应编码, 但是返回的是 Response &, 可以链式调用
+        RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
+                            .setBodyData("<h1> files URL is " + path + "</h1>");
+        co_return;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/home/{id}/{name}", getIdAndNameByHome) {
+        START_PARSE_PATH_PARAMS; // 开始解析请求路径参数
+        PARSE_PARAM(0, u_int32_t, id);     // 解析第一个路径参数{id}, 解析为 u_int32_t类型, 命名为 id
+        PARSE_PARAM(1, std::string, name); // 解析第一个路径参数{name}
+
+        // 解析查询参数为键值对; ?awa=xxx 这种
+        GET_PARSE_QUERY_PARAMETERS(queryMap);
+
+        if (queryMap.count("loli")) // 如果解析到 ?loli=xxx
+            std::cout << queryMap["loli"] << '\n'; // xxx 的值
+
+        RESPONSE_DATA(
+            200, 
+            "<h1> Home id 是 " + std::to_string(*id) + ", 而名字是 " 
+            + *name + "</h1><h2> 来自 URL: " 
+            + req.getRequesPath() + " 的解析</h2>", // 默认`ENDPOINT_BEGIN`会传入 Request& req, 您可以对其进行更细致的操作
+            "text/html", "UTF-8"
+        );
+        co_return;
+    } ENDPOINT_END;
+};
+```
 
 - 绑定控制器到全局路由
 ```cpp
 #include <HXWeb/HXApiHelper.h> // 宏所在头文件
 
-ROUTER_BIND(MywebController); // 这个类在上面声明过了
+ROUTER_BIND(MyWebController); // 这个类在上面声明过了
 ```
 
 - 启动服务器, 并且监听 0.0.0.0:28205
+```cpp
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
+#include <HXWeb/server/Acceptor.h>
 
-## 目录结构
+HX::STL::coroutine::awaiter::Task<> startChatServer() {
+    ROUTER_BIND(MyWebController); // 绑定端点控制器到路由
+    try {
+        auto ptr = HX::web::server::Acceptor::make();
+        co_await ptr->start("0.0.0.0", "28205");
+    } catch(const std::system_error &e) {
+        std::cerr << e.what() << '\n';
+    }
+    co_return;
+}
 
-```sh
-. # 只说明头文件
-|-- include
-|   |-- HXJson
-|   |   `-- HXJson.h # JSON字符串解析为cpp对象
-|   |-- HXSTL
-|   |   |-- HXSTL.h
-|   |   |-- container
-|   |   |   |-- BytesBuffer.h        # 字节数组
-|   |   |   |-- Callback.h           # 回调函数(函数对象)
-|   |   |   `-- RadixTree.h          # 基数树(压缩前缀树)
-|   |   `-- tools
-|   |       |-- ErrorHandlingTools.h # Linux 错误处理工具
-|   |       |-- MagicEnum.h          # 魔法枚举: 支持反射到枚举值对应的字符串, 和通过字符串得到枚举值
-|   |       `-- StringTools.h        # 字符串工具类(切分等) / 当前时间格式化到字符串工具类
-|   |-- HXWeb
-|   |   |-- HXApiHelper.h            # 为用户提供更好体验的API宏定义
-|   |   |-- client                   # 客户端
-|   |   |-- protocol                 # 协议
-|   |   |   |-- http                 # HTTP协议
-|   |   |   |   |-- Request.h        # 请求
-|   |   |   |   `-- Response.h       # 响应
-|   |   |   `-- websocket
-|   |   |-- router
-|   |   |   |-- RequestParsing.h     # 请求模版解析 (用于给路由解析初始化)
-|   |   |   |-- RouteMapPrefixTree.h # 路由的压缩前缀树
-|   |   |   `-- Router.h             # 单例 路由类
-|   |   |-- server                   # 服务端
-|   |   |   |-- Acceptor.h           # 接受连接类
-|   |   |   |-- AsyncFile.h          # 文件异步操作类
-|   |   |   |-- ConnectionHandler.h  # 连接消息处理类
-|   |   |   `-- context
-|   |   |       `-- EpollContext.h   # 单例 Epoll 上下文 + 基于红黑树の定时器
-|   |   `-- socket
-|   |       |-- AddressResolver.h    # 地址(适配器模式封装的LinuxAPI)
-|   |       `-- FileDescriptor.h     # 文件描述符类
-|   `-- HXprint
-|       `-- HXprint.h                # 可打印 STL 容器 | 日志 函数
+int main() {
+    chdir("../static"); // 移动当前工作目录为这个
+    HX::STL::coroutine::awaiter::runTask( // 启动协程任务
+        HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
+        startChatServer()
+    );
+    return 0;
+}
 ```
 
 ## 代码规范

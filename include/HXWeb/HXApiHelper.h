@@ -58,6 +58,25 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
 }()
 
 /**
+ * @brief 将数据写入响应体, 并且指定状态码
+ * @param CODE 状态码 (如`200`)
+ * @param DATA 写入`响应体`的字符串数据
+ * @param __VA_ARGS__ 响应类型(第一个是响应类型(必选), 第二个是响应编码(可选)), 
+ * 如 `"text/html", "UTF-8"`, `"image/x-icon"`
+ */
+#define RESPONSE_DATA(CODE, DATA, ...) \
+req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_##CODE) \
+.setBodyData(DATA) \
+.setContentType(__VA_ARGS__)
+
+/**
+ * @brief 设置状态码 (接下来可以继续操作)
+ * @param 状态码 (如`200`)
+ */
+#define RESPONSE_STATUS(CODE) \
+req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_##CODE)
+
+/**
  * @brief 开始解析请求路径参数
  * @warning 接下来请使用`PARSE_PARAM`宏
  */
@@ -70,12 +89,15 @@ auto pathSplitArr = HX::STL::utils::StringUtil::split(req.getPureRequesPath(), "
  * @param INDEX 模版路径的第几个通配参数 (从`0`开始计算)
  * @param TYPE 需要解析成的类型, 如`bool`/`int32_t`/`double`/`std::string`/`std::string_view`等
  * @param NAME 变量名称
+ * @return NAME, 类型是`std::optional<TYPE>`
  * @warning 如果解析不到(出错), 则会直接返回错误给客户端
  */
 #define PARSE_PARAM(INDEX, TYPE, NAME) \
 auto NAME = HX::web::router::TypeInterpretation<TYPE>::wildcardElementTypeConversion(pathSplitArr[wildcarIndexArr[INDEX]]); \
-if (!NAME) \
-    return req->_responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_400).setContentType("application/json", "UTF-8").setBodyData("Missing PATH parameter '"#NAME"'").writeResponse()
+if (!NAME) { \
+    RESPONSE_DATA(400, "Missing PATH parameter '"#NAME"'", "application/json", "UTF-8"); \
+    co_return; \
+}
 
 /**
  * @brief 解析多级通配符的宏, 如 `/home/ **` 这种
