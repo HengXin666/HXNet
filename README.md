@@ -125,9 +125,11 @@ int main() {
 #include <HXSTL/tools/ErrorHandlingTools.h> // 第三方库文件
 ```
 
-- 命名空间规范:
+- 命名空间规范: 按照文件夹来, 比如`/HXSTL/coroutine/loop/IoUringLoop.h`, 其中(`HXSTL`是模块根文件夹, 其意思是`HX::STL`)
 ```cpp
+namespace HX { namespace STL { namespace coroutine { namespace loop {
 
+}}}} // namespace HX::STL::coroutine::loop
 ```
 
 - 类成员命名方式为`_name`(自用函数也是以`_`开头)
