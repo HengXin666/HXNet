@@ -20,7 +20,7 @@
 #ifndef _HX_PROMISE_H_
 #define _HX_PROMISE_H_
 
-#include <HXSTL/coroutine/awaiter/Uninitialized.hpp>
+#include <HXSTL/container/Uninitialized.hpp>
 #include <HXSTL/coroutine/awaiter/RepeatAwaiter.hpp>
 #include <HXSTL/coroutine/awaiter/PreviousAwaiter.hpp>
 
@@ -74,7 +74,7 @@ struct Promise {
 
     Promise &operator=(Promise &&) = delete;
 
-    HX::STL::coroutine::awaiter::Uninitialized<T> _res;
+    HX::STL::container::Uninitialized<T> _res;
     
     std::coroutine_handle<> _previous {}; // 上一个协程句柄
     std::exception_ptr _exception {}; // 异常信息

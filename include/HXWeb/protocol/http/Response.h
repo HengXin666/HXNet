@@ -24,7 +24,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include <HXSTL/container/BytesBuffer.h>
+#include <HXSTL/container/BytesBuffer.hpp>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 

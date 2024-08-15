@@ -21,7 +21,7 @@
  * */
 
 #include <functional>
-#include <HXSTL/container/RadixTree.h>
+#include <HXSTL/container/RadixTree.hpp>
 /// @brief 压缩前缀树测试
 void testRadixTree() {
     using func = std::function<void()>;

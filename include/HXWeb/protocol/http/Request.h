@@ -25,8 +25,7 @@
 #include <string>
 #include <optional>
 
-#include <HXSTL/container/Callback.h>
-#include <HXSTL/container/BytesBuffer.h>
+#include <HXSTL/container/BytesBuffer.hpp>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 

@@ -23,7 +23,7 @@
 #include <utility>
 #include <memory>
 
-namespace HX { namespace STL { namespace coroutine { namespace awaiter {
+namespace HX { namespace STL { namespace container {
 
 template <class T = void>
 struct NonVoidHelper {
@@ -100,6 +100,6 @@ class Uninitialized<T &> : public Uninitialized<std::reference_wrapper<T>> {};
 template <class T>
 class Uninitialized<T &&> : public Uninitialized<T> {};
 
-}}}} // namespace HX::STL::coroutine::awaiter
+}}} // namespace HX::STL::container
 
 #endif // !_HX_UNINITIALIZED_H_

@@ -20,10 +20,11 @@
 #ifndef _HX_ROUTE_MAP_PREFIX_TREE_H_
 #define _HX_ROUTE_MAP_PREFIX_TREE_H_
 
-#include <HXSTL/container/RadixTree.h>
 #include <stack>
 
-namespace HX::web {
+#include <HXSTL/container/RadixTree.hpp>
+
+namespace HX { namespace web { namespace router {
 
 /**
  * @brief 路由映射前缀树
@@ -125,6 +126,6 @@ public:
     }
 };
 
-} // namespace HXHttp
+}}} // namespace HX::web::router
 
 #endif // _HX_ROUTE_MAP_PREFIX_TREE_H_
