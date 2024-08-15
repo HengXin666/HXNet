@@ -9,18 +9,22 @@
 
 namespace HX { namespace web { namespace server {
 
-HX::STL::coroutine::awaiter::TimerTask ConnectionHandler::start(int fd) {
+HX::STL::coroutine::awaiter::TimerTask ConnectionHandler::start(int fd, std::chrono::seconds timeout) {
     HX::web::protocol::http::Request _request {};    // 客户端请求类
-
     HX::web::protocol::http::Response _response {};  // 服务端响应类
-
+    std::vector<char> buff(protocol::http::Request::BUF_SIZE);
     _request._responsePtr = &_response;
-    
+
+    // 连接超时
+    auto _timeout = HX::STL::coroutine::loop::durationToKernelTimespec(timeout);
+
     while (true) {
         // === 读取 ===
-        std::vector<char> buff(protocol::http::Request::BUF_SIZE);
         // LOG_INFO("读取中...");
-        size_t n = std::max(co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(fd, buff, 0), 0); // 读取到的字节数
+        size_t n = std::max(co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
+            HX::STL::coroutine::loop::IoUringTask().prepRecv(fd, buff, 0),
+            HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(&_timeout, 0)
+        ), 0); // 读取到的字节数
         while (true) {
             if (n == 0) {
                 // 断开连接
@@ -34,8 +38,9 @@ HX::STL::coroutine::awaiter::TimerTask ConnectionHandler::start(int fd) {
                 HX::STL::container::ConstBytesBufferView {buff.data(), n}
             )) {
                 // LOG_INFO("二次读取中..., 还需要读取 size = %llu", size);
-                n = std::max(co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
-                    fd, buff, std::min(size, protocol::http::Request::BUF_SIZE), 0
+                n = std::max(co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
+                    HX::STL::coroutine::loop::IoUringTask().prepRecv(fd, buff, 0),
+                    HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(&_timeout, 0)
                 ), 0);
                 continue;
             }

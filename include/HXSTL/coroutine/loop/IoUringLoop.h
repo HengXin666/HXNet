@@ -26,6 +26,22 @@
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
+template <class Rep, class Period>
+struct __kernel_timespec durationToKernelTimespec(std::chrono::duration<Rep, Period> dur) {
+    struct __kernel_timespec ts;
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(dur);
+    auto nsecs =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(dur - secs);
+    ts.tv_sec = static_cast<__kernel_time64_t>(secs.count());
+    ts.tv_nsec = static_cast<__kernel_time64_t>(nsecs.count());
+    return ts;
+}
+
+template <class Clk, class Dur>
+struct __kernel_timespec timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
+    return durationToKernelTimespec(tp.time_since_epoch());
+}
+
 class IoUringLoop {
     IoUringLoop& operator=(IoUringLoop&&) = delete;
 public:
@@ -95,6 +111,18 @@ struct [[nodiscard]] IoUringTask {
 
     struct ::io_uring_sqe *getSqe() const noexcept {
         return _sqe;
+    }
+
+    /**
+     * @brief 链接超时操作
+     * @param lhs 操作
+     * @param rhs 空连接的超时操作 (prepLinkTimeout)
+     * @return IoUringTask&& 
+     */
+    static IoUringTask &&linkOps(IoUringTask &&lhs, IoUringTask &&rhs) {
+        lhs._sqe->flags |= IOSQE_IO_LINK;
+        rhs._previous = std::noop_coroutine();
+        return std::move(lhs);
     }
 
 private:
@@ -267,6 +295,20 @@ public:
      */
     IoUringTask &&prepClose(int fd) && {
         ::io_uring_prep_close(_sqe, fd);
+        return std::move(*this);
+    }
+
+    /**
+     * @brief 创建未链接的超时操作
+     * @param ts 超时时间
+     * @param flags 
+     * @return IoUringTask&& 
+     */
+    IoUringTask &&prepLinkTimeout(
+        struct __kernel_timespec *ts,
+        unsigned int flags
+    ) && {
+        ::io_uring_prep_link_timeout(_sqe, ts, flags);
         return std::move(*this);
     }
 };
