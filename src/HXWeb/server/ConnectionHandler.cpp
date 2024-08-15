@@ -9,7 +9,7 @@
 
 namespace HX { namespace web { namespace server {
 
-HX::STL::coroutine::awaiter::TimerTask ConnectionHandler::start(int fd, std::chrono::seconds timeout) {
+HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono::seconds timeout) {
     HX::web::protocol::http::Request _request {};    // 客户端请求类
     HX::web::protocol::http::Response _response {};  // 服务端响应类
     std::vector<char> buff(protocol::http::Request::BUF_SIZE);
@@ -39,7 +39,7 @@ HX::STL::coroutine::awaiter::TimerTask ConnectionHandler::start(int fd, std::chr
             )) {
                 // LOG_INFO("二次读取中..., 还需要读取 size = %llu", size);
                 n = std::max(co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
-                    HX::STL::coroutine::loop::IoUringTask().prepRecv(fd, buff, 0),
+                    HX::STL::coroutine::loop::IoUringTask().prepRecv(fd, buff, size, 0),
                     HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(&_timeout, 0)
                 ), 0);
                 continue;

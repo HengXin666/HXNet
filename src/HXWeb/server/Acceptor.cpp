@@ -6,7 +6,7 @@
 
 namespace HX { namespace web { namespace server {
 
-HX::STL::coroutine::awaiter::Task<> Acceptor::start(
+HX::STL::coroutine::task::Task<> Acceptor::start(
     const std::string& name,
     const std::string& port
 ) {
@@ -57,7 +57,7 @@ HX::STL::coroutine::awaiter::Task<> Acceptor::start(
         HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
             std::chrono::system_clock::now(),
             nullptr,
-            std::make_shared<HX::STL::coroutine::awaiter::TimerTask>(
+            std::make_shared<HX::STL::coroutine::task::TimerTask>(
                 ConnectionHandler::start(fd)
             )
         );

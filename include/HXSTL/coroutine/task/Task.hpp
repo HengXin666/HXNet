@@ -20,10 +20,10 @@
 #ifndef _HX_TASK_H_
 #define _HX_TASK_H_
 
-#include <HXSTL/coroutine/awaiter/Promise.hpp>
+#include <HXSTL/coroutine/promise/Promise.hpp>
 #include <HXSTL/coroutine/awaiter/ExitAwaiter.hpp>
 
-namespace HX { namespace STL { namespace coroutine { namespace awaiter {
+namespace HX { namespace STL { namespace coroutine { namespace task {
 
 /**
  * @brief 协程任务类: 直接返回, 而不是马上执行
@@ -31,7 +31,7 @@ namespace HX { namespace STL { namespace coroutine { namespace awaiter {
  * @tparam P 协程的`promise_type`类型
  * @tparam A 被`co_await`时的行为
  */
-template <class T = void, class P = Promise<T>, class A = ExitAwaiter<T, P>>
+template <class T = void, class P = HX::STL::coroutine::promise::Promise<T>, class A = HX::STL::coroutine::awaiter::ExitAwaiter<T, P>>
 struct [[nodiscard]] Task {
     using promise_type = P;
 
@@ -72,7 +72,7 @@ private:
  * @tparam P 协程的`promise_type`类型
  * @tparam A 被`co_await`时的行为
  */
-template <class T = void, class P = Promise<T, false>, class A = ExitAwaiter<T, P>>
+template <class T = void, class P = HX::STL::coroutine::promise::Promise<T, false>, class A = HX::STL::coroutine::awaiter::ExitAwaiter<T, P>>
 struct [[nodiscard]] TaskSuspend {
     using promise_type = P;
 

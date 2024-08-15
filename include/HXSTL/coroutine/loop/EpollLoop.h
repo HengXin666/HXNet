@@ -25,7 +25,7 @@
 #include <chrono>
 #include <sys/epoll.h>
 
-#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
@@ -72,7 +72,7 @@ private:
     std::vector<struct ::epoll_event> _evs;
 };
 
-struct EpollFilePromise : HX::STL::coroutine::awaiter::Promise<EpollEventMask> {
+struct EpollFilePromise : HX::STL::coroutine::promise::Promise<EpollEventMask> {
     auto get_return_object() {
         return std::coroutine_handle<EpollFilePromise>::from_promise(*this);
     }
@@ -127,9 +127,9 @@ struct EpollFileAwaiter {
  * @param fd 文件套接字
  * @param mask Epoll 事件掩码
  * @param ctl 如: EPOLL_CTL_ADD
- * @return HX::STL::coroutine::awaiter::Task<int, EpollFilePromise> 
+ * @return HX::STL::coroutine::task::Task<int, EpollFilePromise> 
  */
-inline HX::STL::coroutine::awaiter::Task<int, EpollFilePromise> waitFileEvent(
+inline HX::STL::coroutine::task::Task<int, EpollFilePromise> waitFileEvent(
     EpollLoop& epollLoop,
     int fd, 
     EpollEventMask mask, 

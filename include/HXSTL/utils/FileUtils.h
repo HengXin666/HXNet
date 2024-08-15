@@ -23,7 +23,7 @@
 #include <string>
 #include <string_view>
 
-#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
 
 namespace HX { namespace STL { namespace utils {
 
@@ -50,7 +50,7 @@ struct FileUtils {
      * @param path 文件路径
      * @return std::string 文件内容
      */
-    static HX::STL::coroutine::awaiter::Task<std::string> asyncGetFileContent(
+    static HX::STL::coroutine::task::Task<std::string> asyncGetFileContent(
         const std::string& path
     );
 };

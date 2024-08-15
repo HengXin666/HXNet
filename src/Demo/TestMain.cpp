@@ -48,38 +48,6 @@ void testMagicEnum() {
     std::cout << HX::STL::utils::MagicEnum::nameFromEnum<MyEnum>("imouto") << '\n';
 }
 
-#include <HXWeb/HXApiHelper.h>
-#include <HXSTL/utils/FileUtils.h>
-#include <HXWeb/server/Acceptor.h>
-#include <HXWeb/server/context/EpollContext.h>
-#include <unistd.h>
-/// @brief 服务端测试
-void testServer() {
-    ::chdir("../static");
-    /// @brief 编写控制器(端点)
-    class MywebController {
-
-    public:
-        static std::string execQueryHomeData() {
-            return "<h1>Heng_Xin ll 哇!</h1><h2>Now Time: " 
-                    + HX::STL::utils::DateTimeFormat::format() 
-                    + "</h2>";
-        }
-    };
-
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-    try {
-        ROUTER_BIND(MywebController);
-
-        HX::web::server::context::EpollContext ctx;
-        auto ptr = HX::web::server::Acceptor::make();
-        ptr->start("0.0.0.0", "28205");
-        ctx.join();
-    } catch(const std::system_error &e) {
-        std::cerr << e.what() << '\n';
-    }
-}
-
 // int main() {
 //     testServer();
 //     return 0;

@@ -208,12 +208,15 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
         case 'n':
             if (json[1] == 'u' && json[2] == 'l' && json[3] == 'l')
                 return {JsonObject{std::nullptr_t{}}, 4};
+            break;
         case 't':
             if (json[1] == 'r' && json[2] == 'u' && json[3] == 'e')
                 return {JsonObject{true}, 4};
+            break;
         case 'f':
             if (json.size() > 4 && json[1] == 'a' && json[2] == 'l' && json[3] == 's' && json[4] == 'e')
                 return {JsonObject{false}, 5};
+            break;
         default:
             break;
         }

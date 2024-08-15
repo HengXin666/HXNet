@@ -25,7 +25,7 @@
 #include <string>
 #include <functional>
 
-#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/router/RouteMapPrefixTree.h>
 
 namespace HX::web::protocol::http {
@@ -42,7 +42,7 @@ namespace HX { namespace web { namespace router {
  */
 class Router {
     /// @brief 端点函数
-    using EndpointFunc = std::function<HX::STL::coroutine::awaiter::Task<void>(
+    using EndpointFunc = std::function<HX::STL::coroutine::task::Task<void>(
         const HX::web::protocol::http::Request&
     )>;
 

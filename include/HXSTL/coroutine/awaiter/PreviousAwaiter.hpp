@@ -32,7 +32,7 @@ struct PreviousAwaiter {
         return false;
     }
 
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<> coroutine) const noexcept {
+    std::coroutine_handle<> await_suspend(std::coroutine_handle<> /*coroutine*/) const noexcept {
         if (_previous)
             return _previous;
         else

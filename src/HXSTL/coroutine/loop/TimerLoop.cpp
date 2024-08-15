@@ -1,6 +1,6 @@
 #include <HXSTL/coroutine/loop/TimerLoop.h>
 
-#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
@@ -45,13 +45,13 @@ std::optional<std::chrono::system_clock::duration> TimerLoop::run() {
     return std::nullopt;
 }
 
-HX::STL::coroutine::awaiter::Task<void> TimerLoop::sleep_until(
+HX::STL::coroutine::task::Task<void> TimerLoop::sleep_until(
     std::chrono::system_clock::time_point expireTime
 ) {
     co_await SleepAwaiter(AsyncLoop::getLoop(), expireTime);
 }
 
-HX::STL::coroutine::awaiter::Task<void> TimerLoop::sleep_for(
+HX::STL::coroutine::task::Task<void> TimerLoop::sleep_for(
     std::chrono::system_clock::duration duration
 ) {
     co_await SleepAwaiter(AsyncLoop::getLoop(), std::chrono::system_clock::now() + duration);

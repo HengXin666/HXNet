@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/AddressResolver.h>
 
 namespace HX { namespace web { namespace server {
@@ -47,7 +47,7 @@ public:
      * @param name 主机名或地址字符串(IPv4 的点分十进制表示或 IPv6 的十六进制表示)
      * @param port 服务名可以是十进制的端口号, 也可以是已知的服务名称, 如 ftp、http 等
      */
-    HX::STL::coroutine::awaiter::Task<> start(const std::string& name, const std::string& port);
+    HX::STL::coroutine::task::Task<> start(const std::string& name, const std::string& port);
 };
 
 }}} // namespace HX::web::server

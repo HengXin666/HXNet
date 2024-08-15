@@ -20,7 +20,7 @@
 #ifndef _HX_TIMER_TASK_H_
 #define _HX_TIMER_TASK_H_
 
-#include <HXSTL/coroutine/awaiter/Promise.hpp>
+#include <HXSTL/coroutine/promise/Promise.hpp>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
@@ -30,7 +30,7 @@ class TimerLoop;
 
 }}}} // namespace HX::STL::coroutine::loop
 
-namespace HX { namespace STL { namespace coroutine { namespace awaiter {
+namespace HX { namespace STL { namespace coroutine { namespace task {
 
 struct TimerPromis {
     friend struct TimerTask;

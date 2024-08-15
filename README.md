@@ -77,7 +77,7 @@ ROUTER_BIND(MyWebController); // 这个类在上面声明过了
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXWeb/server/Acceptor.h>
 
-HX::STL::coroutine::awaiter::Task<> startChatServer() {
+HX::STL::coroutine::task::Task<> startChatServer() {
     ROUTER_BIND(MyWebController); // 绑定端点控制器到路由
     try {
         auto ptr = HX::web::server::Acceptor::make();

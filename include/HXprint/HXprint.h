@@ -43,6 +43,15 @@
 #include <cstdarg>
 #endif
 
+// 屏蔽未使用函数的警告
+#if defined(_MSC_VER) // MSVC
+    #pragma warning(push)
+    #pragma warning(disable: 4505) // C4505: 未使用的局部函数已删除
+#elif defined(__GNUC__) || defined(__clang__) // GCC 和 Clang
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-function"
+#endif
+
 namespace HX::print { // C++20
 
 // 内部使用的命名空间啊喂!
@@ -288,5 +297,11 @@ void printnl(T0 const &t0, Ts const &...ts) {
 #endif // __cpp_lib_concepts
 
 } // namespace HX::print
+
+#if defined(_MSC_VER) // MSVC
+    #pragma warning(pop)
+#elif defined(__GNUC__) || defined(__clang__) // GCC 和 Clang
+    #pragma GCC diagnostic pop
+#endif
 
 #endif // _HX_PRINT_H_

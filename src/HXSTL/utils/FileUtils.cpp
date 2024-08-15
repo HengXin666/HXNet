@@ -24,7 +24,7 @@ void FileUtils::putFileContent(const std::string& path, std::string_view content
     std::copy(content.begin(), content.end(), std::ostreambuf_iterator<char>(file));
 }
 
-HX::STL::coroutine::awaiter::Task<std::string> FileUtils::asyncGetFileContent(
+HX::STL::coroutine::task::Task<std::string> FileUtils::asyncGetFileContent(
     const std::string& path
 ) {
     int fd = co_await HX::STL::coroutine::loop::IoUringTask().prepOpenat(

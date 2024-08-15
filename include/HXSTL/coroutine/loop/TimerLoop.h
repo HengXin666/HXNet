@@ -27,8 +27,8 @@
 #include <utility>
 #include <thread>
 
-#include <HXSTL/coroutine/awaiter/TimerTask.hpp>
-#include <HXSTL/coroutine/awaiter/Task.hpp>
+#include <HXSTL/coroutine/task/TimerTask.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
@@ -37,7 +37,7 @@ public:
     /**
      * @brief 协程智能指针, 用于维护被`Timer`托管的协程的生命周期
      */
-    using CoroutinePtr = std::shared_ptr<HX::STL::coroutine::awaiter::TimerTask>;
+    using CoroutinePtr = std::shared_ptr<HX::STL::coroutine::task::TimerTask>;
 
     /**
      * @brief 添加计时器
@@ -113,7 +113,7 @@ public:
      * @param timerLoop 计时器循环对象
      * @param expireTime 时间点, 如 2024-8-4 22:12:23
      */
-    HX::STL::coroutine::awaiter::Task<void> static sleep_until(
+    HX::STL::coroutine::task::Task<void> static sleep_until(
         std::chrono::system_clock::time_point expireTime
     );
 
@@ -121,7 +121,7 @@ public:
      * @brief 暂停一段时间
      * @param duration 比如 3s
      */
-    HX::STL::coroutine::awaiter::Task<void> static sleep_for(
+    HX::STL::coroutine::task::Task<void> static sleep_for(
         std::chrono::system_clock::duration duration
     );
 

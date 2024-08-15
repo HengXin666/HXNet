@@ -152,7 +152,7 @@ public:
 
 };
 
-HX::STL::coroutine::awaiter::Task<> startChatServer() {
+HX::STL::coroutine::task::Task<> startChatServer() {
     setlocale(LC_ALL, "zh_CN.UTF-8");
     messageArr.emplace_back("系统", "欢迎来到聊天室!");
     ROUTER_BIND(ChatController);
@@ -169,32 +169,32 @@ HX::STL::coroutine::awaiter::Task<> startChatServer() {
 
 using namespace std::chrono;
 
-HX::STL::coroutine::awaiter::TimerTask C() {
+HX::STL::coroutine::task::TimerTask C() {
     std::cout << "\t\tC start\n";
     co_await HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().sleep_for(3s); // Simulate an asynchronous operation
     std::cout << "\t\tC continues\n";
 }
 
-HX::STL::coroutine::awaiter::TaskSuspend<
+HX::STL::coroutine::task::TaskSuspend<
     void,
-    HX::STL::coroutine::awaiter::Promise<void>,
-    HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
+    HX::STL::coroutine::promise::Promise<void>,
+    HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::promise::Promise<void>>
 > B() {
     std::cout << "\tB start\n";
     // auto task = C(); // 需要保证 task 未被销毁!
     HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
         std::chrono::system_clock::now(),
         nullptr,
-        std::make_shared<HX::STL::coroutine::awaiter::TimerTask>(C())
+        std::make_shared<HX::STL::coroutine::task::TimerTask>(C())
     );
     std::cout << "\tB end\n";
     co_return;
 }
 
-HX::STL::coroutine::awaiter::Task<
+HX::STL::coroutine::task::Task<
     void,
-    HX::STL::coroutine::awaiter::Promise<void>,
-    HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::awaiter::Promise<void>>
+    HX::STL::coroutine::promise::Promise<void>,
+    HX::STL::coroutine::awaiter::ExitAwaiter<void, HX::STL::coroutine::promise::Promise<void>>
 > A() {
     std::cout << "A start\n";
     co_await B();
@@ -250,7 +250,7 @@ int _main() {
 
 int main() {
     chdir("../static");
-    HX::STL::coroutine::awaiter::runTask(
+    HX::STL::coroutine::task::runTask(
         HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
         startChatServer()
     );

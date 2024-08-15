@@ -24,7 +24,7 @@
 #include <HXSTL/coroutine/awaiter/RepeatAwaiter.hpp>
 #include <HXSTL/coroutine/awaiter/PreviousAwaiter.hpp>
 
-namespace HX { namespace STL { namespace coroutine { namespace awaiter {
+namespace HX { namespace STL { namespace coroutine { namespace promise {
 
 /**
  * @brief 
@@ -41,7 +41,7 @@ struct Promise {
     }
 
     auto final_suspend() noexcept {
-        return PreviousAwaiter(_previous);
+        return HX::STL::coroutine::awaiter::PreviousAwaiter(_previous);
     }
 
     void unhandled_exception() noexcept {
@@ -74,7 +74,7 @@ struct Promise {
 
     Promise &operator=(Promise &&) = delete;
 
-    Uninitialized<T> _res;
+    HX::STL::coroutine::awaiter::Uninitialized<T> _res;
     
     std::coroutine_handle<> _previous {}; // 上一个协程句柄
     std::exception_ptr _exception {}; // 异常信息
@@ -90,7 +90,7 @@ struct Promise<void, ifSuspend> {
     }
 
     auto final_suspend() noexcept {
-        return PreviousAwaiter(_previous);
+        return HX::STL::coroutine::awaiter::PreviousAwaiter(_previous);
     }
 
     void unhandled_exception() noexcept {
