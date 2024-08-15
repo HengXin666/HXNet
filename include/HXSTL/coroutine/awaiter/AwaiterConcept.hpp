@@ -66,6 +66,17 @@ struct AwaitableTraits<A> {
     using NonVoidRetType = HX::STL::container::NonVoidHelper<RetType>::Type;
 };
 
+/**
+ * @brief Awaitable特性 (条件特化版本), 它在`A`不满足`Awaiter`概念但满足`Awaitable`概念时生效;
+ * 其继承 co_await 返回值类型 Awaiter, 以提取 co_await 的返回值类型
+ * @tparam A 
+ */
+template <class A>
+    requires(!Awaiter<A> && Awaitable<A>)
+struct AwaitableTraits<A>
+    : AwaitableTraits<decltype(std::declval<A>().operator co_await())> 
+{};
+
 }}}} // namespace HX::STL::coroutine::awaiter
 
 #endif // !_HX_AWAITER_CONCEPT_H_

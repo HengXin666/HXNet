@@ -294,70 +294,73 @@ struct ReturnPreviousTask {
     std::coroutine_handle<promise_type> mCoroutine;
 };
 
-struct WhenAnyCtlBlock {
-    static constexpr std::size_t kNullIndex = std::size_t(-1);
+// struct WhenAnyCtlBlock {
+//     static constexpr std::size_t kNullIndex = std::size_t(-1);
 
-    std::size_t mIndex{kNullIndex};
-    std::coroutine_handle<> mPrevious{};
-    std::exception_ptr mException{};
-};
+//     std::size_t mIndex{kNullIndex};
+//     std::coroutine_handle<> mPrevious{};
+//     std::exception_ptr mException{};
+// };
 
-struct WhenAnyAwaiter {
-    bool await_ready() const noexcept {
-        return false;
-    }
+// struct WhenAnyAwaiter {
+//     bool await_ready() const noexcept {
+//         return false;
+//     }
 
-    std::coroutine_handle<>
-    await_suspend(std::coroutine_handle<> coroutine) const {
-        if (mTasks.empty()) return coroutine;
-        mControl.mPrevious = coroutine;
-        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
-            t.mCoroutine.resume();
-        return mTasks.back().mCoroutine;
-    }
+//     std::coroutine_handle<>
+//     await_suspend(std::coroutine_handle<> coroutine) const {
+//         if (mTasks.empty()) return coroutine;
+//         mControl.mPrevious = coroutine;
+//         for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
+//             t.mCoroutine.resume();
+//         return mTasks.back().mCoroutine;
+//     }
 
-    void await_resume() const {
-        if (mControl.mException) [[unlikely]] {
-            std::rethrow_exception(mControl.mException);
-        }
-    }
+//     void await_resume() const {
+//         if (mControl.mException) [[unlikely]] {
+//             std::rethrow_exception(mControl.mException);
+//         }
+//     }
 
-    WhenAnyCtlBlock &mControl;
-    std::span<ReturnPreviousTask const> mTasks;
-};
+//     WhenAnyCtlBlock &mControl;
+//     std::span<ReturnPreviousTask const> mTasks;
+// };
 
-template <class T>
-ReturnPreviousTask whenAnyHelper(auto const &t, WhenAnyCtlBlock &control,
-                                 HX::STL::container::Uninitialized<T> &result, std::size_t index) {
-    try {
-        result.putValue(co_await t);
-    } catch (...) {
-        control.mException = std::current_exception();
-        co_return control.mPrevious;
-    }
-    --control.mIndex = index;
-    co_return control.mPrevious;
-}
+// template <class T>
+// ReturnPreviousTask whenAnyHelper(auto const &t, WhenAnyCtlBlock &control,
+//                                  HX::STL::container::Uninitialized<T> &result, std::size_t index) {
+//     try {
+//         result.putValue(co_await t);
+//     } catch (...) {
+//         control.mException = std::current_exception();
+//         co_return control.mPrevious;
+//     }
+//     --control.mIndex = index;
+//     co_return control.mPrevious;
+// }
 
-template <std::size_t... Is, class... Ts>
-HX::STL::coroutine::task::Task<std::variant<typename HX::STL::coroutine::awaiter::AwaitableTraits<Ts>::NonVoidRetType...>>
-whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
-    WhenAnyCtlBlock control{};
-    std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
-    ReturnPreviousTask taskArray[]{whenAnyHelper(ts, control, std::get<Is>(result), Is)...};
-    co_await WhenAnyAwaiter(control, taskArray);
-    Uninitialized<std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...>> varResult;
-    ((control.mIndex == Is && (varResult.putValue(
-        std::in_place_index<Is>, std::get<Is>(result).moveValue()), 0)), ...);
-    co_return varResult.moveValue();
-}
+// template <std::size_t... Is, class... Ts>
+// HX::STL::coroutine::task::Task<std::variant<typename HX::STL::coroutine::awaiter::AwaitableTraits<Ts>::NonVoidRetType...>>
+// whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
+//     WhenAnyCtlBlock control{};
+//     std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
+//     ReturnPreviousTask taskArray[]{whenAnyHelper(ts, control, std::get<Is>(result), Is)...};
+//     co_await WhenAnyAwaiter(control, taskArray);
+//     Uninitialized<std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...>> varResult;
+//     ((control.mIndex == Is && (varResult.putValue(
+//         std::in_place_index<Is>, std::get<Is>(result).moveValue()), 0)), ...);
+//     co_return varResult.moveValue();
+// }
 
-template <HX::STL::coroutine::awaiter::Awaitable... Ts>
-    requires(sizeof...(Ts) != 0)
-auto when_any(Ts &&...ts) {
-    return whenAnyImpl(std::make_index_sequence<sizeof...(Ts)>{},
-                       std::forward<Ts>(ts)...);
-}
+// template <HX::STL::coroutine::awaiter::Awaitable... Ts>
+//     requires(sizeof...(Ts) != 0)
+// auto when_any(Ts &&...ts) {
+//     return whenAnyImpl(std::make_index_sequence<sizeof...(Ts)>{},
+//                        std::forward<Ts>(ts)...);
+// }
+
+#include <HXSTL/coroutine/promise/Promise.hpp>
+#include <HXSTL/coroutine/awaiter/ExitAwaiter.hpp>
 
 template <HX::STL::coroutine::awaiter::Awaitable T1, HX::STL::coroutine::awaiter::Awaitable T2>
 HX::STL::coroutine::task::Task<
@@ -369,7 +372,13 @@ HX::STL::coroutine::task::Task<
     T1&& t1,
     T2&& t2
 ) {
-
+     /**
+      * @brief 如果要实现 t1, t2 其中一个完成, 并且返回完成值, 并且取消另一个任务, 则需要这样操作协程
+      * 协程P -> 做 co_await t1    # 如果等待, 则会返回
+      * 继续启动 -> 做 co_await t2 # 如果等待, 则会返回
+      * 
+      * 全部启动好后, co_await 等待其中一个, 如果有返回, 则whenAny结束
+      */
 }
 
 // 完成任意任务就返回
@@ -380,9 +389,6 @@ HX::STL::coroutine::task::Task<> he1() {
         HX::STL::coroutine::loop::TimerLoop::sleep_for(1s),
         HX::STL::coroutine::loop::TimerLoop::sleep_for(2s)
     );
-    typename HX::STL::coroutine::awaiter::AwaitableTraits<
-        decltype(HX::STL::coroutine::loop::TimerLoop::sleep_for(1s))
-    >::NonVoidRetType a;
     std::cout << "好啦 1s\n";
     co_return;
 }
