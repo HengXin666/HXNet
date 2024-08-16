@@ -66,6 +66,10 @@ struct [[nodiscard]] Task {
         return _coroutine;
     }
 
+    auto getCoroutine() const {
+        return _coroutine;
+    }
+
 private:
     std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
 };
@@ -111,6 +115,10 @@ struct [[nodiscard]] ImmediatelyTask {
         return _coroutine;
     }
 
+    auto getCoroutine() const {
+        return _coroutine;
+    }
+
 private:
     std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
 };
@@ -135,6 +143,6 @@ T runTask(Loop &loop, Task<T, P, A> const &t) {
     return a.await_resume();
 };
 
-}}}} // namespace HX::STL::coroutine::awaiter
+}}}} // namespace HX::STL::coroutine::task
 
 #endif // !_HX_TASK_H_

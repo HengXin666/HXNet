@@ -151,7 +151,7 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
     - [x] 修改为使用 io_uring 驱动!!
         - [ ] 支持多线程并且不突出
     - [x] 实现文件的异步读写
-    - [ ] 实现协程TimerLoop的对于ABCT任务(其中T是计时任务(?必须吗)), 任意一个完成, 则返回(打断其他), 这个功能
+    - [x] 实现协程TimerLoop的对于ABCT任务(其中T是计时任务(?必须吗)), 任意一个完成, 则返回(打断其他), 这个功能
 
 ### 协程epoll服务端BUG汇总
 1. [x] 读取数据的时候, 有时候无法读取到正确的数据 (某些值被换成了`\0`)

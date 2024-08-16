@@ -45,13 +45,17 @@ std::optional<std::chrono::system_clock::duration> TimerLoop::run() {
     return std::nullopt;
 }
 
-HX::STL::coroutine::task::Task<void> TimerLoop::sleep_until(
+HX::STL::coroutine::task::Task<
+    HX::STL::container::NonVoidHelper<>
+> TimerLoop::sleep_until(
     std::chrono::system_clock::time_point expireTime
 ) {
     co_await SleepAwaiter(AsyncLoop::getLoop(), expireTime);
 }
 
-HX::STL::coroutine::task::Task<void> TimerLoop::sleep_for(
+HX::STL::coroutine::task::Task<
+    HX::STL::container::NonVoidHelper<>
+> TimerLoop::sleep_for(
     std::chrono::system_clock::duration duration
 ) {
     co_await SleepAwaiter(AsyncLoop::getLoop(), std::chrono::system_clock::now() + duration);

@@ -110,6 +110,6 @@ private:
     std::shared_ptr<TimerTask> _ptr = nullptr;      // 用于管理自己生命周期的
 };
 
-}}}} // namespace HX::STL::coroutine::awaiter
+}}}} // namespace HX::STL::coroutine::task
 
 #endif // !_HX_TIMER_TASK_H_

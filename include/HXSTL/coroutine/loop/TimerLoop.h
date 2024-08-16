@@ -135,7 +135,9 @@ public:
      * @param timerLoop 计时器循环对象
      * @param expireTime 时间点, 如 2024-8-4 22:12:23
      */
-    HX::STL::coroutine::task::Task<void> static sleep_until(
+    HX::STL::coroutine::task::Task<
+        HX::STL::container::NonVoidHelper<>
+    > static sleep_until(
         std::chrono::system_clock::time_point expireTime
     );
 
@@ -143,7 +145,9 @@ public:
      * @brief 暂停一段时间
      * @param duration 比如 3s
      */
-    HX::STL::coroutine::task::Task<void> static sleep_for(
+    HX::STL::coroutine::task::Task<
+        HX::STL::container::NonVoidHelper<>
+    > static sleep_for(
         std::chrono::system_clock::duration duration
     );
 
