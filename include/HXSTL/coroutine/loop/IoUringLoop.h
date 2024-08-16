@@ -47,10 +47,9 @@ class IoUringLoop {
 public:
     /**
      * @brief 创建一个 io_uring 的 Loop
-     * 
      * @param entries 环形队列长度
      */
-    explicit IoUringLoop(unsigned int entries = 512);
+    explicit IoUringLoop(unsigned int entries = 1024U);
 
     bool run(std::optional<std::chrono::system_clock::duration> timeout);
 

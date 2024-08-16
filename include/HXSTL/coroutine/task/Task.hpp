@@ -53,7 +53,7 @@ struct [[nodiscard]] Task {
         return *this;
     }
 
-    ~Task() {
+    virtual ~Task() {
         if (_coroutine)
             _coroutine.destroy();
     }

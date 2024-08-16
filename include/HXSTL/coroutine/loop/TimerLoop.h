@@ -137,7 +137,7 @@ public:
      */
     HX::STL::coroutine::task::Task<
         HX::STL::container::NonVoidHelper<>
-    > static sleep_until(
+    > static sleepUntil(
         std::chrono::system_clock::time_point expireTime
     );
 
@@ -147,7 +147,7 @@ public:
      */
     HX::STL::coroutine::task::Task<
         HX::STL::container::NonVoidHelper<>
-    > static sleep_for(
+    > static sleepFor(
         std::chrono::system_clock::duration duration
     );
 

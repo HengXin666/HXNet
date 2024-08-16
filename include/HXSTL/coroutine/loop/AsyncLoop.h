@@ -23,7 +23,6 @@
 #include <thread>
 
 #include <HXSTL/coroutine/loop/TimerLoop.h>
-#include <HXSTL/coroutine/loop/EpollLoop.h>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {

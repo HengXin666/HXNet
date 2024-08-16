@@ -47,7 +47,7 @@ std::optional<std::chrono::system_clock::duration> TimerLoop::run() {
 
 HX::STL::coroutine::task::Task<
     HX::STL::container::NonVoidHelper<>
-> TimerLoop::sleep_until(
+> TimerLoop::sleepUntil(
     std::chrono::system_clock::time_point expireTime
 ) {
     co_await SleepAwaiter(AsyncLoop::getLoop(), expireTime);
@@ -55,7 +55,7 @@ HX::STL::coroutine::task::Task<
 
 HX::STL::coroutine::task::Task<
     HX::STL::container::NonVoidHelper<>
-> TimerLoop::sleep_for(
+> TimerLoop::sleepFor(
     std::chrono::system_clock::duration duration
 ) {
     co_await SleepAwaiter(AsyncLoop::getLoop(), std::chrono::system_clock::now() + duration);
