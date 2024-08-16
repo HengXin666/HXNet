@@ -72,18 +72,29 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
         // === 响应 ===
         // LOG_INFO("响应中...");
         HX::STL::container::ConstBytesBufferView buf = _response._buf;
-        n = co_await HX::STL::coroutine::loop::IoUringTask().prepSend(fd, buf, 0); // 已经写入的字节数
-        while (true) {
-            if (n == buf.size()) {
-                // 全部写入啦
-                _response.clear();
-                break;
+        try {
+            n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+                co_await HX::STL::coroutine::loop::IoUringTask().prepSend(fd, buf, 0)
+            ); // 已经写入的字节数
+            while (true) {
+                if (n == buf.size()) {
+                    // 全部写入啦
+                    _response.clear();
+                    break;
+                }
+                n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+                    co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
+                        fd, buf = buf.subspan(n), 0
+                    )
+                );
             }
-            n = co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-                fd, buf = buf.subspan(n), 0
-            );
+        } catch(const std::exception& e) {
+            LOG_ERROR("向客户端 %d 发送消息时候出错: %s", e.what());
+            break;
         }
     }
+
+    co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
 }
 
 }}} // namespace HX::web::server
