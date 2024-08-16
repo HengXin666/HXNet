@@ -12,7 +12,7 @@ namespace HX { namespace web { namespace server {
 HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono::seconds timeout) {
     HX::web::protocol::http::Request _request {};    // 客户端请求类
     HX::web::protocol::http::Response _response {};  // 服务端响应类
-    std::vector<char> buff(protocol::http::Request::BUF_SIZE);
+    std::vector<char> buff(protocol::http::Request::kBufSize);
     _request._responsePtr = &_response;
 
     // 连接超时

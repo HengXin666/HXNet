@@ -41,7 +41,11 @@ message (STATUS "ROOT_PATH dir is ${ROOT_PATH}")
 set (appName HXNet)
 
 # 递归查找
-file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
+file(GLOB_RECURSE srcs CONFIGURE_DEPENDS 
+    src/*.cpp 
+    include/*.h 
+    examples/*.cpp
+)
 
 # 编译可执行文件
 add_executable (${appName} ${srcs})

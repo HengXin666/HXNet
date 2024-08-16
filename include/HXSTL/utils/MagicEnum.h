@@ -52,7 +52,7 @@ struct HXEnableIf<true> {
 };
 
 template<int Begin, int End, class F>
-typename HXEnableIf<Begin == End>::type _staticFor(const F& func) {
+typename HXEnableIf<Begin == End>::type _staticFor(const F& /*func*/) {
 }
 
 template<int Begin, int End, class F>
@@ -67,7 +67,7 @@ struct _GetEnumNameFunctor {
     std::string& _str;
 
     _GetEnumNameFunctor(int n, std::string& str) : _n(n)
-                                                , _str(str)
+                                                 , _str(str)
     {}
 
     template<int I>

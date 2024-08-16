@@ -32,7 +32,7 @@ HX::STL::coroutine::task::Task<std::string> FileUtils::asyncGetFileContent(
         AT_FDCWD, path.c_str(), static_cast<int>(flags), mode
     );
     std::string res;
-    std::vector<char> buf(1024);
+    std::vector<char> buf(kBufMaxSize);
     std::size_t len = 0;
     uint64_t offset = 0;
     while ((len = static_cast<std::size_t>(

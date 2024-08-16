@@ -150,6 +150,7 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
     - [x] 重构为基于协程的epoll
     - [x] 修改为使用 io_uring 驱动!!
         - [ ] 支持多线程并且不突出
+    - [ ] 支持跨平台(IOCP)
     - [x] 实现文件的异步读写
     - [x] 实现协程TimerLoop的对于ABCT任务(其中T是计时任务(?必须吗)), 任意一个完成, 则返回(打断其他), 这个功能
 
@@ -169,15 +170,15 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
 - 协程版本: (基准: 别人22w/s的并发的程序在我这里一样的参数也就3w+/s..)
 
 ```sh
-╰─ wrk -c1000 -d15s http://localhost:28205/ # WSL Arth 测试的 (感觉性能还没有跑到尽头)
+╰─ wrk -c500 -d15s http://localhost:28205/ # WSL Arth 测试的 (感觉性能还没有跑到尽头 (cpu: wrk + 本程序 才 24%左右的占用..))
 Running 15s test @ http://localhost:28205/
-  2 threads and 1000 connections
+  2 threads and 500 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    43.61ms   99.59ms   1.78s    98.21%
-    Req/Sec    15.30k     0.96k   26.51k    87.96%
-  455707 requests in 15.09s, 1.69GB read # 异步的文件读写 | 目前服务端还只是单线程
-Requests/sec:  30190.88
-Transfer/sec:    114.62MB
+    Latency    17.37ms   21.60ms 614.42ms   99.26%
+    Req/Sec    15.73k     0.88k   17.68k    75.67%
+  469885 requests in 15.08s, 1.74GB read
+Requests/sec:  31154.81
+Transfer/sec:    118.28MB
 ```
 
 ---

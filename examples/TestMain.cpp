@@ -47,8 +47,3 @@ void testMagicEnum() {
     std::cout << HX::STL::utils::MagicEnum::getEnumName<MyEnum>(MyEnum::imouto) << '\n';
     std::cout << HX::STL::utils::MagicEnum::nameFromEnum<MyEnum>("imouto") << '\n';
 }
-
-// int main() {
-//     testServer();
-//     return 0;
-// }

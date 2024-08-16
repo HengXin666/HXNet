@@ -41,6 +41,7 @@ private:
     // O_CLOEXEC 确保在执行新程序时, 文件描述符不会继承到子进程
     static constexpr int kOpenModeDefaultFlags = O_LARGEFILE | O_CLOEXEC;
 #endif
+    static constexpr std::size_t kBufMaxSize = 4096U;
 public:
     enum class OpenMode : int {
         Read = O_RDONLY | kOpenModeDefaultFlags,                        // 只读模式 (r)
