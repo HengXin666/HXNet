@@ -146,7 +146,10 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
 - 阶段性任务:
     - [x] 实现基于红黑树实现定时中断, 超时自动终止任务 (类似于Linux内核的“完全公平调度”)
     - [x] 用户自定义路由 | 控制器
-    - [ ] 客户端
+    - [x] 客户端
+    - [ ] 支持`https`
+    - [ ] 支持代理
+    - [ ] 支持`WebSocket`
     - [x] 重构为基于协程的epoll
     - [x] 修改为使用 io_uring 驱动!!
         - [ ] 支持多线程并且不突出

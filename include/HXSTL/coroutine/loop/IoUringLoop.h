@@ -193,7 +193,7 @@ public:
      * @brief 异步的向服务端创建连接
      * @param fd 客户端套接字
      * @param addr [out] 服务端信息
-     * @param addrlen [out] 服务端信息长度指针
+     * @param addrlen 服务端信息长度指针
      * @return IoUringTask&& 
      */
     IoUringTask &&prepConnect(

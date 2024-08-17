@@ -1,8 +1,4 @@
-#include <unistd.h>
-#include <chrono>
-#include <list>
 #include <iostream>
-
 #include <HXWeb/HXApiHelper.h>
 #include <HXSTL/utils/FileUtils.h>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
@@ -157,12 +153,11 @@ class ChatController {
         co_return;
     } ENDPOINT_END;
 
-public:
+public: // 控制器成员函数 (请写成`static`方法)
 
 };
 
 HX::STL::coroutine::task::Task<> startChatServer() {
-    setlocale(LC_ALL, "zh_CN.UTF-8");
     messageArr.emplace_back("系统", "欢迎来到聊天室!");
     ROUTER_BIND(ChatController);
     try {
@@ -176,6 +171,7 @@ HX::STL::coroutine::task::Task<> startChatServer() {
 
 int main() {
     chdir("../static");
+    setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(
         HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
         startChatServer()
