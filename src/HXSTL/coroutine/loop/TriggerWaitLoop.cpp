@@ -12,8 +12,6 @@ TriggerWaitLoop::~TriggerWaitLoop() {
         for (auto&& it : _waitQueue)
             it.destroy();
         break;
-    case DestructionBehavior::NoCleanup: // 不释放挂载的协程
-        break;
     default:
         break;
     }

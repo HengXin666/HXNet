@@ -43,7 +43,6 @@ public:
     enum class DestructionBehavior : int {
         Resume,      // 把挂载的任务全部执行
         Cleanup,     // 清除所有挂载的协程 (`coroutine.destroy()`) (不执行)
-        NoCleanup,   // 不释放挂载的协程
     };
 
     /**
