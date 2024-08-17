@@ -41,8 +41,15 @@ namespace HX { namespace web { namespace router {
  * @brief 路由类: 懒汉单例
  */
 class Router {
+public:
+    /**
+     * @brief 端点函数返回值
+     * @return bool true代表复用(保留)连接, false代表(回复这一次响应后立即)关闭连接
+     */
+    using EndpointReturnType = HX::STL::coroutine::task::Task<bool>;
+protected:
     /// @brief 端点函数
-    using EndpointFunc = std::function<HX::STL::coroutine::task::Task<void>(
+    using EndpointFunc = std::function<EndpointReturnType(
         const HX::web::protocol::http::Request&
     )>;
 
@@ -61,7 +68,6 @@ class Router {
     Router(const Router&) = delete;
     Router& operator=(const Router&) = delete;
 public:
-
     /**
      * @brief 获取路由类单例
      */
@@ -72,7 +78,7 @@ public:
 
     /**
      * @brief 添加端点函数
-     * @param requestType 请求类型, 如`"GET"`, `POST` (全大写)
+     * @param requestType 请求类型, 如`GET`, `POST` (全大写)
      * @param path 挂载的PTAH, 如`"/home/{id}"`, 尾部不要`/`
      * @param func 端点函数
      */
@@ -80,7 +86,7 @@ public:
 
     /**
      * @brief 获取该请求类型和URL(PTAH)绑定的端点函数
-     * @param requestType 请求类型, 如`"GET"`, `POST` (全大写)
+     * @param requestType 请求类型, 如`GET`, `POST` (全大写)
      * @param path 访问的目标地址, 如`"/home\**?loli=imouto"`, 尾部不要`/`, 会解析为`?`之前的内容
      * @return 存在则返回, 否则为`nullptr`
      */

@@ -17,6 +17,8 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
 
     // 连接超时
     auto _timeout = HX::STL::coroutine::loop::durationToKernelTimespec(timeout);
+    
+    bool endpointRes = 0; // 是否复用连接
 
     while (true) {
         // === 读取 ===
@@ -56,7 +58,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
         );
         // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
         if (fun) {
-            co_await fun(_request);
+            endpointRes = co_await fun(_request);
         } else {
             _response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
                     .setContentType("text/html", "UTF-8")
@@ -88,12 +90,16 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
                     )
                 );
             }
+
+            if (!endpointRes)
+                break;
         } catch(const std::exception& e) {
             LOG_ERROR("向客户端 %d 发送消息时候出错: %s", e.what());
             break;
         }
     }
 
+    LOG_WARNING("客户端直接给我退出! (%d)", fd);
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
 }
 

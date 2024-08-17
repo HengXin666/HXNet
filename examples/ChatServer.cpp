@@ -58,7 +58,7 @@ class ChatController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"),
             "text/html", "UTF-8"
         );
-        co_return;
+        co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
@@ -67,18 +67,19 @@ class ChatController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
             "image/x-icon"
         );
+        co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/files/**", files) {
         PARSE_MULTI_LEVEL_PARAM(path);
         RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
                             .setBodyData("<h1> files URL is " + path + "</h1>");
-        co_return;
+        co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/home/{id}/{name}", getIdAndNameByHome) {
         START_PARSE_PATH_PARAMS; // 开始解析请求路径参数
-        PARSE_PARAM(0, u_int32_t, id);
+        PARSE_PARAM(0, u_int32_t, id, false);
         PARSE_PARAM(1, std::string, name);
 
         // 解析查询参数为键值对; ?awa=xxx 这种
@@ -92,7 +93,7 @@ class ChatController {
             "<h1> Home id 是 " + std::to_string(*id) + ", 而名字是 " + *name + "</h1><h2> 来自 URL: " + req.getRequesPath() + " 的解析</h2>",
             "text/html", "UTF-8"
         );
-        co_return;
+        co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_POST, "/send", send) { // 客户端发送消息过来
@@ -110,7 +111,7 @@ class ChatController {
         }
         
         RESPONSE_STATUS(200).setContentType("text/plain", "UTF-8");
-        co_return;
+        co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_POST, "/recv", recv) { // 发送内容给客户端
@@ -130,7 +131,7 @@ class ChatController {
                     Message::toJson(messageArr.begin() + len, messageArr.end()),
                     "text/plain", "UTF-8"
                 );
-                co_return;
+                co_return true;
             }
             else {
                 // printf("等我3秒~\n");
@@ -145,12 +146,12 @@ class ChatController {
                     Message::toJson(messageArr.begin() + len, messageArr.end()),
                     "text/plain", "UTF-8"
                 );
-                co_return;
+                co_return true;
             }
         } else {
             printf("啥也没有...\n");
         }
-        co_return;
+        co_return true;
     } ENDPOINT_END;
 
 public: // 控制器成员函数 (请写成`static`方法)
@@ -162,7 +163,7 @@ HX::STL::coroutine::task::Task<> startChatServer() {
     ROUTER_BIND(ChatController);
     try {
         auto ptr = HX::web::server::Acceptor::make();
-        co_await ptr->start("0.0.0.0", "28205");
+        co_await ptr->start("0.0.0.0", "28205", 10s);
     } catch(const std::system_error &e) {
         std::cerr << e.what() << '\n';
     }

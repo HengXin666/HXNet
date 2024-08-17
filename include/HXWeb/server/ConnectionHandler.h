@@ -36,7 +36,7 @@ struct ConnectionHandler {
      */
     static HX::STL::coroutine::task::TimerTask start(
         int fd, 
-        std::chrono::seconds timeout = std::chrono::seconds{10}
+        std::chrono::seconds timeout
     );
 };
 

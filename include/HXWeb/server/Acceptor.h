@@ -21,6 +21,7 @@
 #define _HX_ACCEPTOR_H_
 
 #include <memory>
+#include <chrono>
 
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/AddressResolver.h>
@@ -46,8 +47,13 @@ public:
      * @brief 开始接受连接: 注册服务器套接字, 绑定并监听端口
      * @param name 主机名或地址字符串(IPv4 的点分十进制表示或 IPv6 的十六进制表示)
      * @param port 服务名可以是十进制的端口号, 也可以是已知的服务名称, 如 ftp、http 等
+     * @param timeout 没有收到消息, 超时自动断开的时间 (单位: 秒)
      */
-    HX::STL::coroutine::task::Task<> start(const std::string& name, const std::string& port);
+    HX::STL::coroutine::task::Task<> start(
+        const std::string& name, 
+        const std::string& port,
+        std::chrono::seconds timeout = std::chrono::seconds{30}
+    );
 };
 
 }}} // namespace HX::web::server

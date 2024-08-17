@@ -25,7 +25,8 @@ class MyWebController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"), // (body数据) 异步(协程)读取文件
             "text/html", "UTF-8" // (响应类型), 以及响应编码
         );
-        co_return; // 注意, 端点函数是协程, 得使用 co_return 而不是return (返回值是 void)
+        co_return true; // 注意, 端点函数是协程, 得使用 co_return 而不是return (返回值是 bool)
+                        // bool 的意思是是否复用连接 (HTTP/1.1 是推荐复用连接的)
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
@@ -34,6 +35,7 @@ class MyWebController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
             "image/x-icon" // 响应编码 可以不写
         );
+        co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/files/**", files) { // 支持通配符路径
@@ -41,12 +43,15 @@ class MyWebController {
         // 另一种响应宏, 只会设置响应编码, 但是返回的是 Response &, 可以链式调用
         RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
                             .setBodyData("<h1> files URL is " + path + "</h1>");
+        co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/home/{id}/{name}", getIdAndNameByHome) {
         START_PARSE_PATH_PARAMS; // 开始解析请求路径参数
-        PARSE_PARAM(0, u_int32_t, id);     // 解析第一个路径参数{id}, 解析为 u_int32_t类型, 命名为 id
-        PARSE_PARAM(1, std::string, name); // 解析第二个路径参数{name}
+        PARSE_PARAM(0, u_int32_t, id, false); // 解析第一个路径参数{id}, 解析为 u_int32_t类型, 命名为 id
+                                              // 并且如果解析失败则不复用连接 (false)
+
+        PARSE_PARAM(1, std::string, name);    // 解析第二个路径参数{name} (不写, 则默认复用连接)
 
         // 解析查询参数为键值对; ?awa=xxx 这种
         GET_PARSE_QUERY_PARAMETERS(queryMap);
@@ -61,6 +66,7 @@ class MyWebController {
             + req.getRequesPath() + " 的解析</h2>", // 默认`ENDPOINT_BEGIN`会传入 Request& req, 您可以对其进行更细致的操作
             "text/html", "UTF-8"
         );
+        co_return true;
     } ENDPOINT_END;
 
 public: // 控制器成员函数 (请写成`static`方法)
@@ -84,7 +90,8 @@ HX::STL::coroutine::task::Task<> startChatServer() {
     ROUTER_BIND(MyWebController); // 绑定端点控制器到路由
     try {
         auto ptr = HX::web::server::Acceptor::make();
-        co_await ptr->start("0.0.0.0", "28205");
+        // 监听 0.0.0.0:28205, 并且客户端超时时间设置为 10s (默认参数是 30s)
+        co_await ptr->start("0.0.0.0", "28205", 10s);
     } catch(const std::system_error &e) {
         std::cerr << e.what() << '\n';
     }

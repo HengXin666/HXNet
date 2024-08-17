@@ -47,7 +47,7 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
     HX::web::router::Router::getSingleton().addController( \
         METHOD,\
         templatePath,\
-        [=](const HX::web::protocol::http::Request& req) -> HX::STL::coroutine::task::Task<void>
+        [=](const HX::web::protocol::http::Request& req) -> HX::web::router::Router::EndpointReturnType
 
 /**
  * @brief 结束端点的定义
@@ -89,15 +89,16 @@ auto pathSplitArr = HX::STL::utils::StringUtil::split(req.getPureRequesPath(), "
  * @param INDEX 模版路径的第几个通配参数 (从`0`开始计算)
  * @param TYPE 需要解析成的类型, 如`bool`/`int32_t`/`double`/`std::string`/`std::string_view`等
  * @param NAME 变量名称
+ * @param __VA_ARGS__ (`bool`类型): 是否复用连接 (默认复用)
  * @return NAME, 类型是`std::optional<TYPE>`
  * @warning 如果解析不到(出错), 则会直接返回错误给客户端
  */
-#define PARSE_PARAM(INDEX, TYPE, NAME) \
+#define PARSE_PARAM(INDEX, TYPE, NAME, ...) \
 auto NAME = HX::web::router::TypeInterpretation<TYPE>::wildcardElementTypeConversion(pathSplitArr[wildcarIndexArr[INDEX]]); \
 if (!NAME) { \
     RESPONSE_DATA(400, "Missing PATH parameter '"#NAME"'", "application/json", "UTF-8"); \
-    co_return; \
-}
+    co_return __VA_OPT__(void)(0) __VA_OPT__(, __VA_ARGS__); \
+} // C++20才引入的 __VA_OPT__
 
 /**
  * @brief 解析多级通配符的宏, 如 `/home/ **` 这种
