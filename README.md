@@ -62,6 +62,9 @@ class MyWebController {
             "text/html", "UTF-8"
         );
     } ENDPOINT_END;
+
+public: // 控制器成员函数 (请写成`static`方法)
+    // todo...
 };
 ```
 
@@ -105,72 +108,17 @@ int main() {
 |liburing|io_uring|https://github.com/axboe/liburing|
 
 ## 代码规范
-> Heng_Xin 自用
+> --> [C++ 编码规范](documents/CodingStandards/CppStyle.md)
 
-- 模块根文件夹使用驼峰(如`HXWeb`), 分类的子文件夹使用小写(如`tools`), 文件使用驼峰命名.
-    - 其中纯头文件(一般里面只有模版等必须只能写在头文件的), 以`.hpp`结尾
-    - 剩下的, 实现的代码可以放在`.cpp`里面的, 有`.h`配对
-    - `.h`头文件里面应该尽量少的`#include`, 而尽量在`.cpp`里面引入
+## 开发计划
+> --> [开发计划](documents/DevelopmentPlan.md)
 
-- #include 规范:
-```cpp
-#include <HXWeb/socket/AddressResolver.h> // .cpp 与 .h 配对 (然后空行)
+## 开发日志
+> --> [开发日志](documents/DevelopmentLog.md)
 
-#include <sys/types.h>  // 标准库/Linux提供的头文件 (.h在上, 无后缀的在下)
-#include <sys/socket.h>
-#include <netdb.h>
-#include <cstring>
-#include <iostream>     // (然后空行)
-
-#include <HXSTL/tools/ErrorHandlingTools.h> // 第三方库文件
-```
-
-- 命名空间规范: 按照文件夹来, 比如`/HXSTL/coroutine/loop/IoUringLoop.h`, 其中(`HXSTL`是模块根文件夹, 其意思是`HX::STL`)
-```cpp
-namespace HX { namespace STL { namespace coroutine { namespace loop {
-
-}}}} // namespace HX::STL::coroutine::loop
-```
-
-- 类成员命名方式为`_name`(自用函数也是以`_`开头)
-- 变量名: 几乎全部都是`驼峰`命名
-- 枚举: 首字母大写的驼峰
-- 常量: 全大写
-- 类的构造函数: 请 **显式** 书写构造函数, 必要可以添加`explicit`关键字!, 而不是依赖`C++20`的自动隐式匹配生成!
-
+## 性能测试
 > [!TIP]
-> 缩进为`4空格`, 并且TAB按键请使用`4空格`而不是`\t`!
-
-## 开发计划/日志
-
-- 阶段性任务:
-    - [x] 实现基于红黑树实现定时中断, 超时自动终止任务 (类似于Linux内核的“完全公平调度”)
-    - [x] 用户自定义路由 | 控制器
-    - [x] 客户端
-    - [ ] 支持`https`
-    - [ ] 支持代理
-    - [ ] 支持`WebSocket`
-    - [x] 重构为基于协程的epoll
-    - [x] 修改为使用 io_uring 驱动!!
-        - [ ] 支持多线程并且不突出
-    - [ ] 支持跨平台(IOCP)
-    - [x] 实现文件的异步读写
-    - [x] 实现协程TimerLoop的对于ABCT任务(其中T是计时任务(?必须吗)), 任意一个完成, 则返回(打断其他), 这个功能
-
-### 协程epoll服务端BUG汇总
-1. [x] 读取数据的时候, 有时候无法读取到正确的数据 (某些值被换成了`\0`)
-    - 解决方案: 使用`std::span<char>`和`std::vector<char>`配合, 而不是自制`buf`类, 它他妈居然又读取到?!?
-2. [x] 无法正确的断开连接: 明明客户端已经关闭, 而服务端却没有反应 | 实际上`::Accept`已经重新复用那个已经关闭的套接字, 但是`co_await`读取, 它没有反应, 一直卡在那里!
-    - 解决方案: `include/HXWeb/server/ConnectionHandler.h`实际上`make`创建的是智能指针, 而我们只是需要其协程, 故不需要其对象的成员, 导致`AsyncFile`无法因协程退出而析构
-3. [x] 玄学的`include/HXSTL/coroutine/loop/EpollLoop.h`的`await_suspend`的`fd == -1`的问题, 可能和2有关?!?!
-    - 离奇的修复啦?!
----
-4. 在`AsyncFile::asyncRead`加入了`try`以处理`[ERROR]: 连接被对方重置`, 是否有非`try`的解决方案?!
-
-5. 依旧不能很好的实现html基于轮询的聊天室, 我都怀疑是html+js的问题了...(明明和基于回调的事件循环差不多, 都是这个问题..)
-    - 发现啦: http的请求体是不带`\0`作为终止的, 因此解析的时候使用C语言风格的字符串就导致解析失败(越界了)
-
-- 协程版本: (基准: 别人22w/s的并发的程序在我这里一样的参数也就3w+/s..)
+> - 协程版本: (基准: 别人22w/s的并发的程序在我这里一样的参数也就3w+/s..)
 
 ```sh
 ╰─ wrk -c500 -d15s http://localhost:28205/ # WSL Arth 测试的 (感觉性能还没有跑到尽头 (cpu: wrk + 本程序 才 24%左右的占用..))
@@ -183,60 +131,3 @@ Running 15s test @ http://localhost:28205/
 Requests/sec:  31154.81
 Transfer/sec:    118.28MB
 ```
-
----
-- [ ] 编写API宏
-    - [x] 端点快速定义宏
-    - [x] 路径参数解析宏
-
-- [ ] 路由映射的前置任务:
-    - [x] 支持解析Http的请求行/头/体
-    - [x] 支持解析`Query`参数/`PATH`路径 (未支持解析qwq!)
-        - [x] 朴素指定: `/?loli=kawaii&imouto=takusann`
-        - [x] 通配指定: `/{name}/{idStr}`, 即支持任意如: `/114514/str` 格式
-            - 可解析为`bool`/`(u_)int(16、32、64)_t`/`float`/`(long) double`/`std::string`/`std::string_view`
-        - [x] 骂人指定: `/fxxk/**`, 支持所有的如: `/fxxk/csdn`
-        - 支持以上内容, 得需要使用字典树(前缀树), 应该是基数树(压缩前缀树) | 哈希表不能完全胜任
-
-    - 解析规则: 
-        1. 优先级: `静态URL` > `/{name}` > `/**`
-        2. 自动忽略尾部多余的`/`, 如`/home`===`/home/`===`/home////////`
-        3. 注: 不会被`GET`参数影响: 如`/?loli=kawaii&imouto=takusann`只会先解析`/`.
-
-    - [ ] 支持解析`Body`请求体
-        - [ ] none: 没有请求体
-        - [ ] form-data: 格式如下:
-```http
-Content-Type: multipart/form-data; boundary=--------------------------004625337498508003962705
-Content-Length: 167
-
-----------------------------004625337498508003962705
-Content-Disposition: form-data; name="awa"
-
-hello Heng_Xin
-----------------------------004625337498508003962705--
-```
--   -   - [ ] urlencoded: 格式如下
-```http
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 91
-
-awa=%E6%92%92%E5%A4%A7%E5%A3%B0%E5%9C%B0&qwq=%E6%81%AD%E5%96%9C%E5%8F%91%E8%B4%A2&0.0=hello
-```
--   -   - [ ] raw: json/xml/html/...格式如下
-```http
-Content-Length: 186
-content-type: application/json
-
-{
-    "sites": [
-        HX_Github : "https://github.com/HengXin666/HXNet/tree/main"
-    ]
-}
-```
--   - [ ] 解析凭证: (怎么搞? 在哪里? 饼干吗? 在请求头`Authorization`似乎可以)
-
--   - [x] 响应
-        - [x] 响应码
-        - [x] 响应头/行
-        - [x] 响应体
