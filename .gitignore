@@ -16,7 +16,7 @@
 .idea/**/contentModel.xml
 
 # 屏蔽证书/签名等
-certs/
+certs/**
 
 # 只提供生成脚本
 !certs/GenerateCerts.sh
