@@ -97,6 +97,14 @@ public:
     std::size_t parserRequest(HX::STL::container::ConstBytesBufferView buf);
 
     /**
+     * @brief 获取请求头键值对的引用
+     * @return std::unordered_map<std::string, std::string>& 
+     */
+    std::unordered_map<std::string, std::string>& getRequestHeaders() {
+        return _requestHeaders;
+    }
+
+    /**
      * @brief 解析查询参数 (解析如: `?name=loli&awa=ok&hitori`)
      * @return 返回解析到的字符串键值对哈希表
      * @warning 如果解析到不是键值对的, 即通过`&`分割后没有`=`的, 默认其全部为Key, 但Val = ""

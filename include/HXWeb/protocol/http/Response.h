@@ -25,6 +25,13 @@
 #include <unordered_map>
 
 #include <HXSTL/container/BytesBuffer.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
+
+namespace HX { namespace web { namespace server {
+
+struct ConnectionHandler;
+
+}}} // HX::web::server
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
@@ -39,9 +46,30 @@ class Response {
     std::unordered_map<std::string, std::string> _responseHeaders; // 响应头部
     // 空行
     std::string _responseBody; // 响应体
-public:
+
     // @brief 待写入的内容
     HX::STL::container::BytesBuffer _buf;
+
+    int _fd = -1;              // 客户端 fd
+    int _sendCnt = 0;          // 写入计数
+
+    friend HX::web::server::ConnectionHandler;
+
+    /**
+     * @brief 生成响应字符串, 用于写入
+     */
+    void createResponseBuffer();
+
+    /// @brief 发送响应 具体实现
+    /// @return 
+    HX::STL::coroutine::task::Task<> sendImpl();
+
+    /**
+     * @brief 直接发送响应给客户端 (异步的)
+     * 如果客户端已经发送了, 则不进行发送
+     */
+    HX::STL::coroutine::task::Task<> send(HX::STL::container::NonVoidHelper<>);
+public:
 
     /**
      * @brief 响应状态码
@@ -117,12 +145,14 @@ public:
      * @param describe 状态码描述: 如果为`""`则会使用该状态码对应默认的描述
      * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
      */
-    explicit Response(Response::Status statusCode, std::string_view describe = "");
+    // explicit Response(Response::Status statusCode, std::string_view describe = "");
 
-    explicit Response() : _statusLine("HTTP/1.1 ")
-                          , _responseHeaders()
-                          , _responseBody()
-                          , _buf()
+    explicit Response(int fd) : _statusLine("HTTP/1.1 ")
+                              , _responseHeaders()
+                              , _responseBody()
+                              , _buf()
+                              , _fd(fd)
+                              , _sendCnt(0)
     {}
 
     Response(const Response& response) = delete;
@@ -168,9 +198,22 @@ public:
     }
 
     /**
-     * @brief 生成响应字符串, 用于写入
+     * @brief 向响应头部添加一个键值对
+     * @param key 键
+     * @param val 值
+     * @return Response&
+     * @warning `key`在`map`中是区分大小写的, 故不要使用`大小写不同`的相同的`键`
      */
-    void createResponseBuffer();
+    Response& addHeader(const std::string& key, const std::string& val) {
+        _responseHeaders[key] = val;
+        return *this;
+    }
+
+    /**
+     * @brief 直接发送响应给客户端 (异步的)
+     * @warning 请记得加上`co_await`, 因为它是协程!
+     */
+    HX::STL::coroutine::task::Task<> send();
 
     /**
      * @brief 清空已写入的响应, 重置状态 (复用)

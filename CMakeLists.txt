@@ -89,6 +89,9 @@ else()
     message(FATAL_ERROR "OpenSSL not found")
 endif()
 
+# 添加WebSocket需要的Hash库, 以解析数据
+target_include_directories(HXNet PUBLIC lib/hashlib/include)
+
 # 设置头文件路径
 include_directories(${ROOT_PATH}/include)
 

@@ -10,8 +10,8 @@
 namespace HX { namespace web { namespace server {
 
 HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono::seconds timeout) {
-    HX::web::protocol::http::Request _request {};    // 客户端请求类
-    HX::web::protocol::http::Response _response {};  // 服务端响应类
+    HX::web::protocol::http::Request _request {};      // 客户端请求类
+    HX::web::protocol::http::Response _response {fd};  // 服务端响应类
     std::vector<char> buff(protocol::http::Request::kBufSize);
     _request._responsePtr = &_response;
 
@@ -73,24 +73,8 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
 
         // === 响应 ===
         // LOG_INFO("响应中...");
-        HX::STL::container::ConstBytesBufferView buf = _response._buf;
         try {
-            n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-                co_await HX::STL::coroutine::loop::IoUringTask().prepSend(fd, buf, 0)
-            ); // 已经写入的字节数
-            while (true) {
-                if (n == buf.size()) {
-                    // 全部写入啦
-                    _response.clear();
-                    break;
-                }
-                n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-                    co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-                        fd, buf = buf.subspan(n), 0
-                    )
-                );
-            }
-
+            co_await _response.send(HX::STL::container::NonVoidHelper<>{});
             if (!endpointRes)
                 break;
         } catch(const std::exception& e) {
@@ -100,6 +84,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
     }
 
     LOG_WARNING("客户端直接给我退出! (%d)", fd);
+    // 破烂析构不能协程, 不然直接 RAII
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
 }
 
