@@ -15,6 +15,12 @@
 # Generated files
 .idea/**/contentModel.xml
 
+# 屏蔽证书/签名等
+certs/
+
+# 只提供生成脚本
+!certs/GenerateCerts.sh
+
 # Sensitive or high-churn files
 .idea/**/dataSources/
 .idea/**/dataSources.ids

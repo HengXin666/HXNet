@@ -5,6 +5,8 @@ project(HXNet LANGUAGES CXX)
 # 是否开启 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
 # set(IO_URING_DIRECT ON) # 有BUG 先不要用
 
+set(HX_NET_FIND_BEARSSL ON)
+
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
 if (NOT CMAKE_BUILD_TYPE)
@@ -73,6 +75,16 @@ if (HX_NET_FIND_LIBURING)
         target_sources(HXNet PRIVATE lib/liburing/liburing.cpp)
         target_include_directories(HXNet PUBLIC lib/liburing/include)
     endif()
+endif()
+
+if (HX_NET_FIND_BEARSSL)
+    # 查找 OpenSSL 库
+   find_package(OpenSSL REQUIRED)
+
+    # 链接 OpenSSL 库
+    target_link_libraries(HXNet OpenSSL::SSL OpenSSL::Crypto)
+else()
+    target_include_directories(HXNet PUBLIC lib/openssl/include)
 endif()
 
 # 设置头文件路径
