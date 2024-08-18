@@ -5,7 +5,8 @@ project(HXNet LANGUAGES CXX)
 # 是否开启 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
 # set(IO_URING_DIRECT ON) # 有BUG 先不要用
 
-set(HX_NET_FIND_BEARSSL ON)
+# 是否系统已经安装了OpenSSL
+set(HX_NET_FIND_OPENSSL ON)
 
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
@@ -77,14 +78,15 @@ if (HX_NET_FIND_LIBURING)
     endif()
 endif()
 
-if (HX_NET_FIND_BEARSSL)
+if (HX_NET_FIND_OPENSSL)
     # 查找 OpenSSL 库
-   find_package(OpenSSL REQUIRED)
+    find_package(OpenSSL REQUIRED)
 
     # 链接 OpenSSL 库
     target_link_libraries(HXNet OpenSSL::SSL OpenSSL::Crypto)
 else()
-    target_include_directories(HXNet PUBLIC lib/openssl/include)
+    # target_include_directories(HXNet PUBLIC lib/openssl/include)
+    message(FATAL_ERROR "OpenSSL not found")
 endif()
 
 # 设置头文件路径

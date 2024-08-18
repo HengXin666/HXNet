@@ -24,7 +24,7 @@ void setup_async_io() {
     // 使用 io_uring 或其他异步库
 }
 
-int _https_main() {
+int main() {
     SSL_library_init();
     SSL_load_error_strings();
 
