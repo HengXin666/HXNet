@@ -56,24 +56,24 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
             _request.getRequesType(), 
             _request.getRequesPath()
         );
-        // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
-        if (fun) {
-            endpointRes = co_await fun(_request);
-        } else {
-            _response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
-                    .setContentType("text/html", "UTF-8")
-                    .setBodyData("<h1>404 NOT FIND PATH: [" 
-                        + _request.getRequesPath() 
-                        + "]</h1><h2>Now Time: " 
-                        + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                        + "</h2>");
-        }
-        _response.createResponseBuffer();
-        _request.clear(); // 本次请求使用结束, 清空, 复用
-
-        // === 响应 ===
-        // LOG_INFO("响应中...");
         try {
+            // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
+            if (fun) {
+                endpointRes = co_await fun(_request);
+            } else {
+                _response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
+                        .setContentType("text/html", "UTF-8")
+                        .setBodyData("<h1>404 NOT FIND PATH: [" 
+                            + _request.getRequesPath() 
+                            + "]</h1><h2>Now Time: " 
+                            + HX::STL::utils::DateTimeFormat::formatWithMilli() 
+                            + "</h2>");
+            }
+            _response.createResponseBuffer();
+            _request.clear(); // 本次请求使用结束, 清空, 复用
+
+            // === 响应 ===
+            // LOG_INFO("响应中...");
             co_await _response.send(HX::STL::container::NonVoidHelper<>{});
             if (!endpointRes)
                 break;
