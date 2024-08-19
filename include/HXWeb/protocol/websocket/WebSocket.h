@@ -20,6 +20,7 @@
 #ifndef _HX_WEB_SOCKET_H_
 #define _HX_WEB_SOCKET_H_
 
+#include <linux/time_types.h>
 #include <memory>
 #include <chrono>
 #include <functional>
@@ -61,8 +62,11 @@ class WebSocket {
     /// @brief 最后一次ping的时间点
     std::chrono::steady_clock::time_point _lastPingTime {};
 
+    /// @brief 
+    struct __kernel_timespec timeout;
+
     /// @brief 是否处于Pong看看对方嘎了没有 阶段
-    bool _waitingPong = true;
+    bool _waitingPong = false;
 
     /// @brief 是否处于半关闭状态
     bool _halfClosed = false;
@@ -71,12 +75,13 @@ class WebSocket {
     // 这是一个混乱的方案, 目前! By Heng_Xin (2024-8-19 15:09:09)
 
     HX::STL::coroutine::task::Task<> getSpan(std::span<char> s);
-    HX::STL::coroutine::task::Task<std::string> getN(std::size_t n);
+    HX::STL::coroutine::task::Task<std::optional<std::string>> getN(std::size_t n);
 
-    HX::STL::coroutine::task::Task<WebSocketPacket> recvPacket();
+    HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> recvPacket();
     HX::STL::coroutine::task::Task<> sendPacket(WebSocketPacket packet, uint32_t mask = 0);
 
     HX::STL::coroutine::task::Task<> sendPing();
+
 public:
     WebSocket(WebSocket &&) = default;
 

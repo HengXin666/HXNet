@@ -77,7 +77,13 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
             if (!endpointRes)
                 break;
         } catch(const std::exception& e) {
-            LOG_ERROR("向客户端 %d 发送消息时候出错: %s", e.what());
+            LOG_ERROR("向客户端 %d 发送消息时候出错: %s", fd, e.what());
+            break;
+        } catch (const char* mag) {
+            LOG_ERROR("向客户端 %d 发送消息时候出错: %s", fd, mag);
+            break;
+        } catch(...) {
+            LOG_ERROR("向客户端 %d 发送消息时候发生未知错误", fd);
             break;
         }
     }

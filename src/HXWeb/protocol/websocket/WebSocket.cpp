@@ -80,34 +80,50 @@ HX::STL::coroutine::task::Task<WebSocket::pointer> WebSocket::makeServer(
 }
 
 HX::STL::coroutine::task::Task<> WebSocket::getSpan(std::span<char> s) {
-    co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
-        _req._responsePtr->_fd, s, 0
+    HX::STL::tools::UringErrorHandlingTools::throwingError(
+        co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
+            _req._responsePtr->_fd, s, 0
+        )
     );
 }
 
-HX::STL::coroutine::task::Task<std::string> WebSocket::getN(std::size_t n) {
+HX::STL::coroutine::task::Task<std::optional<std::string>> WebSocket::getN(std::size_t n) {
     std::string s;
-    s.reserve(n);
-    co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
-        _req._responsePtr->_fd, s, n, 0
+    s.resize(n);
+    int len = std::max(
+        co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
+            HX::STL::coroutine::loop::IoUringTask().prepRecv(
+                _req._responsePtr->_fd, s, n, 0
+            ),
+            HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
+                &timeout, 0
+            )
+        ), 0
     );
-    co_return s;
+
+    if (len) {
+        co_return s;
+    }
+    co_return std::nullopt;
 }
 
-HX::STL::coroutine::task::Task<WebSocketPacket> WebSocket::recvPacket() {
+HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPacket() {
     WebSocketPacket packet;
-    std::string head = co_await getN(2);
+    std::optional<std::string> head = co_await getN(2);
+    if (!head.has_value()) // 超时: 没有读取到数据
+        co_return std::nullopt;
     bool fin;
     do {
-        uint8_t head0 = static_cast<uint8_t>(head[0]);
-        uint8_t head1 = static_cast<uint8_t>(head[1]);
-        fin = (head0 & 0x80) != 0;
+        uint8_t head0 = static_cast<uint8_t>((*head)[0]);
+        uint8_t head1 = static_cast<uint8_t>((*head)[1]);
+        fin = (head0 & 0x80) != 0; // -127(十进制) & 1000 0000H => true
         packet._opCode = static_cast<WebSocketPacket::OpCode>(head0 & 0x0F);
-        bool masked = (head1 & 0x80) != 0;
+        bool masked = (head1 & 0x80) != 0; //
         uint8_t payloadLen8 = head1 & 0x7F;
-        size_t payloadLen;
+        std::size_t payloadLen;
 
         if (packet._opCode >= 8 && packet._opCode <= 10 && payloadLen8 >= 0x7E) [[unlikely]] {
+            printf("packet._opCode >= 8 && packet._opCode <= 10 && payloadLen8 >= 0x7E");
             throw;
         }
 
@@ -124,6 +140,7 @@ HX::STL::coroutine::task::Task<WebSocketPacket> WebSocket::recvPacket() {
             payloadLen = static_cast<size_t>(payloadLen64);
             if constexpr (sizeof(uint64_t) > sizeof(size_t)) {
                 if (payloadLen64 > std::numeric_limits<size_t>::max()) {
+                    printf("payloadLen64 > std::numeric_limits<size_t>::max()\n");
                     throw;
                 }
             }
@@ -134,9 +151,11 @@ HX::STL::coroutine::task::Task<WebSocketPacket> WebSocket::recvPacket() {
 
         std::string mask;
         if (masked) {
-            mask = co_await getN(4);
+            mask = *co_await getN(4);
         }
-        auto data = co_await getN(payloadLen);
+
+        auto data = payloadLen ? *co_await getN(payloadLen) : "";
+
         if (masked) {
             const std::size_t len = data.size();
             for (std::size_t i = 0; i != len; ++i) {
@@ -202,29 +221,33 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPacket(
 
     data += packet._content;
 
-    std::string_view buf = packet._content;
-
-    std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-        co_await HX::STL::coroutine::loop::IoUringTask().prepSend(_req._responsePtr->_fd, buf, 0)
-    ); // 已经写入的字节数
-
-    while (true) {
-        if (n == buf.size()) {
-            // 全部写入啦
-            break;
-        }
-        n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+    std::string_view buf = data;
+    try {
+        std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
             co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-                _req._responsePtr->_fd, buf = buf.substr(n), 0
+                _req._responsePtr->_fd, buf, 0
             )
-        );
-    }
+        ); // 已经写入的字节数
 
+        while (true) {
+            if (n == buf.size()) {
+                // 全部写入啦
+                break;
+            }
+            n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+                co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
+                    _req._responsePtr->_fd, buf = buf.substr(n), 0
+                )
+            );
+        }
+    } catch(const std::exception& e) { // 可能对方立即断开
+        // std::cerr << "错误: " << e.what() << '\n';
+    }
     co_return;
 }
 
 HX::STL::coroutine::task::Task<> WebSocket::sendPing() {
-    co_await sendPacket( WebSocketPacket {
+    co_await sendPacket(WebSocketPacket {
         ._opCode = WebSocketPacket::Ping,
         ._content = {},
     });
@@ -233,13 +256,11 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPing() {
 HX::STL::coroutine::task::Task<> WebSocket::start(
     std::chrono::steady_clock::duration pingPongTimeout /*= std::chrono::seconds(5)*/
 ) {
+    timeout = HX::STL::coroutine::loop::durationToKernelTimespec(pingPongTimeout);
     while (true) {
-        auto maybePacket = co_await HX::STL::coroutine::task::WhenAny::whenAny(
-            recvPacket(),
-            HX::STL::coroutine::loop::TimerLoop::sleepFor(pingPongTimeout)
-        );
+        auto maybePacket = co_await recvPacket();
 
-        if (maybePacket.index()) { // index == 1
+        if (!maybePacket.has_value()) { // index == 1
             // 主动Ping
             if (_waitingPong) { // 上次ping还没有回复我呢! 对面已经嘎啦!
                 break;
@@ -250,7 +271,7 @@ HX::STL::coroutine::task::Task<> WebSocket::start(
         }
         _waitingPong = false;
 
-        auto packet = std::get<0>(maybePacket);
+        auto&& packet = *maybePacket;
 
         switch (packet._opCode) {
         case WebSocketPacket::OpCode::Text: 
@@ -292,7 +313,8 @@ HX::STL::coroutine::task::Task<> WebSocket::start(
         }
         
         default:
-            printf("未知code: %u\n", packet._opCode);
+            // printf("未知code: %u\n", packet._opCode);
+            // co_return;
             break;
         }
     }
@@ -302,8 +324,7 @@ HX::STL::coroutine::task::Task<> WebSocket::send(const std::string& text) {
     if (_halfClosed) [[unlikely]] {
         co_return; // throw !!! ?
     }
-
-    co_await sendPacket( WebSocketPacket {
+    co_await sendPacket(WebSocketPacket {
         ._opCode = WebSocketPacket::Text,
         ._content = std::move(text),
     });

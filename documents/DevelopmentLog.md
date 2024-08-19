@@ -4,6 +4,7 @@
 - [2024-8-18 21:48:26] : 导入`OpenSSL`项目且配置CMake, 并且新增`certs/GenerateCerts.sh`以生成证书和私钥
 - [2024-8-18 23:25:46] : 导入`hashlib`项目且配置CMake, 初步设计WebSocket连接解析(未完成), 修改`Response`支持直接异步写回(提供`send`函数)
 - [2024-8-19 17:25:09] : 初步完成WebSocket, 正在测试... (可以连接, 但是发现无法接收到消息?!)
+- [2024-8-19 22:37:29] : 修复WebSocket的bug (1. 不应该使用whenAny来取消uring, 因为还在监听; 2. 写错变量名, debug半天...)
 
 ---
 

@@ -26,14 +26,10 @@ class WSChatController {
 
     ENDPOINT_BEGIN(API_GET, "/", root) {
         if (auto ws = co_await HX::web::protocol::websocket::WebSocket::makeServer(req)) {
-            /**
-             * curl --include --no-buffer --header "Connection: Upgrade" --header "Upgrade: websocket" --header "Host: 172.19.2.102:8000" --header "Origin: http://172.19.2.102:8000" --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" --header "Sec-WebSocket-Version: 13" ws://127.0.0.1:28205/
-             * 
-             */
-            printf("成功升级为 WebSocket\n");
             // 成功升级为 WebSocket
+            printf("成功升级为 WebSocket\n");
             ws->setOnMessage([&](const std::string& message) -> HX::STL::coroutine::task::Task<> {
-                printf("收到消息: %s\n", message.c_str());
+                printf("收到消息: %s (%lu)\n", message.c_str(), message.size());
                 co_await ws->send("收到啦！" + message);
             });
 

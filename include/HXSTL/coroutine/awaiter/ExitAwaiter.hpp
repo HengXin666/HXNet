@@ -31,6 +31,10 @@ template <class T, class P>
 struct ExitAwaiter {
     using promise_type = P;
 
+    explicit ExitAwaiter(std::coroutine_handle<promise_type> coroutine)
+        : _coroutine(coroutine)
+    {}
+
     bool await_ready() const noexcept { 
         return false; 
     }
