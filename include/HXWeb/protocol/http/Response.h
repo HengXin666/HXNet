@@ -33,6 +33,12 @@ struct ConnectionHandler;
 
 }}} // HX::web::server
 
+namespace HX { namespace web { namespace protocol { namespace websocket {
+
+class WebSocket;
+
+}}}} // HX::web::protocol::websocket
+
 namespace HX { namespace web { namespace protocol { namespace http {
 
 class Request;
@@ -54,6 +60,7 @@ class Response {
     int _sendCnt = 0;          // 写入计数
 
     friend HX::web::server::ConnectionHandler;
+    friend HX::web::protocol::websocket::WebSocket;
 
     /**
      * @brief 生成响应字符串, 用于写入

@@ -6,6 +6,7 @@
 #include <HXJson/HXJson.h>
 #include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXSTL/coroutine/loop/TriggerWaitLoop.h>
+#include <HXWeb/protocol/websocket/WebSocket.h>
 
 using namespace std::chrono;
 
@@ -13,36 +14,7 @@ using namespace std::chrono;
  * @brief 实现一个websocket的聊天室 By Http服务器
  */
 
-struct Message {
-    std::string _user;
-    std::string _content;
-
-    explicit Message(
-        std::string user, 
-        std::string content
-    ) : _user(user)
-      , _content(content)
-    {}
-
-    static std::string toJson(
-        std::vector<Message>::iterator beginIt, 
-        std::vector<Message>::iterator endIt
-    ) {
-        std::string res = "[";
-        if (beginIt != endIt) {
-            for (; beginIt != endIt; ++beginIt)
-                res += "{\"user\":\""+ beginIt->_user + "\",\"content\":\"" + beginIt->_content  +"\"},";
-            res.pop_back();
-        }
-        res += "]";
-        return res;
-    }
-};
-
-std::vector<Message> wsMessageArr;
-HX::STL::coroutine::loop::TriggerWaitLoop wsWaitLoop {};
-
-class ChatController {
+class WSChatController {
     ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
         RESPONSE_DATA(
             200, 
@@ -53,28 +25,53 @@ class ChatController {
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/", root) {
-        RESPONSE_DATA(
-            200,
-            co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"),
-            "text/html", "UTF-8"
-        );
-        co_return true;
+        if (auto ws = co_await HX::web::protocol::websocket::WebSocket::makeServer(req)) {
+            /**
+             * curl --include --no-buffer --header "Connection: Upgrade" --header "Upgrade: websocket" --header "Host: 172.19.2.102:8000" --header "Origin: http://172.19.2.102:8000" --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" --header "Sec-WebSocket-Version: 13" ws://127.0.0.1:28205/
+             * 
+             */
+            printf("成功升级为 WebSocket\n");
+            // 成功升级为 WebSocket
+            ws->setOnMessage([&](const std::string& message) -> HX::STL::coroutine::task::Task<> {
+                printf("收到消息: %s\n", message.c_str());
+                co_await ws->send("收到啦！" + message);
+            });
+
+            ws->setOnPong([&](std::chrono::steady_clock::duration dt) -> HX::STL::coroutine::task::Task<> {
+                printf("网络延迟: %ld ms\n", dt.count());
+                co_return;
+            });
+
+            ws->setOnClose([&]() -> HX::STL::coroutine::task::Task<> {
+                printf("正在关闭连接...\n");
+                co_return;
+            });
+
+            co_await ws->start();
+            co_return false;
+        } else {
+            RESPONSE_DATA(
+                200,
+                co_await HX::STL::utils::FileUtils::asyncGetFileContent("WebSocketIndex.html"),
+                "text/html", "UTF-8"
+            );
+            co_return true;
+        }
     } ENDPOINT_END;
 };
 
 HX::STL::coroutine::task::Task<> startWsChatServer() {
-    wsMessageArr.emplace_back("系统", "欢迎来到聊天室!");
-    ROUTER_BIND(ChatController);
+    ROUTER_BIND(WSChatController);
     try {
         auto ptr = HX::web::server::Acceptor::make();
-        co_await ptr->start("0.0.0.0", "28205", 10s);
+        co_await ptr->start("127.0.0.1", "28205", 10s);
     } catch(const std::system_error &e) {
         std::cerr << e.what() << '\n';
     }
     co_return;
 }
 
-int _main() {
+int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(

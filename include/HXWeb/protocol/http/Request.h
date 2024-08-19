@@ -100,8 +100,8 @@ public:
      * @brief 获取请求头键值对的引用
      * @return std::unordered_map<std::string, std::string>& 
      */
-    std::unordered_map<std::string, std::string>& getRequestHeaders() {
-        return _requestHeaders;
+    std::unordered_map<std::string, std::string>& getRequestHeaders() const {
+        return const_cast<std::unordered_map<std::string, std::string>&>(_requestHeaders);
     }
 
     /**

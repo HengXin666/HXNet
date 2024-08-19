@@ -62,14 +62,13 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
                 endpointRes = co_await fun(_request);
             } else {
                 _response.setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
-                        .setContentType("text/html", "UTF-8")
-                        .setBodyData("<h1>404 NOT FIND PATH: [" 
+                         .setContentType("text/html", "UTF-8")
+                         .setBodyData("<h1>404 NOT FIND PATH: [" 
                             + _request.getRequesPath() 
                             + "]</h1><h2>Now Time: " 
                             + HX::STL::utils::DateTimeFormat::formatWithMilli() 
                             + "</h2>");
             }
-            _response.createResponseBuffer();
             _request.clear(); // 本次请求使用结束, 清空, 复用
 
             // === 响应 ===
