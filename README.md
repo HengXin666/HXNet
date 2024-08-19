@@ -1,5 +1,5 @@
 # HXNet
-学习现代Cpp的代码存放库, io_uring + 协程的http服务器, 基于压缩前缀树的路由, http解析, Json解析, 万用print等
+学习现代Cpp的代码存放库, io_uring + 协程的http服务器, 基于压缩前缀树的路由, 支持http解析, WebSocket协议, Json解析, 万用print等
 
 ## 构建要求
 
@@ -43,6 +43,12 @@ class MyWebController {
         // 另一种响应宏, 只会设置响应编码, 但是返回的是 Response &, 可以链式调用
         RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
                             .setBodyData("<h1> files URL is " + path + "</h1>");
+                            .send(); // 支持直接在端点里面响应 (记得co_await)
+                                     // 响应后, 不会再次在 ConnectionHandler 中再次响应!
+        // 多次写回无效! (不懂... 即没有失败, 客户端也没有收到...)
+        // co_await RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
+        //                              .setBodyData("<h1> files URL iiiis " + path + "</h1>")
+        //                              .send();
         co_return true;
     } ENDPOINT_END;
 
@@ -112,7 +118,8 @@ int main() {
 
 |依赖库|说明|备注|
 |---|---|---|
-|liburing|io_uring|https://github.com/axboe/liburing|
+|liburing|io_uring的封装|https://github.com/axboe/liburing|
+|hashlib|用于`WebSocket`构造`SHA-1`信息摘要; 以及进行`Base64`编码|https://create.stephan-brumme.com/hash-library/|
 
 ## 代码规范
 > --> [C++ 编码规范](documents/CodingStandards/CppStyle.md)
