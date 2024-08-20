@@ -22,12 +22,11 @@
 
 #include <coroutine>
 
-#include <HXSTL/coroutine/loop/TimerLoop.h>
-
 namespace HX { namespace STL { namespace coroutine { namespace awaiter {
 
 /**
  * @brief 协程控制: 暂停则回到父级`await`继续执行; 其控制权交给`Loop`
+ * @warning 禁止抛出异常! 因为控制权不在协程! 并且已经分离!
  */
 template <class T, class P>
 struct ReturnToParentAwaiter {

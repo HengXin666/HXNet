@@ -51,7 +51,12 @@ struct ExitAwaiter {
         return _coroutine;
     }
 
-    T await_resume() const noexcept {
+    /**
+     * @brief co_await 继续
+     * @return T 
+     * @throw 可能会抛出异常, 正因为如此, 才可以像普通函数一样捕获co_await的异常 (本类设计)
+     */
+    T await_resume() const {
         return _coroutine.promise().result();
     }
 
