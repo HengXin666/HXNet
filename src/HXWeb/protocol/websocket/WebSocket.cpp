@@ -123,8 +123,7 @@ HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPa
         std::size_t payloadLen;
 
         if (packet._opCode >= 8 && packet._opCode <= 10 && payloadLen8 >= 0x7E) [[unlikely]] {
-            printf("packet._opCode >= 8 && packet._opCode <= 10 && payloadLen8 >= 0x7E");
-            throw;
+            throw "packet._opCode >= 8 && packet._opCode <= 10 && payloadLen8 >= 0x7E";
         }
 
         // 解析包的长度
@@ -140,8 +139,7 @@ HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPa
             payloadLen = static_cast<size_t>(payloadLen64);
             if constexpr (sizeof(uint64_t) > sizeof(size_t)) {
                 if (payloadLen64 > std::numeric_limits<size_t>::max()) {
-                    printf("payloadLen64 > std::numeric_limits<size_t>::max()\n");
-                    throw;
+                    throw "payloadLen64 > std::numeric_limits<size_t>::max()";
                 }
             }
             payloadLen = static_cast<size_t>(payloadLen64);
@@ -222,27 +220,25 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPacket(
     data += packet._content;
 
     std::string_view buf = data;
-    try {
-        std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-            co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-                _req._responsePtr->_fd, buf, 0
-            )
-        ); // 已经写入的字节数
 
-        while (true) {
-            if (n == buf.size()) {
-                // 全部写入啦
-                break;
-            }
-            n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-                co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-                    _req._responsePtr->_fd, buf = buf.substr(n), 0
-                )
-            );
+    std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+        co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
+            _req._responsePtr->_fd, buf, 0
+        )
+    ); // 已经写入的字节数
+
+    while (true) {
+        if (n == buf.size()) {
+            // 全部写入啦
+            break;
         }
-    } catch(const std::exception& e) { // 可能对方立即断开
-        // std::cerr << "错误: " << e.what() << '\n';
+        n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+            co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
+                _req._responsePtr->_fd, buf = buf.substr(n), 0
+            )
+        );
     }
+
     co_return;
 }
 
