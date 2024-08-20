@@ -1,6 +1,10 @@
 # HXNet
 学习现代Cpp的代码存放库, io_uring + 协程的http服务器, 基于压缩前缀树的路由, 支持http解析, WebSocket协议, Json解析, 万用print等
 
+## v6.0-websocket 分支说明
+
+当前分支完成websocket的编写, 但是由于前期架构不对, 因此需要重构! 本分支是未重构时候的版本~
+
 ## 构建要求
 
 - Linux 系统

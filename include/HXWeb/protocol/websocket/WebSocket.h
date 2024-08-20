@@ -62,7 +62,7 @@ class WebSocket {
     /// @brief 最后一次ping的时间点
     std::chrono::steady_clock::time_point _lastPingTime {};
 
-    /// @brief 
+    /// @brief pingPongTimeout 心跳包超时时间 / 读取超时时间
     struct __kernel_timespec timeout;
 
     /// @brief 是否处于Pong看看对方嘎了没有 阶段
@@ -98,7 +98,7 @@ public:
 
     /**
      * @brief 启动 WebSocket
-     * @param pingPongTimeout 心跳包超时时间
+     * @param pingPongTimeout 心跳包超时时间 / 读取超时时间
      * @return 协程任务 (需要`co_await`)
      */
     HX::STL::coroutine::task::Task<> start(
