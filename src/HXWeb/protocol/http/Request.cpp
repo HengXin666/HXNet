@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include <HXSTL/utils/StringUtils.h>
-#include <iostream>
+#include <HXSTL/utils/FileUtils.h>
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
@@ -19,10 +19,10 @@ std::size_t protocol::http::Request::parserRequest(
     if (_requestLine.empty()) { // 请求行还未解析
         line = ::strtok_r(_previousData.data(), "\r\n", &tmp); // 线程安全
         if (!line)
-            return protocol::http::Request::kBufSize;
+            return HX::STL::utils::FileUtils::kBufMaxSize;
         _requestLine = HX::STL::utils::StringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
         if (_requestLine.size() != 3)
-            return protocol::http::Request::kBufSize;
+            return HX::STL::utils::FileUtils::kBufMaxSize;
     }
 
     if (!_completeRequestHeader) { // 请求头未解析完
@@ -47,7 +47,7 @@ std::size_t protocol::http::Request::parserRequest(
                     // 应该剩下的参与下次解析
                     _previousData = HX::STL::utils::StringUtil::rfindAndTrim(_previousData.data(), "\r\n");
                     _previousData.pop_back();
-                    return protocol::http::Request::kBufSize;
+                    return HX::STL::utils::FileUtils::kBufMaxSize;
                 }
                 // 是空行
                 _completeRequestHeader = true;

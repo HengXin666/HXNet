@@ -25,6 +25,12 @@
 #include <HXSTL/coroutine/loop/TimerLoop.h>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
 
+#ifdef __GNUC__
+#define HOT_FUNCTION [[gnu::hot]]
+#else
+#define HOT_FUNCTION
+#endif
+
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 /**
@@ -38,7 +44,7 @@ public:
 
     AsyncLoop& operator=(AsyncLoop&&) = delete;
 
-    [[gnu::hot]] static AsyncLoop& getLoop() {
+    HOT_FUNCTION static AsyncLoop& getLoop() {
         static AsyncLoop loop;
         return loop;
     }
@@ -56,14 +62,15 @@ public:
         }
     }
 
-    [[gnu::hot]] TimerLoop& getTimerLoop() {
+    HOT_FUNCTION TimerLoop& getTimerLoop() {
         return _timerLoop;
     }
 
     operator TimerLoop &() {
         return _timerLoop;
     }
-    [[gnu::hot]] IoUringLoop& getIoUringLoop() {
+    
+    HOT_FUNCTION IoUringLoop& getIoUringLoop() {
         return _ioUringLoop;
     }
 
@@ -77,5 +84,7 @@ private:
 };
 
 }}}} // namespace HX::STL::coroutine::loop
+
+#undef HOT_FUNCTION
 
 #endif // !_HX_ASYNC_LOOP_H_

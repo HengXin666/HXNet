@@ -24,6 +24,12 @@
 #include <coroutine>
 #include <chrono>
 
+#ifdef __GNUC__
+#define HOT_FUNCTION [[gnu::hot]]
+#else
+#define HOT_FUNCTION
+#endif
+
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 template <class Rep, class Period>
@@ -53,11 +59,11 @@ public:
 
     bool run(std::optional<std::chrono::system_clock::duration> timeout);
 
-    [[gnu::hot]] bool hasEvent() const noexcept {
+    HOT_FUNCTION bool hasEvent() const noexcept {
         return _numSqesPending/* != 0*/;
     }
 
-    [[gnu::hot]] struct io_uring_sqe *getSqe() {
+    HOT_FUNCTION struct io_uring_sqe *getSqe() {
         struct io_uring_sqe *sqe = ::io_uring_get_sqe(&_ring);
         while (!sqe) {
             int res = ::io_uring_submit(&_ring);
@@ -312,7 +318,8 @@ public:
     }
 };
 
-
 }}}} // namespace HX::STL::coroutine::loop
+
+#undef HOT_FUNCTION
 
 #endif // !_HX_IO_URING_LOOP_H_

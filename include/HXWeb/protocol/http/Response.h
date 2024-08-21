@@ -29,6 +29,8 @@
 
 namespace HX { namespace web { namespace server {
 
+class IO;
+
 struct ConnectionHandler;
 
 }}} // HX::web::server
@@ -59,6 +61,7 @@ class Response {
     int _fd = -1;              // 客户端 fd
     int _sendCnt = 0;          // 写入计数
 
+    friend HX::web::server::IO;
     friend HX::web::server::ConnectionHandler;
     friend HX::web::protocol::websocket::WebSocket;
 
@@ -66,16 +69,6 @@ class Response {
      * @brief 生成响应字符串, 用于写入
      */
     void createResponseBuffer();
-
-    /// @brief 发送响应 具体实现
-    /// @return 
-    HX::STL::coroutine::task::Task<> sendImpl();
-
-    /**
-     * @brief 直接发送响应给客户端 (异步的)
-     * 如果客户端已经发送了, 则不进行发送
-     */
-    HX::STL::coroutine::task::Task<> send(HX::STL::container::NonVoidHelper<>);
 public:
 
     /**
@@ -154,6 +147,13 @@ public:
      */
     // explicit Response(Response::Status statusCode, std::string_view describe = "");
 
+    explicit Response() : _statusLine("HTTP/1.1 ")
+                        , _responseHeaders()
+                        , _responseBody()
+                        , _buf()
+                        , _sendCnt(0)
+    {}
+
     explicit Response(int fd) : _statusLine("HTTP/1.1 ")
                               , _responseHeaders()
                               , _responseBody()
@@ -215,12 +215,6 @@ public:
         _responseHeaders[key] = val;
         return *this;
     }
-
-    /**
-     * @brief 直接发送响应给客户端 (异步的)
-     * @warning 请记得加上`co_await`, 因为它是协程!
-     */
-    HX::STL::coroutine::task::Task<> send();
 
     /**
      * @brief 清空已写入的响应, 重置状态 (复用)

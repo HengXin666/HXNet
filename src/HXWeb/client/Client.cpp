@@ -47,13 +47,15 @@ HX::STL::coroutine::task::Task<std::string> Client::read() {
 }
 
 HX::STL::coroutine::task::Task<int> Client::write(std::span<char> buf) {
-    co_return co_await HX::STL::coroutine::loop::IoUringTask().prepSend(_clientFd, buf, 0);
+    co_return co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
+        _clientFd, buf, 0
+    );
 }
 
 HX::STL::coroutine::task::Task<int> Client::close() {
-    co_return (
+    co_return (void)(_clientFd = -1), (
         co_await HX::STL::coroutine::loop::IoUringTask().prepClose(_clientFd)
-    ), _clientFd = -1;
+    );
 }
 
 Client::~Client() {

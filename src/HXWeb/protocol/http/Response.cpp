@@ -231,40 +231,4 @@ void Response::createResponseBuffer() {
     _buf.append(_responseBody);
 }
 
-HX::STL::coroutine::task::Task<> Response::sendImpl() {
-    createResponseBuffer();
-
-    HX::STL::container::ConstBytesBufferView buf = _buf;
-
-    std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-        co_await HX::STL::coroutine::loop::IoUringTask().prepSend(_fd, buf, 0)
-    ); // 已经写入的字节数
-
-    while (true) {
-        if (n == buf.size()) {
-            // 全部写入啦
-            clear();
-            break;
-        }
-        n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-            co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-                _fd, buf = buf.subspan(n), 0
-            )
-        );
-    }
-}
-
-HX::STL::coroutine::task::Task<> Response::send(HX::STL::container::NonVoidHelper<>) {
-    if (_sendCnt) {
-        _sendCnt = 0;
-        co_return;
-    }
-    co_return co_await sendImpl();
-}
-
-HX::STL::coroutine::task::Task<> Response::send() {
-    ++_sendCnt;
-    co_return co_await sendImpl();
-}
-
 }}}} // namespace HX::web::protocol::http

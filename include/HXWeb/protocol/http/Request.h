@@ -58,9 +58,6 @@ class Request {
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
 public:
-    /// @brief 缓冲区大小: 第一次recv的大小, 以及存放其值的缓冲区数组的大小
-    static constexpr std::size_t kBufSize = 4096U;
-
     Response* _responsePtr = nullptr;
 
     /**
@@ -81,9 +78,9 @@ public:
     };
 
     explicit Request() : _requestLine()
-                         , _requestHeaders()
-                         , _body(std::nullopt)
-                         , _remainingBodyLen(std::nullopt)
+                       , _requestHeaders()
+                       , _body(std::nullopt)
+                       , _remainingBodyLen(std::nullopt)
     {}
 
     /**
@@ -115,7 +112,7 @@ public:
      * @brief 获取请求类型
      * @return 请求类型 (如: "GET", "POST"...)
      */
-    std::string getRequesType() const {
+    std::string getRequesType() const noexcept {
         return _requestLine[RequestLineDataType::RequestType];
     }
 
@@ -123,7 +120,7 @@ public:
      * @brief 获取请求体 ( 临时设计的 )
      * @return 如果没有请求体, 则返回`""`
      */
-    std::string getRequesBody() const {
+    std::string getRequesBody() const noexcept {
         if (_body)
             return *_body;
         return "";
@@ -133,7 +130,7 @@ public:
      * @brief 获取请求PATH
      * @return 请求PATH (如: "/", "/home?loli=watasi"...)
      */
-    std::string getRequesPath() const {
+    std::string getRequesPath() const noexcept {
         return _requestLine[RequestLineDataType::RequestPath];
     }
 
@@ -141,7 +138,7 @@ public:
      * @brief 获取请求的纯PATH部分
      * @return 请求PATH (如: "/", "/home?loli=watasi"的"/home"部分)
      */
-    std::string getPureRequesPath() const {
+    std::string getPureRequesPath() const noexcept {
         std::string path = getRequesPath();
         std::size_t pos = path.find('?');
         if (pos == std::string::npos)
@@ -153,14 +150,14 @@ public:
      * @brief 获取请求协议版本
      * @return 请求协议版本 (如: "HTTP/1.1", "HTTP/2.0"...)
      */
-    std::string getRequesProtocolVersion() const {
+    std::string getRequesProtocolVersion() const noexcept {
         return _requestLine[RequestLineDataType::ProtocolVersion];
     }
 
     /**
      * @brief 清空已有的请求内容, 并且初始化标准
      */
-    void clear() {
+    void clear() noexcept {
         _requestLine.clear();
         _requestHeaders.clear();
         _previousData.clear();

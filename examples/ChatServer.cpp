@@ -72,9 +72,8 @@ class ChatController {
 
     ENDPOINT_BEGIN(API_GET, "/files/**", files) {
         PARSE_MULTI_LEVEL_PARAM(path);
-        co_await RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
-                            .setBodyData("<h1> files URL is " + path + "</h1>")
-                            .send(); // 支持直接在端点里面响应 (记得co_await)
+        RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
+                            .setBodyData("<h1> files URL is " + path + "</h1>"); // 支持直接在端点里面响应 (记得co_await)
                                      // 响应后, 不会再次在 ConnectionHandler 中再次响应!
         // 多次写回无效! (不懂... 即没有失败, 客户端也没有收到...)
         // co_await RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
@@ -176,7 +175,7 @@ HX::STL::coroutine::task::Task<> startChatServer() {
     co_return;
 }
 
-int _main() {
+int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(

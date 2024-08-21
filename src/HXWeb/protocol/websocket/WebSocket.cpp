@@ -51,21 +51,19 @@ inline HX::STL::coroutine::task::Task<bool> _httpUpgradeToWebSocket(
     auto wsKey = headMap.find("sec-websocket-key");
     if (wsKey == headMap.end()) {
         // 怎么会有这种错误?! 什么乐色客户端?!
-        co_await req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_400)
+        req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_400)
                     .setContentType("text/html", "UTF-8")
-                    .setBodyData("Not Find: sec-websocket-key")
-                    .send();
+                    .setBodyData("Not Find: sec-websocket-key");
         co_return false;
     }
 
     auto wsNewKey = _webSocketSecretHash(wsKey->second);
 
-    co_await req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_101)
+    req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_101)
                 .addHeader("connection", "Upgrade")
                 .addHeader("upgrade", "websocket")
                 .addHeader("sec-websocket-accept", wsNewKey)
-                .setBodyData("")
-                .send();
+                .setBodyData("");
     co_return true;
     // https 的则是 wss:// ?!
 }
