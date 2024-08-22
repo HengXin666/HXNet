@@ -10,6 +10,10 @@
 ## 快速开始
 > [!TIP]
 > 仍然在开发, 非最终产品
+>
+> - 其他示例:
+>   - [基于轮询的聊天室](examples/ChatServer.cpp)
+>   - [WebSocket服务端](examples/WsServer.cpp)
 
 - 编写端点 (提供了简化使用的 API 宏)
 ```cpp
@@ -38,17 +42,13 @@ class MyWebController {
         co_return true;
     } ENDPOINT_END;
 
-    ENDPOINT_BEGIN(API_GET, "/files/**", files) { // 支持通配符路径
-        PARSE_MULTI_LEVEL_PARAM(path); // 解析通配符 (**)
-        // 另一种响应宏, 只会设置响应编码, 但是返回的是 Response &, 可以链式调用
+    ENDPOINT_BEGIN(API_GET, "/files/**", files) {
+        PARSE_MULTI_LEVEL_PARAM(path);
         RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
-                            .setBodyData("<h1> files URL is " + path + "</h1>");
-                            .send(); // 支持直接在端点里面响应 (记得co_await)
-                                     // 响应后, 不会再次在 ConnectionHandler 中再次响应!
-        // 多次写回无效! (不懂... 即没有失败, 客户端也没有收到...)
-        // co_await RESPONSE_STATUS(200).setContentType("text/html", "UTF-8")
-        //                              .setBodyData("<h1> files URL iiiis " + path + "</h1>")
-        //                              .send();
+                            .setBodyData("<h1> files URL is " + path + "</h1>"); 
+        // 支持直接在端点里面响应 (记得co_await)
+        // 响应后, 不会再次在 ConnectionHandler 中再次响应!
+        co_await io.sendResponse(); // 立即发送响应
         co_return true;
     } ENDPOINT_END;
 
@@ -69,7 +69,7 @@ class MyWebController {
             200, 
             "<h1> Home id 是 " + std::to_string(*id) + ", 而名字是 " 
             + *name + "</h1><h2> 来自 URL: " 
-            + req.getRequesPath() + " 的解析</h2>", // 默认`ENDPOINT_BEGIN`会传入 Request& req, 您可以对其进行更细致的操作
+            + io.getRequest().getRequesPath()  + " 的解析</h2>", // 默认`ENDPOINT_BEGIN`会传入 const HX::web::server::IO& io, 您可以对其进行更细致的操作
             "text/html", "UTF-8"
         );
         co_return true;

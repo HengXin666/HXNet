@@ -68,7 +68,10 @@ public:
         return *_response;
     }
 
-    HX::STL::coroutine::task::Task<> sendResponse();
+    /**
+     * @brief 立即发送响应
+     */
+    HX::STL::coroutine::task::Task<> sendResponse() const;
     HX::STL::coroutine::task::Task<> sendResponse(HX::STL::container::NonVoidHelper<>);
 
     IO& operator=(IO&&) = delete;

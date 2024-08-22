@@ -67,7 +67,7 @@ HX::STL::coroutine::task::Task<> startWsChatServer() {
     co_return;
 }
 
-int main() {
+int _main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(

@@ -1,6 +1,7 @@
 #include <HXWeb/server/IO.h>
 
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
+#include <HXSTL/coroutine/task/TimerTask.hpp>
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
@@ -15,16 +16,22 @@ IO::IO(int fd)
     , _response(std::make_unique<HX::web::protocol::http::Response>())
 {}
 
+inline static HX::STL::coroutine::task::TimerTask close(int fd) {
+    co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+}
+
 IO::~IO() noexcept {
     // 添加到事件循环, 虽然略微延迟释放fd, 但是RAII呀~
-    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(
-        [](int fd) -> HX::STL::coroutine::task::Task<> {
-            co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
-        }(_fd)
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
+        std::chrono::system_clock::now(),
+        nullptr,
+        std::make_shared<HX::STL::coroutine::task::TimerTask>(
+            close(_fd)
+        )
     );
 }
 
-HX::STL::coroutine::task::Task<> IO::sendResponse() {
+HX::STL::coroutine::task::Task<> IO::sendResponse() const {
     co_await _send();
     ++_response->_sendCnt;
 }
