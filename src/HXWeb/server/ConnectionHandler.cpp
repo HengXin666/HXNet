@@ -38,13 +38,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
             if (fun) {
                 endpointRes = co_await fun(io);
             } else {
-                io._response->setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
-                  .setContentType("text/html", "UTF-8")
-                  .setBodyData("<h1>404 NOT FIND PATH: [" 
-                  + io._request->getRequesPath() 
-                  + "]</h1><h2>Now Time: " 
-                  + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                  + "</h2>");
+                endpointRes = co_await HX::web::router::Router::getSingleton().getErrorEndpointFunc()(io);
             }
 
             // === 响应 ===

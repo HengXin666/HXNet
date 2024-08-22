@@ -52,17 +52,7 @@ protected:
         const HX::web::server::IO&
     )>;
 
-    /**
-     * don't use a char * as a key
-     * std::string keys are never your bottleneck
-     * the performance difference between a char * and a std::string is a myth.
-     */
-    // std::unordered_map<std::string, std::unordered_map<std::string, EndpointFunc>> _routerMap;
-    /// @brief 请求类型 -> URL -> 端点函数 路由映射
-    RouteMapPrefixTree<EndpointFunc> _routerRadixTree;
-
-    explicit Router() : _routerRadixTree() 
-    {}
+    explicit Router();
 
     Router(const Router&) = delete;
     Router& operator=(const Router&) = delete;
@@ -71,7 +61,7 @@ public:
      * @brief 获取路由类单例
      */
     [[nodiscard]] static Router& getSingleton() {
-        static Router router{};
+        static Router router {};
         return router;
     }
 
@@ -81,11 +71,27 @@ public:
      * @param path 挂载的PTAH, 如`"/home/{id}"`, 尾部不要`/`
      * @param func 端点函数
      */
-    void addController(
+    void addEndpoint(
         const std::string& requestType,
         const std::string& path,
         const EndpointFunc& func
     );
+
+    /**
+     * @brief 设置路由找不到时候的端点函数
+     * @param func 端点函数
+     */
+    void setErrorEndpointFunc(const EndpointFunc& func) {
+        _errorEndpointFunc = func;
+    }
+
+    /**
+     * @brief 获取路由找不到时候的端点函数
+     * @return const 端点函数引用 
+     */
+    const EndpointFunc& getErrorEndpointFunc() const {
+        return _errorEndpointFunc;
+    }
 
     /**
      * @brief 获取该请求类型和URL(PTAH)绑定的端点函数
@@ -97,6 +103,17 @@ public:
         const std::string& requestType,
         const std::string& path
     );
+protected:
+    /**
+     * don't use a char * as a key
+     * std::string keys are never your bottleneck
+     * the performance difference between a char * and a std::string is a myth.
+     */
+    /// @brief 请求类型 -> URL -> 端点函数 路由映射
+    RouteMapPrefixTree<EndpointFunc> _routerRadixTree;
+
+    /// @brief 路由找不到时候的端点函数
+    EndpointFunc _errorEndpointFunc;
 };
 
 }}} // namespace HX::web::router

@@ -87,13 +87,21 @@ public: // 控制器成员函数 (请写成`static`方法)
 ROUTER_BIND(MyWebController); // 这个类在上面声明过了
 ```
 
-- 启动服务器, 并且监听 0.0.0.0:28205
+- 启动服务器, 并且监听 0.0.0.0:28205, 并且设置路由失败时候返回的界面
 ```cpp
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXWeb/server/Acceptor.h>
 
 HX::STL::coroutine::task::Task<> startChatServer() {
     ROUTER_BIND(MyWebController); // 绑定端点控制器到路由
+    ERROR_ENDPOINT_BEGIN { // 设置路由失败时候返回的界面 (实际上也是一个端点函数!)
+        RESPONSE_DATA(
+            404,
+            "<!DOCTYPE html><html><head><meta charset=UTF-8><title>404 Not Found</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;background-color:#f4f4f4}h1{font-size:100px;margin:0;color:#333}p{font-size:24px;color:red}</style><body><h1>404</h1><p>Not Found</p><hr/><p>HXNet</p>",
+            "text/html", "UTF-8"
+        );
+        co_return false;
+    } ERROR_ENDPOINT_END;
     try {
         auto ptr = HX::web::server::Acceptor::make();
         // 监听 0.0.0.0:28205, 并且客户端超时时间设置为 10s (默认参数是 30s)

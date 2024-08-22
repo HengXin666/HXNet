@@ -1,10 +1,24 @@
 #include <HXWeb/router/Router.h>
 
+#include <HXWeb/server/IO.h>
+#include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/utils/StringUtils.h>
 
 namespace HX { namespace web { namespace router {
 
-void Router::addController(
+Router::Router()
+    : _routerRadixTree()
+    , _errorEndpointFunc(
+        [=](const HX::web::server::IO& io) -> HX::web::router::Router::EndpointReturnType {
+            io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
+                            .setContentType("text/html", "UTF-8")
+                            .setBodyData("<!DOCTYPE html><html><head><meta charset=UTF-8><title>404 Not Found</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;background-color:#f4f4f4}h1{font-size:100px;margin:0;color:#333}p{font-size:24px;color:#666}</style><body><h1>404</h1><p>Not Found</p><hr/><p>HXNet</p>");
+            co_return false;
+        }
+    )
+{}
+
+void Router::addEndpoint(
     const std::string& requestType, 
     const std::string& path, 
     const Router::EndpointFunc& func

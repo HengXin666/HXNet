@@ -58,6 +58,16 @@ class WSChatController {
 
 HX::STL::coroutine::task::Task<> startWsChatServer() {
     ROUTER_BIND(WSChatController);
+
+    ERROR_ENDPOINT_BEGIN {
+        RESPONSE_DATA(
+            404,
+            "<!DOCTYPE html><html><head><meta charset=UTF-8><title>404 Not Found</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;background-color:#f4f4f4}h1{font-size:100px;margin:0;color:#333}p{font-size:24px;color:red}</style><body><h1>404</h1><p>Not Found</p><hr/><p>HXNet</p>",
+            "text/html", "UTF-8"
+        );
+        co_return false;
+    } ERROR_ENDPOINT_END;
+
     try {
         auto ptr = HX::web::server::Acceptor::make();
         co_await ptr->start("127.0.0.1", "28205", 10s);
