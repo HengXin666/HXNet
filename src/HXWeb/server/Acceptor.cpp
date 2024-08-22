@@ -36,13 +36,6 @@ HX::STL::coroutine::task::Task<> Acceptor::start(
         ::listen(serverFd, SOMAXCONN)
     ).expect("listen");
     
-    LOG_INFO("====== HXServer start: \033[33m\033]8;;http://%s:%s/\033\\http://%s:%s/\033]8;;\033\\\033[0m\033[1;32m ======", 
-        name.c_str(),
-        port.c_str(),
-        name.c_str(),
-        port.c_str()
-    );
-
     while (true) {
         int fd = HX::STL::tools::UringErrorHandlingTools::throwingError(
             co_await HX::STL::coroutine::loop::IoUringTask().prepAccept(

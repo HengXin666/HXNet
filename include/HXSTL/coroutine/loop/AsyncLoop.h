@@ -45,7 +45,7 @@ public:
     AsyncLoop& operator=(AsyncLoop&&) = delete;
 
     HOT_FUNCTION static AsyncLoop& getLoop() {
-        static AsyncLoop loop;
+        thread_local static AsyncLoop loop;
         return loop;
     }
 

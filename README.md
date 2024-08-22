@@ -88,13 +88,16 @@ ROUTER_BIND(MyWebController); // 这个类在上面声明过了
 ```
 
 - 启动服务器, 并且监听 0.0.0.0:28205, 并且设置路由失败时候返回的界面
+    - 可选: 可以设置线程数和超时时间 | 每个线程独享一个`uring`, 但是绑定同一个端口, 由操作系统进行负载均衡
 ```cpp
-#include <HXSTL/coroutine/loop/AsyncLoop.h>
-#include <HXWeb/server/Acceptor.h>
+#include <HXWeb/HXApiHelper.h> // 宏所在头文件
+#include <HXWeb/server/Server.h>
 
-HX::STL::coroutine::task::Task<> startChatServer() {
-    ROUTER_BIND(MyWebController); // 绑定端点控制器到路由
-    ERROR_ENDPOINT_BEGIN { // 设置路由失败时候返回的界面 (实际上也是一个端点函数!)
+int main() {
+    chdir("../static");
+    setlocale(LC_ALL, "zh_CN.UTF-8");
+    ROUTER_BIND(WSChatController);
+    ERROR_ENDPOINT_BEGIN { // 自定义: 设置路由失败时候返回的界面
         RESPONSE_DATA(
             404,
             "<!DOCTYPE html><html><head><meta charset=UTF-8><title>404 Not Found</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;background-color:#f4f4f4}h1{font-size:100px;margin:0;color:#333}p{font-size:24px;color:red}</style><body><h1>404</h1><p>Not Found</p><hr/><p>HXNet</p>",
@@ -102,22 +105,9 @@ HX::STL::coroutine::task::Task<> startChatServer() {
         );
         co_return false;
     } ERROR_ENDPOINT_END;
-    try {
-        auto ptr = HX::web::server::Acceptor::make();
-        // 监听 0.0.0.0:28205, 并且客户端超时时间设置为 10s (默认参数是 30s)
-        co_await ptr->start("0.0.0.0", "28205", 10s);
-    } catch(const std::system_error &e) {
-        std::cerr << e.what() << '\n';
-    }
-    co_return;
-}
 
-int main() {
-    chdir("../static"); // 移动当前工作目录为这个
-    HX::STL::coroutine::awaiter::runTask( // 启动协程任务
-        HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
-        startChatServer()
-    );
+    // 启动服务 [阻塞于此]
+    HX::web::server::Server::start("0.0.0.0", "28205", 16 /*可选*/, 10s /*可选*/); 
     return 0;
 }
 ```
@@ -143,13 +133,25 @@ int main() {
 > - 协程版本: (基准: 别人22w/s的并发的程序在我这里一样的参数也就3w+/s..)
 
 ```sh
-╰─ wrk -c500 -d15s http://localhost:28205/ # WSL Arth 测试的 (感觉性能还没有跑到尽头 (cpu: wrk + 本程序 才 24%左右的占用..))
+# 读写 index.html
+╰─ wrk -c1000 -d15s http://localhost:28205/
 Running 15s test @ http://localhost:28205/
-  2 threads and 500 connections
+  2 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    17.37ms   21.60ms 614.42ms   99.26%
-    Req/Sec    15.73k     0.88k   17.68k    75.67%
-  469885 requests in 15.08s, 1.74GB read
-Requests/sec:  31154.81
-Transfer/sec:    118.28MB
+    Latency    10.91ms    5.76ms  73.87ms   77.52%
+    Req/Sec    38.43k     8.84k   67.78k    69.86%
+  1137056 requests in 15.06s, 3.53GB read
+Requests/sec:  75521.83
+Transfer/sec:    239.91MB
+
+# 没有文件读写
+╰─ wrk -c1000 -d15s http://localhost:28205/home/123/123
+Running 15s test @ http://localhost:28205/home/123/123
+  2 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.30ms    3.60ms  40.93ms   76.85%
+    Req/Sec    71.23k    22.11k  132.67k    68.15%
+  2097727 requests in 15.09s, 412.11MB read
+Requests/sec: 139024.19
+Transfer/sec:     27.31MB
 ```

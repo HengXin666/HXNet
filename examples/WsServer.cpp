@@ -1,12 +1,8 @@
 #include <iostream>
 #include <HXWeb/HXApiHelper.h>
 #include <HXSTL/utils/FileUtils.h>
-#include <HXSTL/coroutine/loop/AsyncLoop.h>
-#include <HXWeb/server/Acceptor.h>
-#include <HXJson/HXJson.h>
-#include <HXSTL/coroutine/task/WhenAny.hpp>
-#include <HXSTL/coroutine/loop/TriggerWaitLoop.h>
 #include <HXWeb/protocol/websocket/WebSocket.h>
+#include <HXWeb/server/Server.h>
 
 using namespace std::chrono;
 
@@ -20,6 +16,31 @@ class WSChatController {
             200, 
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
             "image/x-icon"
+        );
+        co_return true;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/home/{id}/{name}", getIdAndNameByHome) {
+        START_PARSE_PATH_PARAMS; // 开始解析请求路径参数
+        PARSE_PARAM(0, u_int32_t, id, false);
+        PARSE_PARAM(1, std::string, name);
+
+        // 解析查询参数为键值对; ?awa=xxx 这种
+        GET_PARSE_QUERY_PARAMETERS(queryMap);
+
+        if (queryMap.count("loli")) // 如果解析到 ?loli=xxx
+            std::cout << queryMap["loli"] << '\n'; // xxx 的值
+
+        RESPONSE_DATA(
+            200, 
+            "<h1> Home id 是 " 
+            + std::to_string(*id) 
+            + ", 而名字是 " 
+            + *name 
+            + "</h1><h2> 来自 URL: " 
+            + io.getRequest().getRequesPath() 
+            + " 的解析</h2>",
+            "text/html", "UTF-8"
         );
         co_return true;
     } ENDPOINT_END;
@@ -56,9 +77,10 @@ class WSChatController {
     } ENDPOINT_END;
 };
 
-HX::STL::coroutine::task::Task<> startWsChatServer() {
+int main() {
+    chdir("../static");
+    setlocale(LC_ALL, "zh_CN.UTF-8");
     ROUTER_BIND(WSChatController);
-
     ERROR_ENDPOINT_BEGIN {
         RESPONSE_DATA(
             404,
@@ -68,21 +90,7 @@ HX::STL::coroutine::task::Task<> startWsChatServer() {
         co_return false;
     } ERROR_ENDPOINT_END;
 
-    try {
-        auto ptr = HX::web::server::Acceptor::make();
-        co_await ptr->start("127.0.0.1", "28205", 10s);
-    } catch(const std::system_error &e) {
-        std::cerr << e.what() << '\n';
-    }
-    co_return;
-}
-
-int main() {
-    chdir("../static");
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-    HX::STL::coroutine::task::runTask(
-        HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
-        startWsChatServer()
-    );
+    // 启动服务
+    HX::web::server::Server::start("0.0.0.0", "28205"); 
     return 0;
 }
