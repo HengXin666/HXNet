@@ -179,7 +179,7 @@ HX::STL::coroutine::task::Task<> startChatServer() {
     co_return;
 }
 
-int main() {
+int _main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(

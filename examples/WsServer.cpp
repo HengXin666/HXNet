@@ -34,7 +34,7 @@ class WSChatController {
             });
 
             ws->setOnPong([&](std::chrono::steady_clock::duration dt) -> HX::STL::coroutine::task::Task<> {
-                printf("网络延迟: %ld ms\n", dt.count());
+                printf("网络延迟: %ld ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(dt).count());
                 co_return;
             });
 
@@ -67,7 +67,7 @@ HX::STL::coroutine::task::Task<> startWsChatServer() {
     co_return;
 }
 
-int _main() {
+int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(

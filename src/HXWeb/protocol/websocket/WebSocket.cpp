@@ -210,6 +210,7 @@ HX::STL::coroutine::task::Task<> WebSocket::start(
             }
             co_await sendPing();
             _waitingPong = true;
+            _lastPingTime = std::chrono::steady_clock::now();
             continue;
         }
         _waitingPong = false;
