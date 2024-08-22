@@ -60,11 +60,11 @@ public:
 
     ~IO() noexcept;
 
-    HOT_FUNCTION const HX::web::protocol::http::Request& getRequest() const noexcept {
+    HOT_FUNCTION HX::web::protocol::http::Request& getRequest() const noexcept {
         return *_request;
     }
 
-    HOT_FUNCTION const HX::web::protocol::http::Response& getResponse() const noexcept {
+    HOT_FUNCTION HX::web::protocol::http::Response& getResponse() const noexcept {
         return *_response;
     }
 
@@ -177,7 +177,7 @@ protected:
     /**
      * @brief 写入响应到套接字
      */
-    HX::STL::coroutine::task::Task<> _send();
+    HX::STL::coroutine::task::Task<> _send() const;
 
     /**
      * @brief 写入数据到套接字

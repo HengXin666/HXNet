@@ -2,10 +2,6 @@
 
 #include <sys/socket.h>
 
-#include <HXWeb/protocol/http/Request.h>
-#include <HXSTL/coroutine/loop/IoUringLoop.h>
-#include <HXSTL/tools/ErrorHandlingTools.h>
-
 namespace HX { namespace web { namespace protocol { namespace http {
 
 Response& Response::setResponseLine(Response::Status statusCode, std::string_view describe /*= ""*/) {

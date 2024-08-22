@@ -25,7 +25,7 @@ class WSChatController {
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/", root) {
-        if (auto ws = co_await HX::web::protocol::websocket::WebSocket::makeServer(req)) {
+        if (auto ws = co_await HX::web::protocol::websocket::WebSocket::makeServer(io)) {
             // 成功升级为 WebSocket
             printf("成功升级为 WebSocket\n");
             ws->setOnMessage([&](const std::string& message) -> HX::STL::coroutine::task::Task<> {
@@ -67,7 +67,7 @@ HX::STL::coroutine::task::Task<> startWsChatServer() {
     co_return;
 }
 
-int _main() {
+int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(

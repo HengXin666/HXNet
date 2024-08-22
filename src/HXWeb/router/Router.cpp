@@ -1,7 +1,5 @@
 #include <HXWeb/router/Router.h>
 
-#include <HXWeb/protocol/http/Request.h>
-#include <HXSTL/utils/MagicEnum.h>
 #include <HXSTL/utils/StringUtils.h>
 
 namespace HX { namespace web { namespace router {

@@ -21,6 +21,7 @@
 #define _HX_API_HELPER_H_
 
 #include <HXWeb/router/Router.h>
+#include <HXWeb/server/IO.h>
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXWeb/router/RequestParsing.h>
@@ -36,7 +37,7 @@
 #define API_DELETE "DELETE"
 
 /**
- * @brief 定义一个端点, 其中定义了`req`请求信息(HX::web::protocol::http::Request)
+ * @brief 定义一个端点, 其中形参定义了`io`(HX::web::server::IO)
  * @param METHOD 请求类型, 如"GET"
  * @param PATH 端点对应的路径, 如"/home/{id}"
  * @param FUNC_NAME 端点函数名称
@@ -47,7 +48,7 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
     HX::web::router::Router::getSingleton().addController( \
         METHOD,\
         templatePath,\
-        [=](const HX::web::protocol::http::Request& req) -> HX::web::router::Router::EndpointReturnType
+        [=](const HX::web::server::IO& io) -> HX::web::router::Router::EndpointReturnType
 
 /**
  * @brief 结束端点的定义
@@ -65,16 +66,16 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
  * 如 `"text/html", "UTF-8"`, `"image/x-icon"`
  */
 #define RESPONSE_DATA(CODE, DATA, ...) \
-req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_##CODE) \
-.setBodyData(DATA) \
-.setContentType(__VA_ARGS__)
+io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_##CODE) \
+  .setBodyData(DATA) \
+  .setContentType(__VA_ARGS__)
 
 /**
  * @brief 设置状态码 (接下来可以继续操作)
  * @param 状态码 (如`200`)
  */
 #define RESPONSE_STATUS(CODE) \
-req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_##CODE)
+io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_##CODE)
 
 /**
  * @brief 开始解析请求路径参数
@@ -82,7 +83,7 @@ req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::COD
  */
 #define START_PARSE_PATH_PARAMS \
 static const auto wildcarIndexArr = HX::web::router::RequestTemplateParsing::getPathWildcardAnalysisArr(templatePath); \
-auto pathSplitArr = HX::STL::utils::StringUtil::split(req.getPureRequesPath(), "/")
+auto pathSplitArr = HX::STL::utils::StringUtil::split(io.getRequest().getPureRequesPath(), "/")
 
 /**
  * @brief 用于解析指定索引的路径参数, 并将其转换为指定类型的变量
@@ -106,14 +107,14 @@ if (!NAME) { \
  */
 #define PARSE_MULTI_LEVEL_PARAM(NAME) \
 static const auto UWPIndex = HX::web::router::RequestTemplateParsing::getUniversalWildcardPathBeginIndex(templatePath); \
-std::string NAME = req.getPureRequesPath().substr(UWPIndex)
+std::string NAME = io.getRequest().getPureRequesPath().substr(UWPIndex)
 
 /**
  * @brief 解析查询参数键值对Map (解析如: `?name=loli&awa=ok&hitori`)
  * @param NAME 键值对Map的变量名
  */
 #define GET_PARSE_QUERY_PARAMETERS(NAME) \
-auto NAME = req.getParseQueryParameters()
+auto NAME = io.getRequest().getParseQueryParameters()
 
 /**
  * @brief 路由绑定, 将控制器绑定到路由

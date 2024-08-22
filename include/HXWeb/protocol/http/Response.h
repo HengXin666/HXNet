@@ -43,8 +43,6 @@ class WebSocket;
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
-class Request;
-
 /**
  * @brief 服务端响应类(Response)
  */

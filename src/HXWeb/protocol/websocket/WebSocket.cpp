@@ -36,11 +36,10 @@ inline std::string _webSocketSecretHash(std::string userKey) {
     return base64::encode_into<std::string>(buf, buf + SHA1::HashBytes);
 }
 
-
 HX::STL::coroutine::task::Task<bool> WebSocket::httpUpgradeToWebSocket(
     const HX::web::server::IO& io
 ) {
-    auto& headMap = io._request->getRequestHeaders();
+    auto& headMap = io.getRequest().getRequestHeaders();
     if (auto it = headMap.find("upgrade"); it == headMap.end() || it->second != "websocket") {
         co_return false;
     }
@@ -49,19 +48,20 @@ HX::STL::coroutine::task::Task<bool> WebSocket::httpUpgradeToWebSocket(
     auto wsKey = headMap.find("sec-websocket-key");
     if (wsKey == headMap.end()) {
         // 怎么会有这种错误?! 什么乐色客户端?!
-        io._response->setResponseLine(HX::web::protocol::http::Response::Status::CODE_400)
-          .setContentType("text/html", "UTF-8")
-          .setBodyData("Not Find: sec-websocket-key");
+        io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_400)
+                        .setContentType("text/html", "UTF-8")
+                        .setBodyData("Not Find: sec-websocket-key");
         co_return false;
     }
 
     auto wsNewKey = _webSocketSecretHash(wsKey->second);
 
-    io._response->setResponseLine(HX::web::protocol::http::Response::Status::CODE_101)
-      .addHeader("connection", "Upgrade")
-      .addHeader("upgrade", "websocket")
-      .addHeader("sec-websocket-accept", wsNewKey)
-      .setBodyData("");
+    io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_101)
+                    .addHeader("connection", "Upgrade")
+                    .addHeader("upgrade", "websocket")
+                    .addHeader("sec-websocket-accept", wsNewKey)
+                    .setBodyData("");
+    co_await io._send();
     co_return true;
     // https 的则是 wss:// ?!
 }
@@ -74,7 +74,6 @@ HX::STL::coroutine::task::Task<WebSocket::pointer> WebSocket::makeServer(
     }
     co_return nullptr;
 }
-
 
 HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPacket(
     struct __kernel_timespec *timeout

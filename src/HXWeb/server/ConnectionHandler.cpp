@@ -14,8 +14,6 @@ namespace HX { namespace web { namespace server {
 HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono::seconds timeout) {
     IO io {fd};
 
-    io._request->_responsePtr = &*io._response; // TODO
-
     // 连接超时
     auto _timeout = HX::STL::coroutine::loop::durationToKernelTimespec(timeout);
     
@@ -38,15 +36,15 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
         try {
             // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
             if (fun) {
-                endpointRes = co_await fun(*io._request);
+                endpointRes = co_await fun(io);
             } else {
                 io._response->setResponseLine(HX::web::protocol::http::Response::Status::CODE_404)
-                            .setContentType("text/html", "UTF-8")
-                            .setBodyData("<h1>404 NOT FIND PATH: [" 
-                            + io._request->getRequesPath() 
-                            + "]</h1><h2>Now Time: " 
-                            + HX::STL::utils::DateTimeFormat::formatWithMilli() 
-                            + "</h2>");
+                  .setContentType("text/html", "UTF-8")
+                  .setBodyData("<h1>404 NOT FIND PATH: [" 
+                  + io._request->getRequesPath() 
+                  + "]</h1><h2>Now Time: " 
+                  + HX::STL::utils::DateTimeFormat::formatWithMilli() 
+                  + "</h2>");
             }
 
             // === 响应 ===

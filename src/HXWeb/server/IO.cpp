@@ -15,11 +15,6 @@ IO::IO(int fd)
     , _response(std::make_unique<HX::web::protocol::http::Response>())
 {}
 
-// HX::STL::coroutine::task::Task<> IO::close() noexcept {
-//     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(_fd);
-//     _fd = -1;
-// }
-
 IO::~IO() noexcept {
     // 添加到事件循环, 虽然略微延迟释放fd, 但是RAII呀~
     HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(
@@ -152,7 +147,7 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     );
 }
 
-HX::STL::coroutine::task::Task<> IO::_send() {
+HX::STL::coroutine::task::Task<> IO::_send() const {
     // 本次请求使用结束, 清空, 复用
     _request->clear();
     // 清除响应的缓冲区, 复用

@@ -58,8 +58,6 @@ class Request {
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
 public:
-    Response* _responsePtr = nullptr;
-
     /**
      * @brief 请求类型枚举
      */

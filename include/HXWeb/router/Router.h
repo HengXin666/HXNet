@@ -28,12 +28,11 @@
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/router/RouteMapPrefixTree.hpp>
 
-namespace HX::web::protocol::http {
+namespace HX { namespace web { namespace server {
 
-class Request;
-class Response;
+class IO;
 
-}
+}}} // namespace HX::web::server
 
 namespace HX { namespace web { namespace router {
 
@@ -50,7 +49,7 @@ public:
 protected:
     /// @brief 端点函数
     using EndpointFunc = std::function<EndpointReturnType(
-        const HX::web::protocol::http::Request&
+        const HX::web::server::IO&
     )>;
 
     /**
@@ -82,7 +81,11 @@ public:
      * @param path 挂载的PTAH, 如`"/home/{id}"`, 尾部不要`/`
      * @param func 端点函数
      */
-    void addController(const std::string& requestType, const std::string& path, const EndpointFunc& func);
+    void addController(
+        const std::string& requestType,
+        const std::string& path,
+        const EndpointFunc& func
+    );
 
     /**
      * @brief 获取该请求类型和URL(PTAH)绑定的端点函数
@@ -90,7 +93,10 @@ public:
      * @param path 访问的目标地址, 如`"/home\**?loli=imouto"`, 尾部不要`/`, 会解析为`?`之前的内容
      * @return 存在则返回, 否则为`nullptr`
      */
-    EndpointFunc getEndpointFunc(const std::string& requestType, const std::string& path);
+    EndpointFunc getEndpointFunc(
+        const std::string& requestType,
+        const std::string& path
+    );
 };
 
 }}} // namespace HX::web::router

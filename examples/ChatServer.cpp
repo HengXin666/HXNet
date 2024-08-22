@@ -95,14 +95,20 @@ class ChatController {
 
         RESPONSE_DATA(
             200, 
-            "<h1> Home id 是 " + std::to_string(*id) + ", 而名字是 " + *name + "</h1><h2> 来自 URL: " + req.getRequesPath() + " 的解析</h2>",
+            "<h1> Home id 是 " 
+            + std::to_string(*id) 
+            + ", 而名字是 " 
+            + *name 
+            + "</h1><h2> 来自 URL: " 
+            + io.getRequest().getRequesPath() 
+            + " 的解析</h2>",
             "text/html", "UTF-8"
         );
         co_return true;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_POST, "/send", send) { // 客户端发送消息过来
-        auto body = req.getRequesBody();
+        auto body = io.getRequest().getRequesBody();
         auto jsonPair = HX::Json::parse(body);
         if (jsonPair.second) {
             messageArr.emplace_back(
@@ -122,7 +128,7 @@ class ChatController {
     ENDPOINT_BEGIN(API_POST, "/recv", recv) { // 发送内容给客户端
         using namespace std::chrono_literals;
 
-        auto body = req.getRequesBody();
+        auto body = io.getRequest().getRequesBody();
         // printf("recv (%s)\n", body.c_str());
         auto jsonPair = HX::Json::parse(body);
 
@@ -175,7 +181,7 @@ HX::STL::coroutine::task::Task<> startChatServer() {
     co_return;
 }
 
-int main() {
+int _main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(
