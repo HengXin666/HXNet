@@ -34,6 +34,12 @@
 #define HOT_FUNCTION
 #endif
 
+namespace HX { namespace web { namespace protocol { namespace websocket {
+
+class WebSocket;
+
+}}}} // HX::web::protocol::websocket
+
 namespace HX { namespace web { namespace protocol { namespace http {
 
 class Request;
@@ -65,11 +71,8 @@ public:
     HX::STL::coroutine::task::Task<> sendResponse();
     HX::STL::coroutine::task::Task<> sendResponse(HX::STL::container::NonVoidHelper<>);
 
+    IO& operator=(IO&&) = delete;
 protected:
-    friend HX::web::protocol::http::Request;
-    friend HX::web::protocol::http::Response;
-    friend ConnectionHandler;
-
     // === start === 读取相关的函数 === start ===
 
     /**
@@ -82,13 +85,22 @@ protected:
     /**
      * @brief 尝试读取 n 个字符
      * @param n 读取字符个数
+     * @return std::optional<std::string>, 超时或者断开连接, 则为 std::nullpot
+     */
+    HX::STL::coroutine::task::Task<std::optional<std::string>> recvN(
+        std::size_t n
+    ) const;
+
+    /**
+     * @brief 尝试读取 n 个字符
+     * @param n 读取字符个数
      * @param timeout 超时时间
      * @return std::optional<std::string>, 超时或者断开连接, 则为 std::nullpot
      */
     HX::STL::coroutine::task::Task<std::optional<std::string>> recvN(
         std::size_t n,
         struct __kernel_timespec *timeout
-    );
+    ) const;
 
     /**
      * @brief 尝试读取 n 个字符
@@ -101,7 +113,7 @@ protected:
         std::span<char> buf,
         std::size_t n,
         struct __kernel_timespec *timeout
-    );
+    ) const;
 
     /**
      * @brief 读取一个大小为`sizeof(T)`字节的内容, 并且构造为T类型的数据
@@ -114,7 +126,7 @@ protected:
     HX::STL::coroutine::task::Task<T> recvStruct(
         T& res, 
         struct __kernel_timespec *timeout = nullptr
-    ) {
+    ) const {
         if (timeout) {
             co_return co_await _recvSpan(
                 std::span<char>(
@@ -140,23 +152,23 @@ protected:
     template <class T>
     HX::STL::coroutine::task::Task<T> recvStruct(
         struct __kernel_timespec *timeout = nullptr
-    ) {
+    ) const {
         T res;
         co_await recvStruct<T>(res, timeout);
         co_return res;
     }
 
-    HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf);
-    HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf, std::size_t n);
+    HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf) const;
+    HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf, std::size_t n) const;
     HX::STL::coroutine::task::Task<int> _recvSpan(
         std::span<char> buf, 
         struct __kernel_timespec *timeout
-    );
+    ) const;
     HX::STL::coroutine::task::Task<int> _recvSpan(
         std::span<char> buf,
         std::size_t n,
         struct __kernel_timespec *timeout
-    );
+    ) const;
 
     // === end === 读取相关的函数 === end ===
 
@@ -167,7 +179,18 @@ protected:
      */
     HX::STL::coroutine::task::Task<> _send();
 
+    /**
+     * @brief 写入数据到套接字
+     * @param buf 需要写入的内容
+     */
+    HX::STL::coroutine::task::Task<> _send(std::span<char> buf) const;
+
     // === end === 写入相关的函数 === end ===
+
+    friend HX::web::protocol::http::Request;
+    friend HX::web::protocol::http::Response;
+    friend HX::web::protocol::websocket::WebSocket;
+    friend ConnectionHandler;
 
     int _fd = -1;
     std::vector<char> _recvBuf;

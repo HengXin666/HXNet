@@ -3,6 +3,8 @@
 #include <hashlib/sha1.h>
 #include <hashlib/base64.hpp>
 
+#include <HXWeb/server/IO.h>
+#include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXSTL/coroutine/loop/TimerLoop.h>
@@ -34,15 +36,11 @@ inline std::string _webSocketSecretHash(std::string userKey) {
     return base64::encode_into<std::string>(buf, buf + SHA1::HashBytes);
 }
 
-/**
- * @brief 尝试升级为 WebSocket
- * @param req 
- * @return bool 是否升级成功
- */
-inline HX::STL::coroutine::task::Task<bool> _httpUpgradeToWebSocket(
-    const HX::web::protocol::http::Request& req
+
+HX::STL::coroutine::task::Task<bool> WebSocket::httpUpgradeToWebSocket(
+    const HX::web::server::IO& io
 ) {
-    auto& headMap = req.getRequestHeaders();
+    auto& headMap = io._request->getRequestHeaders();
     if (auto it = headMap.find("upgrade"); it == headMap.end() || it->second != "websocket") {
         co_return false;
     }
@@ -51,63 +49,38 @@ inline HX::STL::coroutine::task::Task<bool> _httpUpgradeToWebSocket(
     auto wsKey = headMap.find("sec-websocket-key");
     if (wsKey == headMap.end()) {
         // 怎么会有这种错误?! 什么乐色客户端?!
-        req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_400)
-                    .setContentType("text/html", "UTF-8")
-                    .setBodyData("Not Find: sec-websocket-key");
+        io._response->setResponseLine(HX::web::protocol::http::Response::Status::CODE_400)
+          .setContentType("text/html", "UTF-8")
+          .setBodyData("Not Find: sec-websocket-key");
         co_return false;
     }
 
     auto wsNewKey = _webSocketSecretHash(wsKey->second);
 
-    req._responsePtr->setResponseLine(HX::web::protocol::http::Response::Status::CODE_101)
-                .addHeader("connection", "Upgrade")
-                .addHeader("upgrade", "websocket")
-                .addHeader("sec-websocket-accept", wsNewKey)
-                .setBodyData("");
+    io._response->setResponseLine(HX::web::protocol::http::Response::Status::CODE_101)
+      .addHeader("connection", "Upgrade")
+      .addHeader("upgrade", "websocket")
+      .addHeader("sec-websocket-accept", wsNewKey)
+      .setBodyData("");
     co_return true;
     // https 的则是 wss:// ?!
 }
 
 HX::STL::coroutine::task::Task<WebSocket::pointer> WebSocket::makeServer(
-    const HX::web::protocol::http::Request& req
+    const HX::web::server::IO& io
 ) {
-    if (co_await _httpUpgradeToWebSocket(req)) {
-        co_return std::make_shared<pointer::element_type>(WebSocket {req});
+    if (co_await httpUpgradeToWebSocket(io)) {
+        co_return std::make_shared<pointer::element_type>(WebSocket {io});
     }
     co_return nullptr;
 }
 
-HX::STL::coroutine::task::Task<> WebSocket::getSpan(std::span<char> s) {
-    HX::STL::tools::UringErrorHandlingTools::throwingError(
-        co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
-            _req._responsePtr->_fd, s, 0
-        )
-    );
-}
 
-HX::STL::coroutine::task::Task<std::optional<std::string>> WebSocket::getN(std::size_t n) {
-    std::string s;
-    s.resize(n);
-    int len = std::max(
-        co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
-            HX::STL::coroutine::loop::IoUringTask().prepRecv(
-                _req._responsePtr->_fd, s, n, 0
-            ),
-            HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
-                &timeout, 0
-            )
-        ), 0
-    );
-
-    if (len) {
-        co_return s;
-    }
-    co_return std::nullopt;
-}
-
-HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPacket() {
+HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPacket(
+    struct __kernel_timespec *timeout
+) {
     WebSocketPacket packet;
-    std::optional<std::string> head = co_await getN(2);
+    std::optional<std::string> head = co_await _io.recvN(2, timeout);
     if (!head.has_value()) // 超时: 没有读取到数据
         co_return std::nullopt;
     bool fin;
@@ -126,13 +99,11 @@ HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPa
 
         // 解析包的长度
         if (payloadLen8 == 0x7E) {
-            uint16_t payloadLen16;
-            co_await getSpan(std::span<char>(reinterpret_cast<char *>(&payloadLen16), sizeof(uint16_t)));
+            uint16_t payloadLen16 = co_await _io.recvStruct<uint16_t>();
             payloadLen16 = HX::STL::utils::byteswapIfLittle(payloadLen16);
             payloadLen = static_cast<size_t>(payloadLen16);
         } else if (payloadLen8 == 0x7F) {
-            uint64_t payloadLen64;
-            co_await getSpan(std::span<char>(reinterpret_cast<char *>(&payloadLen64), sizeof(uint64_t)));
+            uint64_t payloadLen64 = co_await _io.recvStruct<uint64_t>();
             payloadLen64 = HX::STL::utils::byteswapIfLittle(payloadLen64);
             payloadLen = static_cast<size_t>(payloadLen64);
             if constexpr (sizeof(uint64_t) > sizeof(size_t)) {
@@ -147,10 +118,10 @@ HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPa
 
         std::string mask;
         if (masked) {
-            mask = *co_await getN(4);
+            mask = *co_await _io.recvN(4);
         }
 
-        auto data = payloadLen ? *co_await getN(payloadLen) : "";
+        auto data = payloadLen ? *co_await _io.recvN(payloadLen) : "";
 
         if (masked) {
             const std::size_t len = data.size();
@@ -216,28 +187,7 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPacket(
     }
 
     data += packet._content;
-
-    std::string_view buf = data;
-
-    std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-        co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-            _req._responsePtr->_fd, buf, 0
-        )
-    ); // 已经写入的字节数
-
-    while (true) {
-        if (n == buf.size()) {
-            // 全部写入啦
-            break;
-        }
-        n = HX::STL::tools::UringErrorHandlingTools::throwingError(
-            co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
-                _req._responsePtr->_fd, buf = buf.substr(n), 0
-            )
-        );
-    }
-
-    co_return;
+    co_await _io._send(data);
 }
 
 HX::STL::coroutine::task::Task<> WebSocket::sendPing() {
@@ -250,9 +200,9 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPing() {
 HX::STL::coroutine::task::Task<> WebSocket::start(
     std::chrono::steady_clock::duration pingPongTimeout /*= std::chrono::seconds(5)*/
 ) {
-    timeout = HX::STL::coroutine::loop::durationToKernelTimespec(pingPongTimeout);
+    auto timeout = HX::STL::coroutine::loop::durationToKernelTimespec(pingPongTimeout);
     while (true) {
-        auto maybePacket = co_await recvPacket();
+        auto maybePacket = co_await recvPacket(&timeout);
 
         if (!maybePacket.has_value()) { // index == 1
             // 主动Ping
@@ -316,7 +266,7 @@ HX::STL::coroutine::task::Task<> WebSocket::start(
 
 HX::STL::coroutine::task::Task<> WebSocket::send(const std::string& text) {
     if (_halfClosed) [[unlikely]] {
-        co_return; // throw !!! ?
+        throw "WebSocket is halfClosed";
     }
     co_await sendPacket(WebSocketPacket {
         ._opCode = WebSocketPacket::Text,

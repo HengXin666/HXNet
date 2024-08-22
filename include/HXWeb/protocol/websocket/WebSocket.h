@@ -20,13 +20,18 @@
 #ifndef _HX_WEB_SOCKET_H_
 #define _HX_WEB_SOCKET_H_
 
-#include <linux/time_types.h>
+#include <liburing.h>
 #include <memory>
 #include <chrono>
 #include <functional>
 
 #include <HXSTL/coroutine/task/Task.hpp>
-#include <HXWeb/protocol/http/Request.h>
+
+namespace HX { namespace web { namespace server {
+
+class IO;
+
+}}} // namespace HX::web::server
 
 namespace HX { namespace web { namespace protocol { namespace websocket {
 
@@ -54,38 +59,40 @@ struct WebSocketPacket {
  */
 class WebSocket {
     using pointer = std::shared_ptr<WebSocket>;
-    const HX::web::protocol::http::Request& _req;
-    std::function<HX::STL::coroutine::task::Task<>(const std::string&)> _onMessage;
-    std::function<HX::STL::coroutine::task::Task<>()> _onClose;
-    std::function<HX::STL::coroutine::task::Task<>(std::chrono::steady_clock::duration)> _onPong;
 
-    /// @brief 最后一次ping的时间点
-    std::chrono::steady_clock::time_point _lastPingTime {};
+    /**
+     * @brief 尝试升级为 WebSocket
+     * @param io
+     * @return bool 是否升级成功
+     */
+    static HX::STL::coroutine::task::Task<bool> httpUpgradeToWebSocket(
+        const HX::web::server::IO& io
+    );
 
-    /// @brief 
-    struct __kernel_timespec timeout;
+    /**
+     * @brief 读取一个WebSocketPacket
+     * @param timeout 超时时间
+     * @return std::optional<WebSocketPacket>
+     */
+    HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> recvPacket(
+        struct __kernel_timespec *timeout
+    );
 
-    /// @brief 是否处于Pong看看对方嘎了没有 阶段
-    bool _waitingPong = false;
-
-    /// @brief 是否处于半关闭状态
-    bool _halfClosed = false;
-
-    // TODO: 临时方案: 先让他们动起来, 我会重新架构
-    // 这是一个混乱的方案, 目前! By Heng_Xin (2024-8-19 15:09:09)
-
-    HX::STL::coroutine::task::Task<> getSpan(std::span<char> s);
-    HX::STL::coroutine::task::Task<std::optional<std::string>> getN(std::size_t n);
-
-    HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> recvPacket();
+    /**
+     * @brief 发送一个WebSocketPacket
+     * @param packet WebSocketPacket
+     * @param mask 掩码
+     */
     HX::STL::coroutine::task::Task<> sendPacket(WebSocketPacket packet, uint32_t mask = 0);
 
+    /**
+     * @brief 发送一个Ping包
+     */
     HX::STL::coroutine::task::Task<> sendPing();
-
 public:
     WebSocket(WebSocket &&) = default;
 
-    explicit WebSocket(const HX::web::protocol::http::Request& req) : _req(req)
+    explicit WebSocket(const HX::web::server::IO& io) : _io(io)
     {}
 
     /**
@@ -93,7 +100,7 @@ public:
      * @return WebSocket指针
      */
     static HX::STL::coroutine::task::Task<pointer> makeServer(
-        const HX::web::protocol::http::Request& req
+        const HX::web::server::IO& io
     );
 
     /**
@@ -135,7 +142,26 @@ public:
         _onPong = std::move(onPong);
     }
 
+    /**
+     * @brief 发送文本包给客户端
+     * @param text 文本
+     */
     HX::STL::coroutine::task::Task<> send(const std::string& text);
+protected:
+    const HX::web::server::IO& _io;
+    // === 回调函数 ===
+    std::function<HX::STL::coroutine::task::Task<>(const std::string&)> _onMessage;
+    std::function<HX::STL::coroutine::task::Task<>()> _onClose;
+    std::function<HX::STL::coroutine::task::Task<>(std::chrono::steady_clock::duration)> _onPong;
+
+    /// @brief 最后一次ping的时间点
+    std::chrono::steady_clock::time_point _lastPingTime {};
+
+    /// @brief 是否处于Pong看看对方嘎了没有 阶段
+    bool _waitingPong = false;
+
+    /// @brief 是否处于半关闭状态
+    bool _halfClosed = false;
 };
 
 }}}} // HX::web::protocol::websocket

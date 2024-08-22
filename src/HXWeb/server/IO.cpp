@@ -10,9 +10,9 @@ namespace HX { namespace web { namespace server {
 
 IO::IO(int fd) 
     : _fd(fd)
+    , _recvBuf(HX::STL::utils::FileUtils::kBufMaxSize)
     , _request(std::make_unique<HX::web::protocol::http::Request>())
     , _response(std::make_unique<HX::web::protocol::http::Response>())
-    , _recvBuf(HX::STL::utils::FileUtils::kBufMaxSize)
 {}
 
 // HX::STL::coroutine::task::Task<> IO::close() noexcept {
@@ -66,9 +66,24 @@ HX::STL::coroutine::task::Task<bool> IO::recvRequest(
 }
 
 HX::STL::coroutine::task::Task<std::optional<std::string>> IO::recvN(
+    std::size_t n
+) const {
+    std::string s;
+    s.resize(n);
+    int len = std::max(
+        co_await _recvSpan(s), 0
+    );
+
+    if (len) {
+        co_return s;
+    }
+    co_return std::nullopt;
+}
+
+HX::STL::coroutine::task::Task<std::optional<std::string>> IO::recvN(
     std::size_t n,
     struct __kernel_timespec *timeout
-) {
+) const {
     std::string s;
     s.resize(n);
     int len = std::max(
@@ -85,19 +100,24 @@ HX::STL::coroutine::task::Task<std::size_t> IO::recvN(
     std::span<char> buf,
     std::size_t n,
     struct __kernel_timespec *timeout
-) {
+) const {
     co_return static_cast<std::size_t>(std::max(
         co_await _recvSpan(buf, n, timeout), 0
     ));
 }
 
-HX::STL::coroutine::task::Task<int> IO::_recvSpan(std::span<char> buf) {
+HX::STL::coroutine::task::Task<int> IO::_recvSpan(
+    std::span<char> buf
+) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
         _fd, buf, 0
     );
 }
 
-HX::STL::coroutine::task::Task<int> IO::_recvSpan(std::span<char> buf, std::size_t n) {
+HX::STL::coroutine::task::Task<int> IO::_recvSpan(
+    std::span<char> buf,
+    std::size_t n
+) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
         _fd, buf, n, 0
     );
@@ -106,7 +126,7 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(std::span<char> buf, std::size
 HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     std::span<char> buf, 
     struct __kernel_timespec *timeout
-) {
+) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
         HX::STL::coroutine::loop::IoUringTask().prepRecv(
             _fd, buf, 0
@@ -121,7 +141,7 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     std::span<char> buf, 
     std::size_t n,
     struct __kernel_timespec *timeout
-) {
+) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
         HX::STL::coroutine::loop::IoUringTask().prepRecv(
             _fd, buf, n, 0
@@ -138,6 +158,25 @@ HX::STL::coroutine::task::Task<> IO::_send() {
     // 清除响应的缓冲区, 复用
     _response->createResponseBuffer();
     std::span<char> buf = _response->_buf;
+    std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+        co_await HX::STL::coroutine::loop::IoUringTask().prepSend(_fd, buf, 0)
+    ); // 已经写入的字节数
+
+    while (true) {
+        if (n == buf.size()) {
+            // 全部写入啦
+            _response->clear();
+            break;
+        }
+        n = HX::STL::tools::UringErrorHandlingTools::throwingError(
+            co_await HX::STL::coroutine::loop::IoUringTask().prepSend(
+                _fd, buf = buf.subspan(n), 0
+            )
+        );
+    }
+}
+
+HX::STL::coroutine::task::Task<> IO::_send(std::span<char> buf) const {
     std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
         co_await HX::STL::coroutine::loop::IoUringTask().prepSend(_fd, buf, 0)
     ); // 已经写入的字节数
