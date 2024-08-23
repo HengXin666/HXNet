@@ -32,6 +32,7 @@
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
+
 template <class Rep, class Period>
 struct __kernel_timespec durationToKernelTimespec(std::chrono::duration<Rep, Period> dur) {
     struct __kernel_timespec ts;
@@ -55,7 +56,7 @@ public:
      * @brief 创建一个 io_uring 的 Loop
      * @param entries 环形队列长度
      */
-    explicit IoUringLoop(unsigned int entries = 1024U);
+    explicit IoUringLoop(unsigned int entries = 4096U);
 
     bool run(std::optional<std::chrono::system_clock::duration> timeout);
 
@@ -63,14 +64,15 @@ public:
         return _numSqesPending/* != 0*/;
     }
 
-    HOT_FUNCTION struct io_uring_sqe *getSqe() {
-        struct io_uring_sqe *sqe = ::io_uring_get_sqe(&_ring);
+    HOT_FUNCTION struct ::io_uring_sqe *getSqe() {
+        struct ::io_uring_sqe *sqe = ::io_uring_get_sqe(&_ring);
         while (!sqe) {
             int res = ::io_uring_submit(&_ring);
             if (res < 0) [[unlikely]] {
                 if (res == -EINTR) {
                     continue;
                 }
+                printf("出现问题!!\n");
                 throw std::system_error(-res, std::system_category());
             }
             sqe = ::io_uring_get_sqe(&_ring);
