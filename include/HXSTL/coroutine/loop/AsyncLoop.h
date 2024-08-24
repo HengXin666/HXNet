@@ -25,6 +25,8 @@
 #include <HXSTL/coroutine/loop/TimerLoop.h>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
 
+#include <iostream>
+
 #ifdef __GNUC__
 #define HOT_FUNCTION [[gnu::hot]]
 #else

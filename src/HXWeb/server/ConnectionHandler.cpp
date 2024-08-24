@@ -30,7 +30,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
         // 交给路由处理
         // LOG_INFO("路由解析中...");
         auto&& fun = HX::web::router::Router::getSingleton().getEndpointFunc(
-            io._request->getRequesType(), 
+            io._request->getRequesType(),
             io._request->getRequesPath()
         );
         try {

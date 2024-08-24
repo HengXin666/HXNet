@@ -50,8 +50,7 @@ public:
      * @param timeout 没有收到消息, 超时自动断开的时间 (单位: 秒)
      */
     HX::STL::coroutine::task::Task<> start(
-        const std::string& name, 
-        const std::string& port,
+        const HX::web::socket::AddressResolver::AddressInfo& entry,
         std::chrono::seconds timeout = std::chrono::seconds{30}
     );
 };

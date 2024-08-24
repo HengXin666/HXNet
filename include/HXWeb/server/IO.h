@@ -162,14 +162,8 @@ protected:
     }
 
     HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf) const;
-    HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf, std::size_t n) const;
     HX::STL::coroutine::task::Task<int> _recvSpan(
         std::span<char> buf, 
-        struct __kernel_timespec *timeout
-    ) const;
-    HX::STL::coroutine::task::Task<int> _recvSpan(
-        std::span<char> buf,
-        std::size_t n,
         struct __kernel_timespec *timeout
     ) const;
 

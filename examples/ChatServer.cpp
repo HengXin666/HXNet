@@ -168,14 +168,14 @@ public: // 控制器成员函数 (请写成`static`方法)
 };
 
 HX::STL::coroutine::task::Task<> startChatServer() {
-    messageArr.emplace_back("系统", "欢迎来到聊天室!");
-    ROUTER_BIND(ChatController);
-    try {
-        auto ptr = HX::web::server::Acceptor::make();
-        co_await ptr->start("0.0.0.0", "28205", 10s);
-    } catch(const std::system_error &e) {
-        std::cerr << e.what() << '\n';
-    }
+//     messageArr.emplace_back("系统", "欢迎来到聊天室!");
+//     ROUTER_BIND(ChatController);
+//     try {
+//         auto ptr = HX::web::server::Acceptor::make();
+//         co_await ptr->start("0.0.0.0", "28205", 10s);
+//     } catch(const std::system_error &e) {
+//         std::cerr << e.what() << '\n';
+//     }
     co_return;
 }
 

@@ -16,16 +16,20 @@ void Server::start(
     std::size_t threadNum /*= std::thread::hardware_concurrency()*/,
     std::chrono::seconds timeout /*= std::chrono::seconds {30}*/
 ) {
+    socket::AddressResolver resolver;
+    auto entry = resolver.resolve(name, port);
     std::vector<std::thread> threadArr;
 
     for (std::size_t i = 0; i < threadNum; ++i) {
-        threadArr.emplace_back([name, port, timeout]() {
+        threadArr.emplace_back([&entry, timeout]() {
+            std::cout << std::this_thread::get_id();
+            printf(" 启动!\n");
             HX::STL::coroutine::task::runTask(
                 HX::STL::coroutine::loop::AsyncLoop::getLoop(),
-                [name, port, timeout]() -> HX::STL::coroutine::task::Task<> {
+                [&entry, timeout]() -> HX::STL::coroutine::task::Task<> {
                     try {
                         auto ptr = HX::web::server::Acceptor::make();
-                        co_await ptr->start(name, port, timeout);
+                        co_await ptr->start(entry, timeout);
                     } catch(const std::system_error &e) {
                         std::cerr << e.what() << '\n';
                     }

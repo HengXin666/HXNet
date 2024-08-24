@@ -5,6 +5,8 @@
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
+std::unordered_map<std::coroutine_handle<>, std::string> debugMap;
+
 IoUringLoop::IoUringLoop(unsigned int entries) : _ring() {
     unsigned int flags = 0;
 
@@ -21,18 +23,19 @@ IoUringLoop::IoUringLoop(unsigned int entries) : _ring() {
 bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout) {
     ::io_uring_cqe* cqe = nullptr;
 
-    __kernel_timespec timespec = {0, 0}; // 设置超时为无限阻塞
-
+    __kernel_timespec timespec; // 设置超时为无限阻塞
+    __kernel_timespec* timespecPtr = nullptr;
     if (timeout.has_value()) {
         auto duration = timeout.value();
         auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
         auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() % 1000000000;
         timespec.tv_sec = static_cast<long>(seconds);
         timespec.tv_nsec = static_cast<long>(nanoseconds);
+        timespecPtr = &timespec;
     }
 
     // 阻塞等待内核, 返回是错误码; cqe是完成队列, 为传出参数
-    int res = io_uring_submit_and_wait_timeout(&_ring, &cqe, 1, &timespec, nullptr);
+    int res = io_uring_submit_and_wait_timeout(&_ring, &cqe, 1, timespecPtr, nullptr);
     if (res == -ETIME) {
         return false;
     } else if (res < 0) [[unlikely]] {
@@ -55,7 +58,15 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     ::io_uring_cq_advance(&_ring, numGot);
     _numSqesPending -= static_cast<std::size_t>(numGot);
     for (auto&& it : tasks) {
+        if (debugMap.count(it)) {
+            printf("%s", debugMap[it].c_str());
+            debugMap.erase(it);
+            printf("\n");
+        } else {
+            printf("!");
+        }
         it.resume();
+        printf("-");
     }
     return true;
 }

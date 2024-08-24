@@ -7,12 +7,10 @@
 namespace HX { namespace web { namespace server {
 
 HX::STL::coroutine::task::Task<> Acceptor::start(
-    const std::string& name,
-    const std::string& port,
+    const HX::web::socket::AddressResolver::AddressInfo& entry,
     std::chrono::seconds timeout /*= std::chrono::seconds{30}*/
 ) {
-    socket::AddressResolver resolver;
-    auto entry = resolver.resolve(name, port);
+    
     
     int serverFd = HX::STL::tools::UringErrorHandlingTools::throwingError(
         co_await HX::STL::coroutine::loop::IoUringTask().prepSocket(

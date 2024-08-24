@@ -104,7 +104,7 @@ HX::STL::coroutine::task::Task<std::size_t> IO::recvN(
     struct __kernel_timespec *timeout
 ) const {
     co_return static_cast<std::size_t>(std::max(
-        co_await _recvSpan(buf, n, timeout), 0
+        co_await _recvSpan(std::span{buf.data(), n}, timeout), 0 // ! n
     ));
 }
 
@@ -117,39 +117,15 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
 }
 
 HX::STL::coroutine::task::Task<int> IO::_recvSpan(
-    std::span<char> buf,
-    std::size_t n
-) const {
-    co_return co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
-        _fd, buf, n, 0
-    );
-}
-
-HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     std::span<char> buf, 
     struct __kernel_timespec *timeout
 ) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
         HX::STL::coroutine::loop::IoUringTask().prepRecv(
-            _fd, buf, 0
+            _fd, buf, 0, "125"
         ),
         HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
-            timeout, 0
-        )
-    );
-}
-
-HX::STL::coroutine::task::Task<int> IO::_recvSpan(
-    std::span<char> buf, 
-    std::size_t n,
-    struct __kernel_timespec *timeout
-) const {
-    co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
-        HX::STL::coroutine::loop::IoUringTask().prepRecv(
-            _fd, buf, n, 0
-        ),
-        HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
-            timeout, 0
+            timeout, IORING_TIMEOUT_BOOTTIME
         )
     );
 }
