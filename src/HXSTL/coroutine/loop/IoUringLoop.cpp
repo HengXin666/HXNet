@@ -37,7 +37,7 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     }
 
     // 阻塞等待内核, 返回是错误码; cqe是完成队列, 为传出参数
-    int res = io_uring_submit_and_wait_timeout(&_ring, &cqe, 1, timespecPtr, nullptr);
+    int res = ::io_uring_submit_and_wait_timeout(&_ring, &cqe, 1, timespecPtr, nullptr);
     if (res == -ETIME) {
         return false;
     } else if (res < 0) [[unlikely]] {

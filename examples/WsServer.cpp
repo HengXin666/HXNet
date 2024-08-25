@@ -28,14 +28,17 @@ class WSChatController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
             "image/x-icon"
         );
-#ifdef DEBUG_MAP
+#ifdef _DEBUG_MAP
         auto&& cntMap = HX::STL::coroutine::loop::debugMap.getMapCnt();
         printf("\033[0m\033[1;31m");
         for (auto&& [k, v] : cntMap)
             printf("%x %d\n", k, v);
         printf("\033[0m");
 #endif
-        co_return true;
+
+        std::cout << std::this_thread::get_id() << '\n';
+
+        co_return false;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/home/{id}/{name}", getIdAndNameByHome) {

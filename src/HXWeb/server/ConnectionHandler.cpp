@@ -46,7 +46,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
             co_await io.sendResponse(HX::STL::container::NonVoidHelper<>{});
             if (!endpointRes)
                 break;
-        // } catch(const std::exception& e) {
+        // } catch (const std::exception& e) {
         //     LOG_ERROR("向客户端 %d 发送消息时候出错 (e): %s", fd, e.what());
         //     break;
         // } catch (const char* msg) {

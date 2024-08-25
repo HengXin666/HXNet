@@ -37,7 +37,7 @@
 #define HOT_FUNCTION
 #endif
 
-#define DEBUG_MAP
+// #define DEBUG_MAP
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
@@ -116,7 +116,7 @@ public:
     bool run(std::optional<std::chrono::system_clock::duration> timeout);
 
     HOT_FUNCTION bool hasEvent() const noexcept {
-        return _numSqesPending != 0;
+        return _numSqesPending /*!= 0*/;
     }
 
     HOT_FUNCTION struct ::io_uring_sqe *getSqe() {
@@ -151,6 +151,10 @@ struct [[nodiscard]] IoUringTask {
     explicit IoUringTask();
 
     struct Awaiter {
+        explicit Awaiter(IoUringTask *task)
+            : _task(task)
+        {}
+        
         bool await_ready() const noexcept {
             return false;
         }
