@@ -5,7 +5,9 @@
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
-std::unordered_map<std::coroutine_handle<>, std::string> debugMap;
+#ifdef DEBUG_MAP
+thread_local DebugMap<> debugMap;
+#endif
 
 IoUringLoop::IoUringLoop(unsigned int entries) : _ring() {
     unsigned int flags = 0;
@@ -57,16 +59,27 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     // 手动前进完成队列的头部 (相当于批量io_uring_cqe_seen)
     ::io_uring_cq_advance(&_ring, numGot);
     _numSqesPending -= static_cast<std::size_t>(numGot);
+    auto __ = std::this_thread::get_id();
     for (auto&& it : tasks) {
+#ifdef DEBUG_MAP
+        std::string _ = "";
         if (debugMap.count(it)) {
-            printf("%s", debugMap[it].c_str());
+            // std::cout << std::this_thread::get_id();
+            _ = debugMap.at(it);
+            // printf(" %s", debugMap.at(it).c_str());
             debugMap.erase(it);
-            printf("\n");
+            // printf("\n");
+            it.resume();
+        } else if (it == std::noop_coroutine()) {
+            _ = "!";
         } else {
-            printf("!");
+            _ = "%%";
+            printf("%%");
         }
+        // printf("-");
+#else
         it.resume();
-        printf("-");
+#endif
     }
     return true;
 }

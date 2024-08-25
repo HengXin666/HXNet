@@ -6,6 +6,8 @@
 
 using namespace std::chrono;
 
+#include <HXSTL/coroutine/loop/IoUringLoop.h>
+
 /**
  * @brief 实现一个websocket的聊天室 By Http服务器
  */
@@ -17,6 +19,22 @@ class WSChatController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
             "image/x-icon"
         );
+        co_return true;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/debug", debug) {
+        RESPONSE_DATA(
+            200, 
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
+            "image/x-icon"
+        );
+#ifdef DEBUG_MAP
+        auto&& cntMap = HX::STL::coroutine::loop::debugMap.getMapCnt();
+        printf("\033[0m\033[1;31m");
+        for (auto&& [k, v] : cntMap)
+            printf("%x %d\n", k, v);
+        printf("\033[0m");
+#endif
         co_return true;
     } ENDPOINT_END;
 
@@ -79,7 +97,7 @@ class WSChatController {
 
 int main() {
     chdir("../static");
-    setlocale(LC_ALL, "zh_CN.UTF-8");
+    // setlocale(LC_ALL, "zh_CN.UTF-8");
     ROUTER_BIND(WSChatController);
     ERROR_ENDPOINT_BEGIN {
         RESPONSE_DATA(
@@ -91,6 +109,6 @@ int main() {
     } ERROR_ENDPOINT_END;
 
     // 启动服务
-    HX::web::server::Server::start("0.0.0.0", "28205", 2); 
+    HX::web::server::Server::start("0.0.0.0", "28205"); 
     return 0;
 }

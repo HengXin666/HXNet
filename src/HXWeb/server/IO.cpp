@@ -122,7 +122,10 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
 ) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
         HX::STL::coroutine::loop::IoUringTask().prepRecv(
-            _fd, buf, 0, "125"
+            _fd, buf, 0
+#ifdef DEBUG_MAP
+            , "125"
+#endif
         ),
         HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
             timeout, IORING_TIMEOUT_BOOTTIME

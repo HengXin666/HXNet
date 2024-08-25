@@ -26,6 +26,8 @@
 
 #include <unordered_map>
 #include <string>
+#include <mutex>
+#include <thread>
 
 #include <HXSTL/coroutine/task/Task.hpp>
 
@@ -35,9 +37,55 @@
 #define HOT_FUNCTION
 #endif
 
+#define DEBUG_MAP
+
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
-extern std::unordered_map<std::coroutine_handle<>, std::string> debugMap;
+#ifdef DEBUG_MAP
+template <class K = std::coroutine_handle<>, class V = std::string>
+class DebugMap {
+    std::mutex _mx {};
+    std::unordered_map<K, V> _map{};
+    std::unordered_map<K, int> _mapCnt{};
+    std::unordered_map<std::thread::id, int> _cnt {};
+public:
+    V& operator [](const K& k) {
+        ++_cnt[std::this_thread::get_id()];
+        // std::lock_guard _(_mx);
+        ++_mapCnt[k];
+        return _map[k];
+    }
+
+    V& at(const K& k) {
+        // std::lock_guard _(_mx);
+        return _map.at(k);
+    }
+
+    auto count(const K& k) {
+        // std::lock_guard _(_mx);
+        return _map.count(k);
+    }
+
+    void erase(const K& k) {
+        --_cnt[std::this_thread::get_id()];
+        // std::lock_guard _(_mx);
+        if (!--_mapCnt[k]) {
+            _mapCnt.erase(k);
+            _map.erase(k);
+        }
+    }
+
+    const auto& getCnt() const {
+        return _cnt;
+    }
+
+    const auto& getMapCnt() const {
+        return _mapCnt;
+    }
+};
+
+extern thread_local DebugMap<> debugMap;
+#endif
 
 template <class Rep, class Period>
 struct __kernel_timespec durationToKernelTimespec(std::chrono::duration<Rep, Period> dur) {
@@ -56,8 +104,9 @@ struct __kernel_timespec timePointToKernelTimespec(std::chrono::time_point<Clk, 
 }
 
 class IoUringLoop {
-    IoUringLoop& operator=(IoUringLoop&&) = delete;
 public:
+    IoUringLoop& operator=(IoUringLoop&&) = delete;
+
     /**
      * @brief 创建一个 io_uring 的 Loop
      * @param entries 环形队列长度
@@ -108,8 +157,10 @@ struct [[nodiscard]] IoUringTask {
 
         void await_suspend(std::coroutine_handle<> coroutine) {
             _task->_previous = coroutine;
+#ifdef DEBUG_MAP
             if (debugMsg != "")
                 debugMap[_task->_previous] = debugMsg;
+#endif
             _task->_res = -ENOSYS;
         }
 
@@ -118,11 +169,17 @@ struct [[nodiscard]] IoUringTask {
         }
 
         IoUringTask *_task;
+#ifdef DEBUG_MAP
         std::string debugMsg = "";
+#endif
     };
 
     Awaiter operator co_await() {
-        return Awaiter {this, debugMsg};
+        return Awaiter {this
+#ifdef DEBUG_MAP
+        , debugMsg
+#endif
+        };
     }
 
     struct ::io_uring_sqe *getSqe() const noexcept {
@@ -143,9 +200,9 @@ struct [[nodiscard]] IoUringTask {
 
 private:
     std::coroutine_handle<> _previous = nullptr;
-
+#ifdef DEBUG_MAP
     std::string debugMsg = "";
-
+#endif
     friend IoUringLoop;
 
     union {
@@ -154,6 +211,12 @@ private:
     };
 
 public:
+// #ifdef DEBUG_MAP
+//     ~IoUringTask() {
+//         printf("~%s\n", debugMsg.c_str());
+//     }
+// #endif
+
     /**
      * @brief 取消task相关的某些 io_uring 操作
      * @param task 
@@ -165,7 +228,9 @@ public:
         int flags
     ) && {
         io_uring_prep_cancel(_sqe, task, flags);
+#ifdef DEBUG_MAP
         debugMsg = "prepCancel";
+#endif
         return std::move(*this);
     }
 
@@ -184,7 +249,9 @@ public:
         mode_t mode
     ) && {
         ::io_uring_prep_openat(_sqe, dirfd, path, flags, mode);
+#ifdef DEBUG_MAP
         debugMsg = "prepOpenat";
+#endif
         return std::move(*this);
     }
 
@@ -203,7 +270,9 @@ public:
         unsigned int flags
     ) && {
         ::io_uring_prep_socket(_sqe, domain, type, protocol, flags);
+#ifdef DEBUG_MAP
         debugMsg = "prepSocket";
+#endif
         return std::move(*this);
     }
 
@@ -222,7 +291,9 @@ public:
         int flags
     ) && {
         ::io_uring_prep_accept(_sqe, fd, addr, addrlen, flags);
+#ifdef DEBUG_MAP
         debugMsg = "prepAccept";
+#endif
         return std::move(*this);
     }
 
@@ -239,7 +310,9 @@ public:
         socklen_t addrlen
     ) && {
         ::io_uring_prep_connect(_sqe, fd, addr, addrlen);
+#ifdef DEBUG_MAP
         debugMsg = "prepConnect";
+#endif
         return std::move(*this);
     }
 
@@ -256,7 +329,9 @@ public:
         std::uint64_t offset
     ) && {
         ::io_uring_prep_read(_sqe, fd, buf.data(), static_cast<unsigned int>(buf.size()), offset);
+#ifdef DEBUG_MAP
         debugMsg = "prepRead";
+#endif
         return std::move(*this);
     }
 
@@ -273,7 +348,9 @@ public:
         std::uint64_t offset
     ) && {
         ::io_uring_prep_write(_sqe, fd, buf.data(), static_cast<unsigned int>(buf.size()), offset);
+#ifdef DEBUG_MAP
         debugMsg = "prepWrite";
+#endif
         return std::move(*this);
     }
 
@@ -287,11 +364,22 @@ public:
     IoUringTask &&prepRecv(
         int fd,
         std::span<char> buf,
-        int flags,
+        int flags
+#ifdef DEBUG_MAP
+        ,
         std::string debug = ""
+#endif
     ) && {
         ::io_uring_prep_recv(_sqe, fd, buf.data(), buf.size(), flags);
-        debugMsg = "prepRecv2 " + debug;
+#ifdef DEBUG_MAP
+        auto thId = std::this_thread::get_id();
+        debugMsg = "prepRecv2 " 
+                 + debug 
+                 + " this: " 
+                 + std::to_string((u_int64_t)this) 
+                 + " threadID: " 
+                 + std::to_string((u_int64_t)(*(u_int64_t *)&thId));
+#endif
         return std::move(*this);
     }
 
@@ -328,7 +416,9 @@ public:
         int flags
     ) && {
         ::io_uring_prep_send(_sqe, fd, buf.data(), buf.size(), flags);
-        debugMsg = "prepSend";
+#ifdef DEBUG_MAP
+        debugMsg = "prepSend " + std::to_string(buf.size());
+#endif
         return std::move(*this);
     }
 
@@ -339,7 +429,9 @@ public:
      */
     IoUringTask &&prepClose(int fd) && {
         ::io_uring_prep_close(_sqe, fd);
+#ifdef DEBUG_MAP
         debugMsg = "prepClose";
+#endif
         return std::move(*this);
     }
 
@@ -354,17 +446,19 @@ public:
         unsigned int flags
     ) && {
         ::io_uring_prep_link_timeout(_sqe, ts, flags);
+#ifdef DEBUG_MAP
         debugMsg = "prepLinkTimeout";
+#endif
         return std::move(*this);
     }
 
-    HX::STL::coroutine::task::Task<int> cancelGuard() && {
-        debugMsg = "cancelGuard";
-        // CancelCallback _(cancel, [this]() -> HX::STL::coroutine::task::Task<> {
-            co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
-        // });
-        co_return co_await std::move(*this);
-    }
+    // HX::STL::coroutine::task::Task<int> cancelGuard() && {
+    //     debugMsg = "cancelGuard";
+    //     // CancelCallback _(cancel, [this]() -> HX::STL::coroutine::task::Task<> {
+    //         co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
+    //     // });
+    //     co_return co_await std::move(*this);
+    // }
 };
 
 }}}} // namespace HX::STL::coroutine::loop
