@@ -1,6 +1,7 @@
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
 
 #include <HXSTL/tools/ErrorHandlingTools.h>
+#include <HXSTL/coroutine/task/TimerTask.hpp>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
@@ -28,12 +29,7 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     __kernel_timespec timespec; // 设置超时为无限阻塞
     __kernel_timespec* timespecPtr = nullptr;
     if (timeout.has_value()) {
-        auto duration = timeout.value();
-        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
-        auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() % 1000000000;
-        timespec.tv_sec = static_cast<long>(seconds);
-        timespec.tv_nsec = static_cast<long>(nanoseconds);
-        timespecPtr = &timespec;
+        timespecPtr = &(timespec = durationToKernelTimespec(*timeout));
     }
 
     // 阻塞等待内核, 返回是错误码; cqe是完成队列, 为传出参数
@@ -51,8 +47,10 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&_ring, head, cqe) {
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
-        task->_res = cqe->res;
-        tasks.emplace_back(task->_previous);
+        // if (task->_isBad)
+            // continue;
+        task->_res = cqe->res; // 从这里就开始有错误了!
+        tasks.push_back(task->_previous);
         ++numGot;
     }
 
@@ -60,7 +58,7 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     ::io_uring_cq_advance(&_ring, numGot);
     _numSqesPending -= static_cast<std::size_t>(numGot);
     auto __ = std::this_thread::get_id();
-    for (auto&& it : tasks) {
+    for (const auto& it : tasks) {
 #ifdef DEBUG_MAP
         std::string _ = "";
         if (debugMap.count(it)) {
@@ -78,6 +76,13 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
         }
         // printf("-");
 #else
+        if (!it) [[likely]] {
+            std::cerr << "null coroutine pushed into task queue\n";
+        }
+        if (it.done()) [[likely]] {
+            std::cerr << "done coroutine pushed into task queue\n";
+        }
+
         it.resume();
 #endif
     }
@@ -87,6 +92,21 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
 IoUringTask::IoUringTask() {
     _sqe = HX::STL::coroutine::loop::AsyncLoop::getLoop().getIoUringLoop().getSqe();
     ::io_uring_sqe_set_data(_sqe, this);
+}
+
+HX::STL::coroutine::task::TimerTask _prepCancel(IoUringTask *task) {
+    co_await IoUringTask().prepCancel(task, IORING_ASYNC_CANCEL_ALL);
+}
+
+HX::STL::coroutine::task::Task<int> IoUringTask::cancelGuard() && {
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
+        std::chrono::system_clock::now(),
+        nullptr,
+        std::make_shared<HX::STL::coroutine::task::TimerTask>(
+            _prepCancel(this)
+        )
+    );
+    co_return co_await std::move(*this);
 }
 
 }}}} // namespace HX::STL::coroutine::loop

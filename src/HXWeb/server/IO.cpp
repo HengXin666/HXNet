@@ -106,7 +106,8 @@ HX::STL::coroutine::task::Task<std::size_t> IO::recvN(
     co_return static_cast<std::size_t>(std::max(
         co_await _recvSpan(std::span{buf.data(), n}, timeout), 0 // ! n
     ));
-}
+} // corrupted double-linked list
+  // 网上看到有人说几乎无法解决...?!?! 是操作系统kill的?!!?
 
 HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     std::span<char> buf
@@ -130,8 +131,8 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
         HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
             timeout, IORING_TIMEOUT_BOOTTIME
         )
-    );
-}
+    ).cancelGuard();
+} // [135行]: 这里被释放了, 但是却被读取了
 
 HX::STL::coroutine::task::Task<> IO::_send() const {
     // 本次请求使用结束, 清空, 复用

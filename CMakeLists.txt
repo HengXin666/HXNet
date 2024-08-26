@@ -8,6 +8,16 @@ project(HXNet LANGUAGES CXX)
 # 是否系统已经安装了OpenSSL
 set(HX_NET_FIND_OPENSSL ON)
 
+# 是否启用 Address Sanitizer
+set(HX_DEBUG_BY_ADDRESS_SANITIZER ON)
+
+# 使用 Address Sanitizer
+if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+  message("=-=-=-=-=-=-= 启用 Address Sanitizer [-fsanitize=address] =-=-=-=-=-=-=")
+endif()
+
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
 if (NOT CMAKE_BUILD_TYPE)
@@ -23,7 +33,7 @@ set(CMAKE_CXX_STANDARD 20) # 设置C++标准为C++20
 set(CMAKE_C_STANDARD 11)   # 设置C语言标准为C11
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # 指定C++标准是必需的
 set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines") # 显示启动C++协程
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines") # 显式启动C++协程
 
 # 设置CMake模块路径, 包含当前目录下的cmake文件夹以及之前的路径
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
@@ -97,3 +107,8 @@ include_directories(${ROOT_PATH}/include)
 
 # 将include目录添加到HXHttp库的公共包含目录中
 target_include_directories(HXNet PUBLIC include)
+
+# 使用 Address Sanitizer
+if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(HXNet PRIVATE -fsanitize=address)
+endif()

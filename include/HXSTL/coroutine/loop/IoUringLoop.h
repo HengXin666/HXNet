@@ -122,6 +122,7 @@ public:
     HOT_FUNCTION struct ::io_uring_sqe *getSqe() {
         struct ::io_uring_sqe *sqe = ::io_uring_get_sqe(&_ring);
         while (!sqe) {
+            printf("待我再取~\n");
             int res = ::io_uring_submit(&_ring);
             if (res < 0) [[unlikely]] {
                 if (res == -EINTR) {
@@ -151,9 +152,11 @@ struct [[nodiscard]] IoUringTask {
     explicit IoUringTask();
 
     struct Awaiter {
+#ifndef DEBUG_MAP
         explicit Awaiter(IoUringTask *task)
             : _task(task)
         {}
+#endif
         
         bool await_ready() const noexcept {
             return false;
@@ -161,6 +164,7 @@ struct [[nodiscard]] IoUringTask {
 
         void await_suspend(std::coroutine_handle<> coroutine) {
             _task->_previous = coroutine;
+            _task->_isBad = false;
 #ifdef DEBUG_MAP
             if (debugMsg != "")
                 debugMap[_task->_previous] = debugMsg;
@@ -215,6 +219,7 @@ private:
     };
 
 public:
+    bool _isBad = true;
 // #ifdef DEBUG_MAP
 //     ~IoUringTask() {
 //         printf("~%s\n", debugMsg.c_str());
@@ -237,6 +242,17 @@ public:
 #endif
         return std::move(*this);
     }
+
+    IoUringTask &&prepCancel(
+        int flags
+    ) && {
+        io_uring_prep_cancel(_sqe, this, flags);
+#ifdef DEBUG_MAP
+        debugMsg = "prepCancel";
+#endif
+        return std::move(*this);
+    }
+
 
     /**
      * @brief 异步打开文件
@@ -456,13 +472,7 @@ public:
         return std::move(*this);
     }
 
-    // HX::STL::coroutine::task::Task<int> cancelGuard() && {
-    //     debugMsg = "cancelGuard";
-    //     // CancelCallback _(cancel, [this]() -> HX::STL::coroutine::task::Task<> {
-    //         co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
-    //     // });
-    //     co_return co_await std::move(*this);
-    // }
+    HX::STL::coroutine::task::Task<int> cancelGuard() &&;
 };
 
 }}}} // namespace HX::STL::coroutine::loop
