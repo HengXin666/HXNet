@@ -47,9 +47,7 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&_ring, head, cqe) {
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
-        // if (task->_isBad)
-            // continue;
-        task->_res = cqe->res; // 从这里就开始有错误了!
+        task->_res = cqe->res;
         tasks.push_back(task->_previous);
         ++numGot;
     }
@@ -57,34 +55,8 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     // 手动前进完成队列的头部 (相当于批量io_uring_cqe_seen)
     ::io_uring_cq_advance(&_ring, numGot);
     _numSqesPending -= static_cast<std::size_t>(numGot);
-    auto __ = std::this_thread::get_id();
     for (const auto& it : tasks) {
-#ifdef DEBUG_MAP
-        std::string _ = "";
-        if (debugMap.count(it)) {
-            // std::cout << std::this_thread::get_id();
-            _ = debugMap.at(it);
-            // printf(" %s", debugMap.at(it).c_str());
-            debugMap.erase(it);
-            // printf("\n");
-            it.resume();
-        } else if (it == std::noop_coroutine()) {
-            _ = "!";
-        } else {
-            _ = "%%";
-            printf("%%");
-        }
-        // printf("-");
-#else
-        if (!it) [[likely]] {
-            std::cerr << "null coroutine pushed into task queue\n";
-        }
-        if (it.done()) [[likely]] {
-            std::cerr << "done coroutine pushed into task queue\n";
-        }
-
         it.resume();
-#endif
     }
     return true;
 }
@@ -92,21 +64,6 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
 IoUringTask::IoUringTask() {
     _sqe = HX::STL::coroutine::loop::AsyncLoop::getLoop().getIoUringLoop().getSqe();
     ::io_uring_sqe_set_data(_sqe, this);
-}
-
-HX::STL::coroutine::task::TimerTask _prepCancel(IoUringTask *task) {
-    co_await IoUringTask().prepCancel(task, IORING_ASYNC_CANCEL_ALL);
-}
-
-HX::STL::coroutine::task::Task<int> IoUringTask::cancelGuard() && {
-    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
-        std::chrono::system_clock::now(),
-        nullptr,
-        std::make_shared<HX::STL::coroutine::task::TimerTask>(
-            _prepCancel(this)
-        )
-    );
-    co_return co_await std::move(*this);
 }
 
 }}}} // namespace HX::STL::coroutine::loop

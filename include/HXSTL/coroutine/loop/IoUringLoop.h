@@ -37,55 +37,7 @@
 #define HOT_FUNCTION
 #endif
 
-// #define DEBUG_MAP
-
 namespace HX { namespace STL { namespace coroutine { namespace loop {
-
-#ifdef DEBUG_MAP
-template <class K = std::coroutine_handle<>, class V = std::string>
-class DebugMap {
-    std::mutex _mx {};
-    std::unordered_map<K, V> _map{};
-    std::unordered_map<K, int> _mapCnt{};
-    std::unordered_map<std::thread::id, int> _cnt {};
-public:
-    V& operator [](const K& k) {
-        ++_cnt[std::this_thread::get_id()];
-        // std::lock_guard _(_mx);
-        ++_mapCnt[k];
-        return _map[k];
-    }
-
-    V& at(const K& k) {
-        // std::lock_guard _(_mx);
-        return _map.at(k);
-    }
-
-    auto count(const K& k) {
-        // std::lock_guard _(_mx);
-        return _map.count(k);
-    }
-
-    void erase(const K& k) {
-        --_cnt[std::this_thread::get_id()];
-        // std::lock_guard _(_mx);
-        if (!--_mapCnt[k]) {
-            _mapCnt.erase(k);
-            _map.erase(k);
-        }
-    }
-
-    const auto& getCnt() const {
-        return _cnt;
-    }
-
-    const auto& getMapCnt() const {
-        return _mapCnt;
-    }
-};
-
-extern thread_local DebugMap<> debugMap;
-#endif
 
 template <class Rep, class Period>
 struct __kernel_timespec durationToKernelTimespec(std::chrono::duration<Rep, Period> dur) {
@@ -122,13 +74,11 @@ public:
     HOT_FUNCTION struct ::io_uring_sqe *getSqe() {
         struct ::io_uring_sqe *sqe = ::io_uring_get_sqe(&_ring);
         while (!sqe) {
-            printf("待我再取~\n");
             int res = ::io_uring_submit(&_ring);
             if (res < 0) [[unlikely]] {
                 if (res == -EINTR) {
                     continue;
                 }
-                printf("出现问题!!\n");
                 throw std::system_error(-res, std::system_category());
             }
             sqe = ::io_uring_get_sqe(&_ring);
@@ -147,16 +97,14 @@ private:
 };
 
 struct [[nodiscard]] IoUringTask {
-    IoUringTask(IoUringTask &&) = delete;
+    IoUringTask(IoUringTask&& ) = delete;
 
     explicit IoUringTask();
 
     struct Awaiter {
-#ifndef DEBUG_MAP
         explicit Awaiter(IoUringTask *task)
             : _task(task)
         {}
-#endif
         
         bool await_ready() const noexcept {
             return false;
@@ -164,11 +112,6 @@ struct [[nodiscard]] IoUringTask {
 
         void await_suspend(std::coroutine_handle<> coroutine) {
             _task->_previous = coroutine;
-            _task->_isBad = false;
-#ifdef DEBUG_MAP
-            if (debugMsg != "")
-                debugMap[_task->_previous] = debugMsg;
-#endif
             _task->_res = -ENOSYS;
         }
 
@@ -177,17 +120,10 @@ struct [[nodiscard]] IoUringTask {
         }
 
         IoUringTask *_task;
-#ifdef DEBUG_MAP
-        std::string debugMsg = "";
-#endif
     };
 
     Awaiter operator co_await() {
-        return Awaiter {this
-#ifdef DEBUG_MAP
-        , debugMsg
-#endif
-        };
+        return Awaiter {this};
     }
 
     struct ::io_uring_sqe *getSqe() const noexcept {
@@ -200,56 +136,38 @@ struct [[nodiscard]] IoUringTask {
      * @param rhs 空连接的超时操作 (prepLinkTimeout)
      * @return IoUringTask&& 
      */
-    static IoUringTask &&linkOps(IoUringTask &&lhs, IoUringTask &&rhs) {
+    static IoUringTask&& linkOps(IoUringTask&& lhs, IoUringTask&& rhs) {
         lhs._sqe->flags |= IOSQE_IO_LINK;
         rhs._previous = std::noop_coroutine();
         return std::move(lhs);
     }
-
 private:
     std::coroutine_handle<> _previous = nullptr;
-#ifdef DEBUG_MAP
-    std::string debugMsg = "";
-#endif
     friend IoUringLoop;
 
     union {
         int _res;
         struct ::io_uring_sqe *_sqe;
     };
-
 public:
-    bool _isBad = true;
-// #ifdef DEBUG_MAP
-//     ~IoUringTask() {
-//         printf("~%s\n", debugMsg.c_str());
-//     }
-// #endif
-
     /**
      * @brief 取消task相关的某些 io_uring 操作
      * @param task 
      * @param flags 需要取消的操作类型
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepCancel(
+    IoUringTask&& prepCancel(
         IoUringTask *task, 
         int flags
     ) && {
         io_uring_prep_cancel(_sqe, task, flags);
-#ifdef DEBUG_MAP
-        debugMsg = "prepCancel";
-#endif
         return std::move(*this);
     }
 
-    IoUringTask &&prepCancel(
+    IoUringTask&& prepCancel(
         int flags
     ) && {
         io_uring_prep_cancel(_sqe, this, flags);
-#ifdef DEBUG_MAP
-        debugMsg = "prepCancel";
-#endif
         return std::move(*this);
     }
 
@@ -262,16 +180,13 @@ public:
      * @param mode 文件权限模式, 仅在文件创建时有效 (一般写`0644`)
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepOpenat(
+    IoUringTask&& prepOpenat(
         int dirfd, 
         char const *path, 
         int flags,
         mode_t mode
     ) && {
         ::io_uring_prep_openat(_sqe, dirfd, path, flags, mode);
-#ifdef DEBUG_MAP
-        debugMsg = "prepOpenat";
-#endif
         return std::move(*this);
     }
 
@@ -283,16 +198,13 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepSocket(
+    IoUringTask&& prepSocket(
         int domain, 
         int type, 
         int protocol,
         unsigned int flags
     ) && {
         ::io_uring_prep_socket(_sqe, domain, type, protocol, flags);
-#ifdef DEBUG_MAP
-        debugMsg = "prepSocket";
-#endif
         return std::move(*this);
     }
 
@@ -304,16 +216,13 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepAccept(
+    IoUringTask&& prepAccept(
         int fd, 
         struct ::sockaddr *addr, 
         ::socklen_t *addrlen,
         int flags
     ) && {
         ::io_uring_prep_accept(_sqe, fd, addr, addrlen, flags);
-#ifdef DEBUG_MAP
-        debugMsg = "prepAccept";
-#endif
         return std::move(*this);
     }
 
@@ -324,15 +233,12 @@ public:
      * @param addrlen 服务端信息长度指针
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepConnect(
+    IoUringTask&& prepConnect(
         int fd, 
         const struct sockaddr *addr,
         socklen_t addrlen
     ) && {
         ::io_uring_prep_connect(_sqe, fd, addr, addrlen);
-#ifdef DEBUG_MAP
-        debugMsg = "prepConnect";
-#endif
         return std::move(*this);
     }
 
@@ -343,15 +249,12 @@ public:
      * @param offset 文件偏移量
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepRead(
+    IoUringTask&& prepRead(
         int fd,
         std::span<char> buf,
         std::uint64_t offset
     ) && {
         ::io_uring_prep_read(_sqe, fd, buf.data(), static_cast<unsigned int>(buf.size()), offset);
-#ifdef DEBUG_MAP
-        debugMsg = "prepRead";
-#endif
         return std::move(*this);
     }
 
@@ -362,15 +265,12 @@ public:
      * @param offset 文件偏移量
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepWrite(
+    IoUringTask&& prepWrite(
         int fd, 
         std::span<char const> buf,
         std::uint64_t offset
     ) && {
         ::io_uring_prep_write(_sqe, fd, buf.data(), static_cast<unsigned int>(buf.size()), offset);
-#ifdef DEBUG_MAP
-        debugMsg = "prepWrite";
-#endif
         return std::move(*this);
     }
 
@@ -381,47 +281,14 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepRecv(
+    IoUringTask&& prepRecv(
         int fd,
         std::span<char> buf,
         int flags
-#ifdef DEBUG_MAP
-        ,
-        std::string debug = ""
-#endif
     ) && {
         ::io_uring_prep_recv(_sqe, fd, buf.data(), buf.size(), flags);
-#ifdef DEBUG_MAP
-        auto thId = std::this_thread::get_id();
-        debugMsg = "prepRecv2 " 
-                 + debug 
-                 + " this: " 
-                 + std::to_string((u_int64_t)this) 
-                 + " threadID: " 
-                 + std::to_string((u_int64_t)(*(u_int64_t *)&thId));
-#endif
         return std::move(*this);
     }
-
-    // /**
-    //  * @brief 异步读取网络套接字文件
-    //  * @param fd 文件描述符
-    //  * @param buf [out] 读取到的数据
-    //  * @param size 需要读取的大小
-    //  * @param flags 
-    //  * @return IoUringTask&& 
-    //  */
-    // IoUringTask &&prepRecv(
-    //     int fd,
-    //     std::span<char> buf,
-    //     std::size_t size,
-    //     int flags,
-    //     std::string debug = ""
-    // ) && {
-    //     ::io_uring_prep_recv(_sqe, fd, buf.data(), size, flags);
-    //     debugMsg = "prepRecv2 " + debug;
-    //     return std::move(*this);
-    // }
 
     /**
      * @brief 异步写入网络套接字文件
@@ -430,7 +297,7 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepSend(
+    IoUringTask&& prepSend(
         int fd, 
         std::span<char const> buf, 
         int flags
@@ -447,7 +314,7 @@ public:
      * @param fd 文件描述符
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepClose(int fd) && {
+    IoUringTask&& prepClose(int fd) && {
         ::io_uring_prep_close(_sqe, fd);
 #ifdef DEBUG_MAP
         debugMsg = "prepClose";
@@ -461,7 +328,7 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask &&prepLinkTimeout(
+    IoUringTask&& prepLinkTimeout(
         struct __kernel_timespec *ts,
         unsigned int flags
     ) && {
@@ -472,7 +339,11 @@ public:
         return std::move(*this);
     }
 
-    HX::STL::coroutine::task::Task<int> cancelGuard() &&;
+    HX::STL::coroutine::task::Task<int> cancelGuard() && {
+        int res = co_await std::move(*this);
+        co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
+        co_return res;
+    }
 };
 
 }}}} // namespace HX::STL::coroutine::loop

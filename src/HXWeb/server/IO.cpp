@@ -124,15 +124,12 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
         HX::STL::coroutine::loop::IoUringTask().prepRecv(
             _fd, buf, 0
-#ifdef DEBUG_MAP
-            , "125"
-#endif
         ),
         HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
             timeout, IORING_TIMEOUT_BOOTTIME
         )
     ).cancelGuard();
-} // [135行]: 这里被释放了, 但是却被读取了
+}
 
 HX::STL::coroutine::task::Task<> IO::_send() const {
     // 本次请求使用结束, 清空, 复用

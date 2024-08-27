@@ -22,8 +22,6 @@ void Server::start(
 
     for (std::size_t i = 0; i < threadNum; ++i) {
         threadArr.emplace_back([&entry, timeout]() {
-            std::cout << std::this_thread::get_id();
-            printf(" 启动!\n");
             HX::STL::coroutine::task::runTask(
                 HX::STL::coroutine::loop::AsyncLoop::getLoop(),
                 [&entry, timeout]() -> HX::STL::coroutine::task::Task<> {
