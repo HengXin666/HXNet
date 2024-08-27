@@ -32,7 +32,9 @@ namespace HX { namespace web { namespace server {
  * @brief 连接接受类
  */
 class Acceptor {
+#ifdef CLIENT_ADDRESS_LOGGING
     socket::AddressResolver::Address _addr {}; // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
+#endif
     using pointer = std::shared_ptr<Acceptor>;
 public:
     /**

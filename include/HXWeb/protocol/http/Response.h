@@ -44,7 +44,7 @@ class WebSocket;
 namespace HX { namespace web { namespace protocol { namespace http {
 
 /**
- * @brief 服务端响应类(Response)
+ * @brief 响应类(Response)
  */
 class Response {
     // 注意: 他们的末尾并没有事先包含 \r\n, 具体在to_string才提供
@@ -56,7 +56,6 @@ class Response {
     // @brief 待写入的内容
     HX::STL::container::BytesBuffer _buf;
 
-    int _fd = -1;              // 客户端 fd
     int _sendCnt = 0;          // 写入计数
 
     friend HX::web::server::IO;
@@ -150,14 +149,6 @@ public:
                         , _responseBody()
                         , _buf()
                         , _sendCnt(0)
-    {}
-
-    explicit Response(int fd) : _statusLine("HTTP/1.1 ")
-                              , _responseHeaders()
-                              , _responseBody()
-                              , _buf()
-                              , _fd(fd)
-                              , _sendCnt(0)
     {}
 
     Response(const Response& response) = delete;

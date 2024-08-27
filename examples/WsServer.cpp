@@ -98,7 +98,8 @@ class WSChatController {
     } ENDPOINT_END;
 };
 
-int _main() {
+#ifdef COMPILE_WEB_SOCKET_SERVER_MAIN
+int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     ROUTER_BIND(WSChatController);
@@ -115,3 +116,4 @@ int _main() {
     HX::web::server::Server::start("0.0.0.0", "28205"); 
     return 0;
 }
+#endif

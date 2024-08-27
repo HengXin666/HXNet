@@ -38,8 +38,13 @@ HX::STL::coroutine::task::Task<> Acceptor::start(
         int fd = HX::STL::tools::UringErrorHandlingTools::throwingError(
             co_await HX::STL::coroutine::loop::IoUringTask().prepAccept(
                 serverFd,
+#ifdef CLIENT_ADDRESS_LOGGING
                 &_addr._addr,
                 &_addr._addrlen,
+#else
+                nullptr,
+                nullptr,
+#endif
                 0
             )
         );

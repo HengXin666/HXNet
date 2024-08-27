@@ -22,7 +22,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
     while (true) {
         // === 读取 ===
         // LOG_INFO("读取中...");
-        if (co_await io.recvRequest(&_timeout)) {
+        if (co_await io._recvRequest(&_timeout)) {
             LOG_INFO("客户端 %d 已断开连接!", fd);
             co_return;
         }

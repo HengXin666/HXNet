@@ -5,6 +5,9 @@ project(HXNet LANGUAGES CXX)
 # 是否开启 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
 # set(IO_URING_DIRECT ON) # 有BUG 先不要用
 
+# 启用 搜集客户端地址信息 宏
+# add_definitions(-DCLIENT_ADDRESS_LOGGING)
+
 # 是否系统已经安装了OpenSSL
 set(HX_NET_FIND_OPENSSL ON)
 
@@ -17,6 +20,14 @@ if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
   message("=-=-=-=-=-=-= 启用 Address Sanitizer [-fsanitize=address] =-=-=-=-=-=-=")
 endif()
+
+#####        ########
+# 请选择编译的示例代码#
+########       ######
+# add_definitions(-DCOMPILE_PROXY_CLIENT_MAIN) # 使用代理的客户端
+# add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
+add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
+
 
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定

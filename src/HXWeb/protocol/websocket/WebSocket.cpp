@@ -61,7 +61,7 @@ HX::STL::coroutine::task::Task<bool> WebSocket::httpUpgradeToWebSocket(
                     .addHeader("upgrade", "websocket")
                     .addHeader("sec-websocket-accept", wsNewKey)
                     .setBodyData("");
-    co_await io._send();
+    co_await io._sendResponse();
     co_return true;
     // https 的则是 wss:// ?!
 }
@@ -186,7 +186,7 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPacket(
     }
 
     data += packet._content;
-    co_await _io._send(data);
+    co_await _io._sendSpan(data);
 }
 
 HX::STL::coroutine::task::Task<> WebSocket::sendPing() {

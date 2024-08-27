@@ -168,6 +168,7 @@ public: // 控制器成员函数 (请写成`static`方法)
 
 };
 
+#ifdef COMPILE_CHAT_SERVER_MAIN
 int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
@@ -177,3 +178,4 @@ int main() {
     HX::web::server::Server::start("0.0.0.0", "28205", 1); 
     return 0;
 }
+#endif
