@@ -121,11 +121,12 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     std::span<char> buf, 
     struct __kernel_timespec *timeout
 ) const {
+    HX::STL::coroutine::loop::IoUringTask l, r;
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
-        HX::STL::coroutine::loop::IoUringTask().prepRecv(
+        std::move(l).prepRecv(
             _fd, buf, 0
         ),
-        HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
+        std::move(r).prepLinkTimeout(
             timeout, IORING_TIMEOUT_BOOTTIME
         )
     ).cancelGuard();

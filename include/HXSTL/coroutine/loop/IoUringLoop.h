@@ -303,9 +303,6 @@ public:
         int flags
     ) && {
         ::io_uring_prep_send(_sqe, fd, buf.data(), buf.size(), flags);
-#ifdef DEBUG_MAP
-        debugMsg = "prepSend " + std::to_string(buf.size());
-#endif
         return std::move(*this);
     }
 
@@ -316,9 +313,6 @@ public:
      */
     IoUringTask&& prepClose(int fd) && {
         ::io_uring_prep_close(_sqe, fd);
-#ifdef DEBUG_MAP
-        debugMsg = "prepClose";
-#endif
         return std::move(*this);
     }
 
@@ -333,9 +327,6 @@ public:
         unsigned int flags
     ) && {
         ::io_uring_prep_link_timeout(_sqe, ts, flags);
-#ifdef DEBUG_MAP
-        debugMsg = "prepLinkTimeout";
-#endif
         return std::move(*this);
     }
 
