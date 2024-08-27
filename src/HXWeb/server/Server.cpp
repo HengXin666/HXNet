@@ -9,7 +9,6 @@
 
 namespace HX { namespace web { namespace server {
 
-
 void Server::start(
     const std::string& name,
     const std::string& port,

@@ -98,11 +98,11 @@ class WSChatController {
     } ENDPOINT_END;
 };
 
-int main() {
+int _main() {
     chdir("../static");
-    // setlocale(LC_ALL, "zh_CN.UTF-8");
+    setlocale(LC_ALL, "zh_CN.UTF-8");
     ROUTER_BIND(WSChatController);
-    ERROR_ENDPOINT_BEGIN {
+    ERROR_ENDPOINT_BEGIN { // 自定义 404 界面 (找不到url对应的端点函数时候展示的界面)
         RESPONSE_DATA(
             404,
             "<!DOCTYPE html><html><head><meta charset=UTF-8><title>404 Not Found</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;background-color:#f4f4f4}h1{font-size:100px;margin:0;color:#333}p{font-size:24px;color:red}</style><body><h1>404</h1><p>Not Found</p><hr/><p>HXNet</p>",

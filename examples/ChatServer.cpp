@@ -6,6 +6,7 @@
 #include <HXJson/HXJson.h>
 #include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXSTL/coroutine/loop/TriggerWaitLoop.h>
+#include <HXWeb/server/Server.h>
 
 using namespace std::chrono;
 
@@ -48,7 +49,7 @@ struct Message {
     }
 };
 
-std::vector<Message> messageArr;
+std::vector<Message> messageArr = {Message {"系统", "欢迎来到聊天室!"}};
 HX::STL::coroutine::loop::TriggerWaitLoop waitLoop {};
 
 class ChatController {
@@ -167,24 +168,12 @@ public: // 控制器成员函数 (请写成`static`方法)
 
 };
 
-HX::STL::coroutine::task::Task<> startChatServer() {
-//     messageArr.emplace_back("系统", "欢迎来到聊天室!");
-//     ROUTER_BIND(ChatController);
-//     try {
-//         auto ptr = HX::web::server::Acceptor::make();
-//         co_await ptr->start("0.0.0.0", "28205", 10s);
-//     } catch(const std::system_error &e) {
-//         std::cerr << e.what() << '\n';
-//     }
-    co_return;
-}
-
-int _main() {
+int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
-    HX::STL::coroutine::task::runTask(
-        HX::STL::coroutine::loop::AsyncLoop::getLoop(), 
-        startChatServer()
-    );
+    ROUTER_BIND(ChatController);
+    
+    // 启动服务 (指定使用一个线程 (因为messageArr得同步, 多线程就需要上锁(我懒得写了qwq)))
+    HX::web::server::Server::start("0.0.0.0", "28205", 1); 
     return 0;
 }

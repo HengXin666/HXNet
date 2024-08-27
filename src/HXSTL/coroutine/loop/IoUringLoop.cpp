@@ -6,10 +6,6 @@
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
-#ifdef DEBUG_MAP
-thread_local DebugMap<> debugMap;
-#endif
-
 IoUringLoop::IoUringLoop(unsigned int entries) : _ring() {
     unsigned int flags = 0;
 
