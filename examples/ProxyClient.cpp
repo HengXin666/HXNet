@@ -175,8 +175,8 @@ void sendHttpRequestsThroughSocks5(const std::string& proxyHost, int proxyPort, 
 
     // Define multiple HTTP requests
     std::string requests[] = { // 需要 Connection: keep-alive 为复用, 才会复用代理, 不然不会重新连接?!
-        "GET / HTTP/1.1\r\nHost: " + targetHost + "\r\nConnection: keep-alive\r\n\r\n",
-        "GET / HTTP/1.1\r\nHost: " + targetHost + "\r\nConnection: keep-alive\r\n\r\n"
+        "GET / HTTP/1.1\r\nConnection: keep-alive\r\n\r\n",
+        "GET / HTTP/1.1\r\nConnection: keep-alive\r\n\r\n"
     };
 
     for (const auto& request : requests) {
@@ -204,7 +204,7 @@ void sendHttpRequestsThroughSocks5(const std::string& proxyHost, int proxyPort, 
 int main() {
     std::string proxyHost = "127.0.0.1"; // SOCKS5 proxy server IP
     int proxyPort = 2333; // SOCKS5 proxy server port
-    std::string targetHost = "59.36.228.20"; // Target server hostname
+    std::string targetHost = "183.2.172.42"; // Target server hostname
     int targetPort = 80; // Target server port
 
     sendHttpRequestsThroughSocks5(proxyHost, proxyPort, targetHost, targetPort);

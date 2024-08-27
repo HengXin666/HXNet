@@ -29,8 +29,6 @@
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
-class Response;
-
 /**
  * @brief 请求类(Request)
  */
@@ -44,7 +42,11 @@ class Request {
         ProtocolVersion = 2,    // 协议版本
     };
 
-    HX::STL::container::BytesBuffer _previousData; // 之前未解析全的数据
+    /**
+     * @brief 服务端: 之前未解析全的数据
+     *        客户端: 待写入的内容
+     */
+    HX::STL::container::BytesBuffer _buf; 
 
     std::vector<std::string> _requestLine; // 请求行
     std::unordered_map<std::string, std::string> _requestHeaders; // 请求头
@@ -57,6 +59,11 @@ class Request {
 
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
+
+    /**
+     * @brief [仅客户端] 生成请求字符串, 用于写入
+     */
+    void createRequestBuffer();
 public:
     /**
      * @brief 请求类型枚举
@@ -66,7 +73,6 @@ public:
     //     POST = 1,
     //     PUT = 2,
     //     DELETE = 3,
-
     //     // 极少使用
     //     HEAD = 4,    // 获得报文首部
     //     OPTIONS = 5, // 询问支持的方法
@@ -80,7 +86,59 @@ public:
                        , _body(std::nullopt)
                        , _remainingBodyLen(std::nullopt)
     {}
+    // ===== ↓客户端使用↓ =====
+    /**
+     * @brief 设置请求行 (协议使用HTTP/1.1)
+     * @param method 请求方法 (如 "GET")
+     * @param url url (如 "www.baidu.com")
+     * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
+     */
+    Request& setRequestLine(const std::string& method, const std::string& url) {
+        _requestLine[RequestLineDataType::RequestType] = method;
+        _requestLine[RequestLineDataType::RequestPath] = url;
+        _requestLine[RequestLineDataType::ProtocolVersion] = "HTTP/1.1";
+        return *this;
+    }
 
+    /**
+     * @brief 向请求头添加一些键值对
+     * @param heads 键值对
+     * @return Request& 
+     */
+    Request& setRequestHeaders(const std::vector<std::pair<std::string, std::string>>& heads) {
+        for (auto&& [k, v] : heads) {
+            _requestHeaders[k] = v;
+        }
+        return *this;
+    }
+
+    /**
+     * @brief 设置请求体信息
+     * @param data 信息
+     * @return Request& 
+     */
+    Request& setRequestBody(const std::string& data) {
+        _body = data;
+        return *this;
+    }
+
+    /**
+     * @brief 向请求头添加一个键值对
+     * @param key 键
+     * @param val 值
+     * @return Request&
+     * @warning `key`在`map`中是区分大小写的, 故不要使用`大小写不同`的相同的`键`
+     */
+    Request& addHeader(const std::string& key, const std::string& val) {
+        _requestHeaders[key] = val;
+        return *this;
+    }
+
+
+
+    // ===== ↑客户端使用↑ =====
+
+    // ===== ↓服务端使用↓ =====
     /**
      * @brief 解析请求
      * @param buf 需要解析的内容
@@ -158,11 +216,12 @@ public:
     void clear() noexcept {
         _requestLine.clear();
         _requestHeaders.clear();
-        _previousData.clear();
+        _buf.clear();
         _body.reset();
         _completeRequestHeader = false;
         _remainingBodyLen.reset();
     }
+    // ===== ↑服务端使用↑ =====
 };
 
 }}}} // namespace HX::web::protocol::http

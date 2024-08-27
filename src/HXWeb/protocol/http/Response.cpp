@@ -203,14 +203,6 @@ Response& Response::setResponseLine(Response::Status statusCode, std::string_vie
     return *this;
 }
 
-// Response::Response(
-//     Response::Status statusCode, 
-//     std::string_view describe /*= ""*/) : _statusLine("HTTP/1.1 ")
-//                                         , _responseHeaders()
-//                                         , _responseBody() {
-//     setResponseLine(statusCode, describe);
-// }
-
 void Response::createResponseBuffer() {
     _buf.clear();
     _buf.append(_statusLine);

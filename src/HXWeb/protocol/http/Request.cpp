@@ -8,16 +8,40 @@
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
-std::size_t protocol::http::Request::parserRequest(
+void Request::createRequestBuffer() {
+    _buf.clear();
+    _buf.append(_requestLine[RequestLineDataType::RequestType]);
+    _buf.append(" ");
+    _buf.append(_requestLine[RequestLineDataType::RequestPath]);
+    _buf.append(" ");
+    _buf.append(_requestLine[RequestLineDataType::ProtocolVersion]);
+    _buf.append("\r\n");
+    for (const auto& [key, val] : _requestHeaders) {
+        _buf.append(key);
+        _buf.append(": ");
+        _buf.append(val);
+        _buf.append("\r\n");
+    }
+    if (_body) {
+        _buf.append("Content-Length: ");
+        _buf.append(std::to_string(_body->size()));
+        _buf.append("\r\n\r\n");
+        _buf.append(*_body);
+    } else {
+        _buf.append("\r\n\r\n");
+    }
+}
+
+std::size_t Request::parserRequest(
     HX::STL::container::ConstBytesBufferView buf
 ) {
-    _previousData.append(buf);
-    _previousData.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 
+    _buf.append(buf);
+    _buf.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 
                                    // 但是 char * 需要
     char *tmp = nullptr;
     char *line = nullptr;
     if (_requestLine.empty()) { // 请求行还未解析
-        line = ::strtok_r(_previousData.data(), "\r\n", &tmp); // 线程安全
+        line = ::strtok_r(_buf.data(), "\r\n", &tmp); // 线程安全
         if (!line)
             return HX::STL::utils::FileUtils::kBufMaxSize;
         _requestLine = HX::STL::utils::StringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
@@ -34,7 +58,7 @@ std::size_t protocol::http::Request::parserRequest(
          * 请求体
          */
         if (tmp == nullptr) {
-            line = ::strtok_r(_previousData.data(), "\r\n", &tmp);
+            line = ::strtok_r(_buf.data(), "\r\n", &tmp);
         } else {
             line = ::strtok_r(nullptr, "\n", &tmp);
         }
@@ -45,8 +69,8 @@ std::size_t protocol::http::Request::parserRequest(
             if (p.first == "") { // 解析失败, 说明当前是空行, 也有可能是没有读取完毕
                 if (*line != '\r') { 
                     // 应该剩下的参与下次解析
-                    _previousData = HX::STL::utils::StringUtil::rfindAndTrim(_previousData.data(), "\r\n");
-                    _previousData.pop_back();
+                    _buf = HX::STL::utils::StringUtil::rfindAndTrim(_buf.data(), "\r\n");
+                    _buf.pop_back();
                     return HX::STL::utils::FileUtils::kBufMaxSize;
                 }
                 // 是空行
@@ -66,32 +90,28 @@ std::size_t protocol::http::Request::parserRequest(
             _body = std::string {tmp};
             _remainingBodyLen = std::stoll(_requestHeaders["content-length"]) 
                               - _body->size();
-            // std::cout << std::stoll(_requestHeaders["content-length"]) << ' ' 
-            //           << ::strlen(tmp) << ' '
-            //           << _body->size() << '\n';
         } else {
             *_remainingBodyLen -= buf.size();
-            _previousData.pop_back();
+            _buf.pop_back();
             _body->append(
                 std::string_view {
-                    _previousData.data(), 
-                    _previousData.size()
+                    _buf.data(), 
+                    _buf.size()
                 }
             );
         }
 
         if (*_remainingBodyLen != 0) {
-            _previousData.clear();
+            _buf.clear();
             return *_remainingBodyLen;
         }
     }
 
-    // printf("请求体: %s\n", _body->c_str());
-    _previousData.clear();
+    _buf.clear();
     return 0; // 解析完毕
 }
 
-std::unordered_map<std::string, std::string> protocol::http::Request::getParseQueryParameters() const {
+std::unordered_map<std::string, std::string> Request::getParseQueryParameters() const {
     std::string path = getRequesPath();
     std::size_t pos = path.find('?'); // 没必要反向查找
     if (pos == std::string::npos)

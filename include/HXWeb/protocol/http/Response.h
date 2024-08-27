@@ -56,14 +56,14 @@ class Response {
     // @brief 待写入的内容
     HX::STL::container::BytesBuffer _buf;
 
-    int _sendCnt = 0;          // 写入计数
+    unsigned _sendCnt = 0;     // 写入计数
 
     friend HX::web::server::IO;
     friend HX::web::server::ConnectionHandler;
     friend HX::web::protocol::websocket::WebSocket;
 
     /**
-     * @brief 生成响应字符串, 用于写入
+     * @brief [仅服务端] 生成响应字符串, 用于写入
      */
     void createResponseBuffer();
 public:
@@ -136,14 +136,6 @@ public:
         CODE_511 = 511, // Network Authentication Required
     };
 
-    /**
-     * @brief 构造一个响应, 并且初始化状态行 (协议使用HTTP/1.1)
-     * @param statusCode 状态码
-     * @param describe 状态码描述: 如果为`""`则会使用该状态码对应默认的描述
-     * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
-     */
-    // explicit Response(Response::Status statusCode, std::string_view describe = "");
-
     explicit Response() : _statusLine("HTTP/1.1 ")
                         , _responseHeaders()
                         , _responseBody()
@@ -177,7 +169,7 @@ public:
             _responseHeaders["Content-Type"] = type;
         else // Content-Type: text/html; charset=UTF-8
             _responseHeaders["Content-Type"] = type + ";charset=" + encoded;
-        _responseHeaders["Connection"] = "keep-alive";
+        _responseHeaders["Connection"] = "keep-alive"; // 长连接
         _responseHeaders["Server"] = "HX_Net";
         return *this;
     }
