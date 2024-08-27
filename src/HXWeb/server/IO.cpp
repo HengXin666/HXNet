@@ -4,14 +4,8 @@
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
-#include <HXSTL/utils/FileUtils.h>
 
 namespace HX { namespace web { namespace server {
-
-IO::IO(int fd) 
-    : HX::web::socket::IO(fd)
-    , _recvBuf(HX::STL::utils::FileUtils::kBufMaxSize)
-{}
 
 HX::STL::coroutine::task::Task<> IO::sendResponse() const {
     co_await _sendResponse();

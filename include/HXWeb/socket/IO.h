@@ -163,6 +163,9 @@ protected:
     int _fd = -1;
     std::unique_ptr<HX::web::protocol::http::Request> _request;
     std::unique_ptr<HX::web::protocol::http::Response> _response;
+
+    /// @brief 请在子类中使用
+    std::vector<char> _recvBuf;
 };
 
 }}} // namespace HX::web::socket

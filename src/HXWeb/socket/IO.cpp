@@ -13,6 +13,7 @@ IO::IO(int fd)
     : _fd(fd)
     , _request(std::make_unique<HX::web::protocol::http::Request>())
     , _response(std::make_unique<HX::web::protocol::http::Response>())
+    , _recvBuf(HX::STL::utils::FileUtils::kBufMaxSize)
 {}
 
 inline static HX::STL::coroutine::task::TimerTask close(int fd) {

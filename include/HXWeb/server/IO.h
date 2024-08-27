@@ -20,12 +20,6 @@
 #ifndef _HX_SERVER_IO_H_
 #define _HX_SERVER_IO_H_
 
-#include <liburing.h>
-#include <memory>
-#include <optional>
-#include <span>
-#include <vector>
-
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/IO.h>
 
@@ -38,7 +32,8 @@ struct ConnectionHandler;
  */
 class IO : public HX::web::socket::IO {
 public:
-    explicit IO(int fd);
+    explicit IO(int fd) : HX::web::socket::IO(fd)
+    {}
 
     ~IO() noexcept = default;
 
@@ -72,8 +67,6 @@ protected:
     friend HX::web::protocol::http::Request;
     friend HX::web::protocol::http::Response;
     friend ConnectionHandler;
-
-    std::vector<char> _recvBuf;
 };
 
 }}} // namespace HX::web::server
