@@ -20,7 +20,7 @@
 #ifndef _HX_TIMER_LOOP_H_
 #define _HX_TIMER_LOOP_H_
 
-#include <queue>
+#include <list>
 #include <map>
 #include <optional>
 #include <chrono>
@@ -44,10 +44,7 @@ private:
      */
     using TimerRBTree = std::multimap<
         std::chrono::system_clock::time_point, // 超时时间点
-        std::pair<
-            std::coroutine_handle<>, // 协程句柄
-            CoroutinePtr
-        >
+        std::coroutine_handle<>
     >;
 public:
     /**
@@ -58,21 +55,9 @@ public:
      */
     TimerRBTree::iterator addTimer(
         std::chrono::system_clock::time_point expireTime, 
-        std::coroutine_handle<> coroutine,
-        CoroutinePtr task = nullptr
+        std::coroutine_handle<> coroutine
     ) {
-        auto&& v = std::make_pair<
-            std::coroutine_handle<>, 
-            CoroutinePtr
-        > (
-            task != nullptr 
-                ? (void)(task->_ptr = task), task->_coroutine 
-                : coroutine, 
-            task != nullptr 
-                ? CoroutinePtr {task}
-                : nullptr
-        );
-        return _timerRBTree.insert({expireTime, v});
+        return _timerRBTree.insert({expireTime, coroutine});
     }
 
     /**
@@ -84,20 +69,14 @@ public:
     }
 
     /**
-     * @brief 添加任务
-     * @param coroutine 协程任务句柄
+     * @brief 添加托管任务
+     * @param coroutinePtr 协程任务指针
      */
-    void addTask(std::coroutine_handle<> coroutine) {
-        _taskQueue.emplace(coroutine);
+    void addTask(CoroutinePtr coroutinePtr) {
+        _taskList.push_back(coroutinePtr);
     }
 
-    // /**
-    //  * @brief 执行全部任务
-    //  */
-    // void runAll();
-
     std::optional<std::chrono::system_clock::duration> run();
-
 private:
     /**
      * @brief 暂停者
@@ -156,7 +135,7 @@ public:
     );
 
     explicit TimerLoop() : _timerRBTree()
-                         , _taskQueue()
+                         , _taskList()
     {}
 
 private:
@@ -165,8 +144,8 @@ private:
     /// @brief 计时器红黑树
     TimerRBTree _timerRBTree;
 
-    /// @brief 任务队列
-    std::queue<std::coroutine_handle<>> _taskQueue;
+    /// @brief 由计时器管理的协程任务
+    std::list<CoroutinePtr> _taskList;
 };
 
 }}}} // namespace HX::STL::coroutine::loop

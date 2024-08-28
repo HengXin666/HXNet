@@ -47,3 +47,75 @@ void testMagicEnum() {
     std::cout << HX::STL::utils::MagicEnum::getEnumName<MyEnum>(MyEnum::imouto) << '\n';
     std::cout << HX::STL::utils::MagicEnum::nameFromEnum<MyEnum>("imouto") << '\n';
 }
+
+#include <chrono>
+
+using namespace std::chrono;
+
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
+#include <HXSTL/coroutine/task/Task.hpp>
+#include <HXSTL/coroutine/task/TimerTask.hpp>
+#include <HXSTL/utils/FileUtils.h>
+
+struct Log {
+    Log(std::string msg)
+        : _msg(msg)
+    { std::cout << _msg << " {\n"; }
+
+    ~Log() {
+        std::cout << _msg << " }\n";
+    }
+
+    std::string _msg;
+};
+
+HX::STL::coroutine::task::Task<> B() {
+    Log _("B");
+    co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(1s);
+}
+
+HX::STL::coroutine::task::Task<> A() {
+    Log _("A");
+    co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(1s);
+    co_await B();
+    co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(1s);
+}
+
+HX::STL::coroutine::task::TimerTask timerTask(int x) {
+    printf("%d, SB\n", x);
+    {
+        Log _("test");
+        co_await A();
+    }
+    std::string file = co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html");
+    std::cout << file.size() << '\n';
+    co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(1s);
+    printf("%d, 大SB!\n", x);
+    co_return;
+}
+
+HX::STL::coroutine::task::Task<> taskMain() {
+    printf("你好!\n");
+    // {
+    //     Log _("test");
+    //     co_await A();
+    // }
+    int zz = 123;
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(
+        std::make_shared<HX::STL::coroutine::task::TimerTask>(timerTask(zz))
+    );
+    co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(2s);
+    printf("好好说话!!\n");
+    co_return;
+}
+
+#ifdef TEXT_MAIN_MAIN
+int main() {
+    chdir("../static");
+    HX::STL::coroutine::task::runTask(
+        HX::STL::coroutine::loop::AsyncLoop::getLoop(),
+        taskMain()
+    );
+    return 0;
+}
+#endif

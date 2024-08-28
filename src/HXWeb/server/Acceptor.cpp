@@ -51,9 +51,7 @@ HX::STL::coroutine::task::Task<> Acceptor::start(
 
         LOG_WARNING("有新的连接: %d", fd);
         // 开始读取
-        HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
-            std::chrono::system_clock::now(),
-            nullptr,
+        HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(
             std::make_shared<HX::STL::coroutine::task::TimerTask>(
                 ConnectionHandler::start(fd, timeout)
             )

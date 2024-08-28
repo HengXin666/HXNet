@@ -23,9 +23,7 @@ inline static HX::STL::coroutine::task::TimerTask close(int fd) {
 
 IO::~IO() noexcept {
     // 添加到事件循环, 虽然略微延迟释放fd, 但是RAII呀~
-    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTimer(
-        std::chrono::system_clock::now(),
-        nullptr,
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(
         std::make_shared<HX::STL::coroutine::task::TimerTask>(
             close(_fd)
         )

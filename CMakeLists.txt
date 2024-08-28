@@ -24,8 +24,9 @@ endif()
 #####        ########
 # 请选择编译的示例代码#
 ########       ######
+add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
 # add_definitions(-DCOMPILE_PROXY_CLIENT_MAIN) # 使用代理的客户端
-add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
+# add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
 # add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 # add_definitions(-DCLIENT_MAIN)  # 客户端
 

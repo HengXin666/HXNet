@@ -20,12 +20,13 @@
 #ifndef _HX_TIMER_TASK_H_
 #define _HX_TIMER_TASK_H_
 
-#include <HXSTL/coroutine/promise/Promise.hpp>
+// #include <HXSTL/coroutine/awaiter/ExitAwaiter.hpp>
+// #include <HXSTL/coroutine/promise/Promise.hpp>
+#include <HXSTL/coroutine/task/Task.hpp>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 // === 前置声明 ===
-
 class TimerLoop;
 
 }}}} // namespace HX::STL::coroutine::loop
@@ -40,8 +41,8 @@ struct TimerPromis {
     }
 
     auto final_suspend() noexcept {
-        // printf("\t\t结束拉~\n");
-        return std::suspend_never(); // 销毁
+        printf("\t\t结束拉~\n");
+        return HX::STL::coroutine::awaiter::PreviousAwaiter(_previous);
     }
 
     void unhandled_exception() noexcept {
@@ -72,45 +73,53 @@ struct TimerPromis {
  * 即使被`co_await`, 也不会暂停原(`co_await`所在)协程, 而是分离`co_await`后面的任务将其控制权交给`TimerLoop`
  * @warning 请保证`co_await`的内容和接下来的无关!, 本任务`无`返回值
  */
-struct [[nodiscard]] TimerTask {
-    using promise_type = TimerPromis;
+struct [[nodiscard]] TimerTask : public HX::STL::coroutine::task::Task<void> {
+    using promise_type = HX::STL::coroutine::promise::Promise<void>;
 
     TimerTask(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
-        : _coroutine(coroutine) {}
+        : Task(coroutine)
+    {}
 
-    // TimerTask(TimerTask &&) = delete;
-
-    TimerTask(TimerTask &&that) noexcept : _coroutine(that._coroutine) {
-        that._coroutine = nullptr;
-    }
-
-    TimerTask &operator=(TimerTask &&that) noexcept {
-        std::swap(_coroutine, that._coroutine);
-        return *this;
-    }
-
-    ~TimerTask() {
-        if (_coroutine) {
-            _coroutine.destroy();
-        }
-    }
-
-    // 不提供
-    // auto operator co_await() const noexcept {
-    //     return ExitAwaiter<void, promise_type>(_coroutine);
-    // }
-
-    operator std::coroutine_handle<>() const noexcept {
-        return _coroutine;
-    }
-
-private:
     friend HX::STL::coroutine::loop::TimerLoop;
-    std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
-
-    // 得处理这个! 会内存泄漏!
-    std::shared_ptr<TimerTask> _ptr = nullptr;      // 用于管理自己生命周期的
 };
+
+
+// struct [[nodiscard]] TimerTask {
+//     using promise_type = HX::STL::coroutine::promise::Promise<void>;
+
+//     TimerTask(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
+//         : _coroutine(coroutine) {}
+
+//     // TimerTask(TimerTask &&) = delete;
+
+//     TimerTask(TimerTask &&that) noexcept : _coroutine(that._coroutine) {
+//         that._coroutine = nullptr;
+//     }
+
+//     TimerTask &operator=(TimerTask &&that) noexcept {
+//         std::swap(_coroutine, that._coroutine);
+//         return *this;
+//     }
+
+//     ~TimerTask() {
+//         if (_coroutine) {
+//             _coroutine.destroy();
+//         }
+//     }
+
+//     // 不提供
+//     // auto operator co_await() const noexcept {
+//     //     return HX::STL::coroutine::awaiter::ExitAwaiter<void, promise_type>(_coroutine);
+//     // }
+
+//     operator std::coroutine_handle<>() const noexcept {
+//         return _coroutine;
+//     }
+
+// private:
+//     friend HX::STL::coroutine::loop::TimerLoop;
+//     std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
+// };
 
 }}}} // namespace HX::STL::coroutine::task
 
