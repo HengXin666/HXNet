@@ -18,6 +18,7 @@ IO::IO(int fd)
 
 inline static HX::STL::coroutine::task::TimerTask close(int fd) {
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+    printf("~fd\n");
 }
 
 IO::~IO() noexcept {
@@ -96,7 +97,6 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
 }
 
 HX::STL::coroutine::task::Task<> IO::_sendSpan(std::span<char> buf) const {
-    printf("%s\n", buf.data());
     std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
         co_await HX::STL::coroutine::loop::IoUringTask().prepSend(_fd, buf, 0)
     ); // 已经写入的字节数

@@ -107,6 +107,8 @@ struct [[nodiscard]] TimerTask {
 private:
     friend HX::STL::coroutine::loop::TimerLoop;
     std::coroutine_handle<promise_type> _coroutine; // 当前协程句柄
+
+    // 得处理这个! 会内存泄漏!
     std::shared_ptr<TimerTask> _ptr = nullptr;      // 用于管理自己生命周期的
 };
 

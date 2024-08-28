@@ -1,13 +1,11 @@
 #include <HXWeb/server/ConnectionHandler.h>
 
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
-#include <HXSTL/utils/StringUtils.h>
-#include <HXSTL/tools/ErrorHandlingTools.h>
-#include <HXSTL/utils/FileUtils.h>
 #include <HXWeb/router/Router.h>
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXWeb/server/IO.h>
+#include <HXprint/HXprint.h>
 
 namespace HX { namespace web { namespace server {
 
@@ -33,7 +31,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
             io._request->getRequesType(),
             io._request->getRequesPath()
         );
-        // try {
+        try {
             // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
             if (fun) {
                 endpointRes = co_await fun(io);
@@ -46,16 +44,16 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler::start(int fd, std::chrono
             co_await io.sendResponse(HX::STL::container::NonVoidHelper<>{});
             if (!endpointRes)
                 break;
-        // } catch (const std::exception& e) {
-        //     LOG_ERROR("向客户端 %d 发送消息时候出错 (e): %s", fd, e.what());
-        //     break;
-        // } catch (const char* msg) {
-        //     LOG_ERROR("向客户端 %d 发送消息时候出错 (msg): %s", fd, msg);
-        //     break;
-        // } catch(...) {
-        //     LOG_ERROR("向客户端 %d 发送消息时候发生未知错误", fd);
-        //     break;
-        // }
+        } catch (const std::exception& e) {
+            LOG_ERROR("向客户端 %d 发送消息时候出错 (e): %s", fd, e.what());
+            break;
+        } catch (const char* msg) {
+            LOG_ERROR("向客户端 %d 发送消息时候出错 (msg): %s", fd, msg);
+            break;
+        } catch(...) {
+            LOG_ERROR("向客户端 %d 发送消息时候发生未知错误", fd);
+            break;
+        }
     }
 
     LOG_WARNING("客户端直接给我退出! (%d)", fd);

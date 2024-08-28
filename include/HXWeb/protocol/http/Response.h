@@ -22,11 +22,11 @@
 
 #include <string>
 #include <string_view>
+#include <span>
 #include <vector>
 #include <unordered_map>
 #include <optional>
 
-#include <HXSTL/container/BytesBuffer.hpp>
 #include <HXSTL/coroutine/task/Task.hpp>
 
 namespace HX { namespace web { namespace server {
@@ -41,6 +41,15 @@ namespace HX { namespace web { namespace protocol { namespace http {
  * @brief 响应类(Response)
  */
 class Response {
+    /**
+     * @brief 响应行数据分类
+     */
+    enum ResponseLineDataType {
+        ProtocolVersion = 0,   // 协议版本
+        StatusCode = 1,        // 状态码
+        StatusMessage = 2,     // 请求路径
+    };
+
     // 注意: 他们的末尾并没有事先包含 \r\n, 具体在to_string才提供
     std::vector<std::string> _statusLine; // 状态行
     std::unordered_map<std::string, std::string> _responseHeaders; // 响应头部
@@ -48,7 +57,7 @@ class Response {
     std::string _responseBody; // 响应体
 
     // @brief 待写入的内容
-    HX::STL::container::BytesBuffer _buf;
+    std::string _buf;
 
     unsigned _sendCnt = 0;     // 写入计数
 
@@ -156,7 +165,48 @@ public:
      *         `>  0`: 需要继续解析`size_t`个字节
      * @warning 假定内容是符合Http协议的
      */
-    std::size_t parserResponse(HX::STL::container::ConstBytesBufferView buf);
+    std::size_t parserResponse(std::span<char> buf);
+
+    /**
+     * @brief 获取协议版本
+     * @return std::string 
+     */
+    std::string getProtocolVersion() const {
+        return _statusLine[ResponseLineDataType::ProtocolVersion];
+    }
+
+    /**
+     * @brief 获取状态码
+     * @return std::string 
+     */
+    std::string getStatusCode() const {
+        return _statusLine[ResponseLineDataType::StatusCode];
+    }
+
+    /**
+     * @brief 获取状态信息
+     * @return std::string 
+     */
+    std::string geStatusMessage() const {
+        return _statusLine[ResponseLineDataType::StatusMessage];
+    }
+
+    /**
+     * @brief 获取响应头键值对
+     * @return 响应头键值对 (键均为小写)
+     */
+    std::unordered_map<std::string, std::string> getResponseHeaders() const {
+        return std::move(_responseHeaders);
+    }
+
+    /**
+     * @brief 获取响应体
+     * @return std::string 
+     */
+    std::string getResponseBody() const {
+        return std::move(_responseBody);
+    }
+
     // ===== ↑客户端使用↑ =====
 
     // ===== ↓服务端使用↓ =====

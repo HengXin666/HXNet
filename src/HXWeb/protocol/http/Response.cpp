@@ -11,207 +11,207 @@ namespace HX { namespace web { namespace protocol { namespace http {
 Response& Response::setResponseLine(Response::Status statusCode, std::string_view describe /*= ""*/) {
     _statusLine.clear();
     _statusLine.resize(3);
-    _statusLine[0] = "HTTP/1.1";
-    _statusLine[1] = std::to_string(static_cast<int>(statusCode));
+    _statusLine[ResponseLineDataType::ProtocolVersion] = "HTTP/1.1";
+    _statusLine[ResponseLineDataType::StatusCode] = std::to_string(static_cast<int>(statusCode));
     if (!describe.size()) {
         switch (statusCode) {
             case Response::Status::CODE_100:
-                _statusLine[2] = ("Continue");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Continue";
                 break;
             case Response::Status::CODE_101:
-                _statusLine[2] = ("Switching Protocols");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Switching Protocols";
                 break;
             case Response::Status::CODE_102:
-                _statusLine[2] = ("Processing");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Processing";
                 break;
             case Response::Status::CODE_200:
-                _statusLine[2] = ("OK");
+                _statusLine[ResponseLineDataType::StatusMessage] = "OK";
                 break;
             case Response::Status::CODE_201:
-                _statusLine[2] = ("Created");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Created";
                 break;
             case Response::Status::CODE_202:
-                _statusLine[2] = ("Accepted");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Accepted";
                 break;
             case Response::Status::CODE_203:
-                _statusLine[2] = ("Non-Authoritative Information");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Non-Authoritative Information";
                 break;
             case Response::Status::CODE_204:
-                _statusLine[2] = ("No Content");
+                _statusLine[ResponseLineDataType::StatusMessage] = "No Content";
                 break;
             case Response::Status::CODE_205: 
-                _statusLine[2] = ("Reset Content");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Reset Content";
                 break;
             case Response::Status::CODE_206:
-                _statusLine[2] = ("Partial Content");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Partial Content";
                 break;
             case Response::Status::CODE_207:
-                _statusLine[2] = ("Multi-Status");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Multi-Status";
                 break;
             case Response::Status::CODE_226:
-                _statusLine[2] = ("IM Used");
+                _statusLine[ResponseLineDataType::StatusMessage] = "IM Used";
                 break;
             case Response::Status::CODE_300:
-                _statusLine[2] = ("Multiple Choices");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Multiple Choices";
                 break;
             case Response::Status::CODE_301:
-                _statusLine[2] = ("Moved Permanently");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Moved Permanently";
                 break;
             case Response::Status::CODE_302: 
-                _statusLine[2] = ("Moved Temporarily");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Moved Temporarily";
                 break;
             case Response::Status::CODE_303:
-                _statusLine[2] = ("See Other");
+                _statusLine[ResponseLineDataType::StatusMessage] = "See Other";
                 break;
             case Response::Status::CODE_304:
-                _statusLine[2] = ("Not Modified");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Not Modified";
                 break;
             case Response::Status::CODE_305:
-                _statusLine[2] = ("Use Proxy");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Use Proxy";
                 break;
             case Response::Status::CODE_306:
-                _statusLine[2] = ("Reserved");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Reserved";
                 break;
             case Response::Status::CODE_307:
-                _statusLine[2] = ("Temporary Redirect");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Temporary Redirect";
                 break;
             case Response::Status::CODE_400:
-                _statusLine[2] = ("Bad Request");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Bad Request";
                 break;
             case Response::Status::CODE_401:
-                _statusLine[2] = ("Unauthorized");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Unauthorized";
                 break;
             case Response::Status::CODE_402:
-                _statusLine[2] = ("Payment Required");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Payment Required";
                 break;
             case Response::Status::CODE_403:
-                _statusLine[2] = ("Forbidden");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Forbidden";
                 break;
             case Response::Status::CODE_404:
-                _statusLine[2] = ("Not Found");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Not Found";
                 break;
             case Response::Status::CODE_405:
-                _statusLine[2] = ("Method Not Allowed");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Method Not Allowed";
                 break;
             case Response::Status::CODE_406:
-                _statusLine[2] = ("Not Acceptable");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Not Acceptable";
                 break;
             case Response::Status::CODE_407:
-                _statusLine[2] = ("Proxy Authentication Required");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Proxy Authentication Required";
                 break;
             case Response::Status::CODE_408:
-                _statusLine[2] = ("Request Timeout");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Request Timeout";
                 break;
             case Response::Status::CODE_409:
-                _statusLine[2] = ("Conflict");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Conflict";
                 break;
             case Response::Status::CODE_410:
-                _statusLine[2] = ("Gone");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Gone";
                 break;
             case Response::Status::CODE_411:
-                _statusLine[2] = ("Length Required");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Length Required";
                 break;
             case Response::Status::CODE_412:
-                _statusLine[2] = ("Precondition Failed");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Precondition Failed";
                 break;
             case Response::Status::CODE_413:
-                _statusLine[2] = ("Request Entity Too Large");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Request Entity Too Large";
                 break;
             case Response::Status::CODE_414:
-                _statusLine[2] = ("Request-URI Too Large");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Request-URI Too Large";
                 break;
             case Response::Status::CODE_415:
-                _statusLine[2] = ("Unsupported Media Type");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Unsupported Media Type";
                 break;
             case Response::Status::CODE_416:
-                _statusLine[2] = ("Requested Range Not Satisfiable");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Requested Range Not Satisfiable";
                 break;
             case Response::Status::CODE_417:
-                _statusLine[2] = ("Expectation Failed");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Expectation Failed";
                 break;
             case Response::Status::CODE_422:
-                _statusLine[2] = ("Unprocessable Entity");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Unprocessable Entity";
                 break;
             case Response::Status::CODE_423:
-                _statusLine[2] = ("Locked");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Locked";
                 break;
             case Response::Status::CODE_424:
-                _statusLine[2] = ("Failed Dependency");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Failed Dependency";
                 break;
             case Response::Status::CODE_425:
-                _statusLine[2] = ("Unordered Collection");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Unordered Collection";
                 break;
             case Response::Status::CODE_426:
-                _statusLine[2] = ("Upgrade Required");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Upgrade Required";
                 break;
             case Response::Status::CODE_428:
-                _statusLine[2] = ("Precondition Required");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Precondition Required";
                 break;
             case Response::Status::CODE_429:
-                _statusLine[2] = ("Too Many Requests");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Too Many Requests";
                 break;
             case Response::Status::CODE_431:
-                _statusLine[2] = ("Request Header Fields Too Large");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Request Header Fields Too Large";
                 break;
             case Response::Status::CODE_434:
-                _statusLine[2] = ("Requested host unavailable");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Requested host unavailable";
                 break;
             case Response::Status::CODE_444:
-                _statusLine[2] = ("Close connection without sending headers");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Close connection without sending headers";
                 break;
             case Response::Status::CODE_449:
-                _statusLine[2] = ("Retry With");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Retry With";
                 break;
             case Response::Status::CODE_451:
-                _statusLine[2] = ("Unavailable For Legal Reasons");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Unavailable For Legal Reasons";
                 break;
             case Response::Status::CODE_500:
-                _statusLine[2] = ("Internal Server Error");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Internal Server Error";
                 break;
             case Response::Status::CODE_501:
-                _statusLine[2] = ("Not Implemented");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Not Implemented";
                 break;
             case Response::Status::CODE_502:
-                _statusLine[2] = ("Bad Gateway");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Bad Gateway";
                 break;
             case Response::Status::CODE_503:
-                _statusLine[2] = ("Service Unavailable");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Service Unavailable";
                 break;
             case Response::Status::CODE_504:
-                _statusLine[2] = ("Gateway Timeout");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Gateway Timeout";
                 break;
             case Response::Status::CODE_505:
-                _statusLine[2] = ("HTTP Version Not Supported");
+                _statusLine[ResponseLineDataType::StatusMessage] = "HTTP Version Not Supported";
                 break;
             case Response::Status::CODE_506:
-                _statusLine[2] = ("Variant Also Negotiates");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Variant Also Negotiates";
                 break;
             case Response::Status::CODE_507:
-                _statusLine[2] = ("Insufficient Storage");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Insufficient Storage";
                 break;
             case Response::Status::CODE_508:
-                _statusLine[2] = ("Loop Detected");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Loop Detected";
                 break;
             case Response::Status::CODE_509:
-                _statusLine[2] = ("Bandwidth Limit Exceeded");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Bandwidth Limit Exceeded";
                 break;
             case Response::Status::CODE_510:
-                _statusLine[2] = ("Not Extended");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Not Extended";
                 break;
             case Response::Status::CODE_511: 
-                _statusLine[2] = ("Network Authentication Required");
+                _statusLine[ResponseLineDataType::StatusMessage] = "Network Authentication Required";
                 break;
             default: // 使用可真刁钻呐!
                 break;
         }
     } else {
-        _statusLine[2] = (describe);
+        _statusLine[ResponseLineDataType::StatusMessage] = describe;
     }
     return *this;
 }
 
-std::size_t Response::parserResponse(HX::STL::container::ConstBytesBufferView buf) {
-    _buf.append(buf);
+std::size_t Response::parserResponse(std::span<char> buf) {
+    _buf.append(std::string {buf.data(), buf.size()});
     _buf.push_back('\0'); // HTTP 响应的响应体在传输过程中没有特定的 \0 结束标志, 
                           // 但是 char * 需要
     char *tmp = nullptr;
@@ -289,12 +289,11 @@ std::size_t Response::parserResponse(HX::STL::container::ConstBytesBufferView bu
 
 void Response::createResponseBuffer() {
     _buf.clear();
-    printf("长度: %lld\n", _statusLine.size());
-    _buf.append(_statusLine[0]);
+    _buf.append(_statusLine[ResponseLineDataType::ProtocolVersion]);
     _buf.append(" ");
-    _buf.append(_statusLine[1]);
+    _buf.append(_statusLine[ResponseLineDataType::StatusCode]);
     _buf.append(" ");
-    _buf.append(_statusLine[2]);
+    _buf.append(_statusLine[ResponseLineDataType::StatusMessage]);
     _buf.append("\r\n");
     for (const auto& [key, val] : _responseHeaders) {
         _buf.append(key);
@@ -302,14 +301,10 @@ void Response::createResponseBuffer() {
         _buf.append(val);
         _buf.append("\r\n");
     }
-    if (_responseBody.size()) {
-        _buf.append("Content-Length: ");
-        _buf.append(std::to_string(_responseBody.size()));
-        _buf.append("\r\n\r\n");
-        _buf.append(_responseBody);
-    } else {
-        _buf.append("\r\n\r\n");
-    }
+    _buf.append("Content-Length: ");
+    _buf.append(std::to_string(_responseBody.size()));
+    _buf.append("\r\n\r\n");
+    _buf.append(_responseBody);
 }
 
 }}}} // namespace HX::web::protocol::http

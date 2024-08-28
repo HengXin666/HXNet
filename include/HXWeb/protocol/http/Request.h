@@ -24,8 +24,7 @@
 #include <unordered_map>
 #include <string>
 #include <optional>
-
-#include <HXSTL/container/BytesBuffer.hpp>
+#include <span>
 
 namespace HX { namespace web { namespace client {
 
@@ -52,7 +51,7 @@ class Request {
      * @brief 服务端: 之前未解析全的数据
      *        客户端: 待写入的内容
      */
-    HX::STL::container::BytesBuffer _buf; 
+    std::string _buf;
 
     std::vector<std::string> _requestLine; // 请求行
     std::unordered_map<std::string, std::string> _requestHeaders; // 请求头
@@ -152,7 +151,7 @@ public:
      *         `>  0`: 需要继续解析`size_t`个字节
      * @warning 假定内容是符合Http协议的
      */
-    std::size_t parserRequest(HX::STL::container::ConstBytesBufferView buf);
+    std::size_t parserRequest(std::span<char> buf);
 
     /**
      * @brief 获取请求头键值对的引用

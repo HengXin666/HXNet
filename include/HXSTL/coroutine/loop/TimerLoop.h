@@ -59,14 +59,18 @@ public:
     TimerRBTree::iterator addTimer(
         std::chrono::system_clock::time_point expireTime, 
         std::coroutine_handle<> coroutine,
-        CoroutinePtr task = {}
+        CoroutinePtr task = nullptr
     ) {
         auto&& v = std::make_pair<
             std::coroutine_handle<>, 
             CoroutinePtr
         > (
-            task != nullptr ? (void)(task->_ptr = task), task->_coroutine : coroutine, 
-            std::move(task)
+            task != nullptr 
+                ? (void)(task->_ptr = task), task->_coroutine 
+                : coroutine, 
+            task != nullptr 
+                ? CoroutinePtr {task}
+                : nullptr
         );
         return _timerRBTree.insert({expireTime, v});
     }
@@ -87,10 +91,10 @@ public:
         _taskQueue.emplace(coroutine);
     }
 
-    /**
-     * @brief 执行全部任务
-     */
-    void runAll();
+    // /**
+    //  * @brief 执行全部任务
+    //  */
+    // void runAll();
 
     std::optional<std::chrono::system_clock::duration> run();
 

@@ -33,9 +33,9 @@ void Request::createRequestBuffer() {
 }
 
 std::size_t Request::parserRequest(
-    HX::STL::container::ConstBytesBufferView buf
+    std::span<char> buf
 ) {
-    _buf.append(buf);
+    _buf.append(std::string {buf.data(), buf.size()});
     _buf.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 
                           // 但是 char * 需要
     char *tmp = nullptr;
