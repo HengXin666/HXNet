@@ -22,9 +22,12 @@
 
 #include <memory>
 #include <span>
+#include <optional>
+#include <chrono>
 
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/AddressResolver.h>
+#include <HXWeb/client/IO.h>
 
 namespace HX { namespace web { namespace client {
 
@@ -33,7 +36,7 @@ namespace HX { namespace web { namespace client {
  */
 class Client {
     socket::AddressResolver::Address _addr {};  // 用于存放服务端的地址信息
-    int _clientFd = -1;
+    std::unique_ptr<HX::web::client::IO> _io {};
     using pointer = std::shared_ptr<Client>;
 public:
     /**
@@ -46,38 +49,31 @@ public:
 
     /**
      * @brief 开始连接服务器
-     * @param name 主机名或地址字符串(IPv4 的点分十进制表示或 IPv6 的十六进制表示)
-     * @param port 服务名可以是十进制的端口号, 也可以是已知的服务名称, 如 ftp、http 等
-     * @return 是否操作成功
+     * @param url 服务器链接
+     * @throw 连接出错
      */
-    HX::STL::coroutine::task::Task<int> start(const std::string& name, const std::string& port);
+    HX::STL::coroutine::task::Task<> start(const std::string& url);
 
     /**
      * @brief 读取服务端响应的消息
-     * @return std::string
-     * @warning 这个还不算完善: 有时候会丢失消息, 因为可读的时候缓冲区不一定是满的, 
-     * 但是服务端又是一段一段的发送导致提前终止(需要解析http才可以完美接收!)
+     * @param timeout 超时时间
+     * @return 是否断开连接
      */
-    HX::STL::coroutine::task::Task<std::string> read();
+    HX::STL::coroutine::task::Task<bool> read(std::chrono::seconds timeout);
 
     /**
      * @brief 向服务端发送消息
      * @param buf 需要发送的消息
-     * @return 发送的字节 / 错误码`-erron`
      */
-    HX::STL::coroutine::task::Task<int> write(std::span<char> buf);
+    HX::STL::coroutine::task::Task<> write(std::span<char> buf);
 
     /**
-     * @brief 释放客户端连接
-     * @return 是否操作成功
+     * @brief 获取客户端的IO流
+     * @return const HX::web::client::IO& 
      */
-    HX::STL::coroutine::task::Task<int> close();
-
-    /**
-     * @brief Destroy the Client object
-     * @throw 如果没有调用`close()`, 则会报错! | 抛出异常则代表是用户没有释放连接, 不是代码有问题, 是代码逻辑有问题!
-     */
-    ~Client();
+    const HX::web::client::IO& getIO() const {
+        return *_io;
+    }
 };
 
 }}} // namespace HX::web::client

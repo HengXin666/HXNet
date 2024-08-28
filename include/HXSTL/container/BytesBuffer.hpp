@@ -209,7 +209,7 @@ public:
     /**
      * @brief 清除容器数据
      */
-    void clear() {
+    void clear() noexcept {
         _data.clear();
     }
 

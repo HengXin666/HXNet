@@ -37,7 +37,7 @@ std::size_t Request::parserRequest(
 ) {
     _buf.append(buf);
     _buf.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 
-                                   // 但是 char * 需要
+                          // 但是 char * 需要
     char *tmp = nullptr;
     char *line = nullptr;
     if (_requestLine.empty()) { // 请求行还未解析

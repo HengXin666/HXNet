@@ -25,7 +25,7 @@
 
 namespace HX { namespace web { namespace client {
 
-struct Client;
+class Client;
 
 /**
  * @brief 服务连接时候的io
@@ -40,7 +40,7 @@ public:
     /**
      * @brief 立即发送请求
      */
-    HX::STL::coroutine::task::Task<> sendRequest() const;
+    // HX::STL::coroutine::task::Task<> sendRequest() const;
 
     IO& operator=(IO&&) = delete;
 protected:
@@ -57,7 +57,7 @@ protected:
 
     // === start === 写入相关的函数 === start ===
     /**
-     * @brief 写入响应到套接字
+     * @brief 写入请求到套接字
      */
     HX::STL::coroutine::task::Task<> _sendRequest() const;
     // === end === 写入相关的函数 === end ===

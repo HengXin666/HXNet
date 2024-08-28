@@ -27,6 +27,12 @@
 
 #include <HXSTL/container/BytesBuffer.hpp>
 
+namespace HX { namespace web { namespace client {
+
+class IO;
+
+}}} // namespace HX::web::client
+
 namespace HX { namespace web { namespace protocol { namespace http {
 
 /**
@@ -59,6 +65,8 @@ class Request {
 
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
+
+    friend HX::web::client::IO;
 
     /**
      * @brief [仅客户端] 生成请求字符串, 用于写入
@@ -133,9 +141,6 @@ public:
         _requestHeaders[key] = val;
         return *this;
     }
-
-
-
     // ===== ↑客户端使用↑ =====
 
     // ===== ↓服务端使用↓ =====
@@ -209,6 +214,7 @@ public:
     std::string getRequesProtocolVersion() const noexcept {
         return _requestLine[RequestLineDataType::ProtocolVersion];
     }
+    // ===== ↑服务端使用↑ =====
 
     /**
      * @brief 清空已有的请求内容, 并且初始化标准
@@ -221,7 +227,6 @@ public:
         _completeRequestHeader = false;
         _remainingBodyLen.reset();
     }
-    // ===== ↑服务端使用↑ =====
 };
 
 }}}} // namespace HX::web::protocol::http

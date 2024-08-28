@@ -22,7 +22,9 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 #include <unordered_map>
+#include <optional>
 
 #include <HXSTL/container/BytesBuffer.hpp>
 #include <HXSTL/coroutine/task/Task.hpp>
@@ -31,15 +33,7 @@ namespace HX { namespace web { namespace server {
 
 class IO;
 
-struct ConnectionHandler;
-
 }}} // HX::web::server
-
-namespace HX { namespace web { namespace protocol { namespace websocket {
-
-class WebSocket;
-
-}}}} // HX::web::protocol::websocket
 
 namespace HX { namespace web { namespace protocol { namespace http {
 
@@ -48,7 +42,7 @@ namespace HX { namespace web { namespace protocol { namespace http {
  */
 class Response {
     // 注意: 他们的末尾并没有事先包含 \r\n, 具体在to_string才提供
-    std::string _statusLine; // 状态行
+    std::vector<std::string> _statusLine; // 状态行
     std::unordered_map<std::string, std::string> _responseHeaders; // 响应头部
     // 空行
     std::string _responseBody; // 响应体
@@ -58,9 +52,13 @@ class Response {
 
     unsigned _sendCnt = 0;     // 写入计数
 
+    // @brief 是否解析完成响应头
+    bool _completeResponseHeader = false;
+
+    // @brief 仍需读取的请求体长度
+    std::optional<std::size_t> _remainingBodyLen;
+
     friend HX::web::server::IO;
-    friend HX::web::server::ConnectionHandler;
-    friend HX::web::protocol::websocket::WebSocket;
 
     /**
      * @brief [仅服务端] 生成响应字符串, 用于写入
@@ -136,7 +134,7 @@ public:
         CODE_511 = 511, // Network Authentication Required
     };
 
-    explicit Response() : _statusLine("HTTP/1.1 ")
+    explicit Response() : _statusLine()
                         , _responseHeaders()
                         , _responseBody()
                         , _buf()
@@ -149,6 +147,19 @@ public:
     Response(Response&& response) = default;
     Response& operator=(Response&& response) = default;
 
+    // ===== ↓客户端使用↓ =====
+    /**
+     * @brief 解析响应
+     * @param buf 需要解析的内容
+     * @return 是否需要继续解析;
+     *         `== 0`: 不需要;
+     *         `>  0`: 需要继续解析`size_t`个字节
+     * @warning 假定内容是符合Http协议的
+     */
+    std::size_t parserResponse(HX::STL::container::ConstBytesBufferView buf);
+    // ===== ↑客户端使用↑ =====
+
+    // ===== ↓服务端使用↓ =====
     /**
      * @brief 设置状态行 (协议使用HTTP/1.1)
      * @param statusCode 状态码
@@ -196,15 +207,16 @@ public:
         _responseHeaders[key] = val;
         return *this;
     }
+    // ===== ↑服务端使用↑ =====
 
     /**
      * @brief 清空已写入的响应, 重置状态 (复用)
      */
-    void clear() {
-        _statusLine = "HTTP/1.1 ";
+    void clear() noexcept {
         _responseHeaders.clear();
         _responseBody.clear();
         _buf.clear();
+        _completeResponseHeader = false;
     }
 };
 

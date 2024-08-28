@@ -46,7 +46,7 @@ HX::STL::coroutine::task::Task<bool> IO::_recvRequest(
 HX::STL::coroutine::task::Task<> IO::_sendResponse() const {
     // 本次请求使用结束, 清空, 复用
     _request->clear();
-    // 清除响应的缓冲区, 复用
+    // 生成响应字符串, 用于写入
     _response->createResponseBuffer();
     std::span<char> buf = _response->_buf;
     std::size_t n = HX::STL::tools::UringErrorHandlingTools::throwingError(
