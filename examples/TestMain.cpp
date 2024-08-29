@@ -54,7 +54,7 @@ using namespace std::chrono;
 
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXSTL/coroutine/task/Task.hpp>
-#include <HXSTL/coroutine/task/TimerTask.hpp>
+#include <HXSTL/coroutine/task/TimerTask.h>
 #include <HXSTL/utils/FileUtils.h>
 
 struct Log {
@@ -101,7 +101,7 @@ HX::STL::coroutine::task::Task<> taskMain() {
     //     co_await A();
     // }
     int zz = 123;
-    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
         std::make_shared<HX::STL::coroutine::task::TimerTask>(timerTask(zz))
     );
     co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(2s);

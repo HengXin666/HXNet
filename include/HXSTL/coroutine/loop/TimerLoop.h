@@ -20,6 +20,7 @@
 #ifndef _HX_TIMER_LOOP_H_
 #define _HX_TIMER_LOOP_H_
 
+#include <queue>
 #include <list>
 #include <map>
 #include <optional>
@@ -27,7 +28,7 @@
 #include <utility>
 #include <thread>
 
-#include <HXSTL/coroutine/task/TimerTask.hpp>
+#include <HXSTL/coroutine/task/TimerTask.h>
 #include <HXSTL/coroutine/task/Task.hpp>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
@@ -69,13 +70,25 @@ public:
     }
 
     /**
-     * @brief 添加托管任务
+     * @brief 添加待启动的托管任务
      * @param coroutinePtr 协程任务指针
      */
-    void addTask(CoroutinePtr coroutinePtr) {
-        _taskList.push_back(coroutinePtr);
+    void addInitiationTask(CoroutinePtr coroutinePtr) {
+        _initiationQueue.push(coroutinePtr);
     }
 
+    /**
+     * @brief 添加待释放的托管任务
+     * @param coroutinePtr 协程任务指针
+     */
+    void addDestructionQueue(CoroutinePtr coroutinePtr) {
+        _destructionQueue.push(coroutinePtr);
+    }
+
+    /**
+     * @brief 启动计时器Loop
+     * @return std::optional<std::chrono::system_clock::duration> 如果有计数器任务, 则会返回执行时间
+     */
     std::optional<std::chrono::system_clock::duration> run();
 private:
     /**
@@ -135,7 +148,8 @@ public:
     );
 
     explicit TimerLoop() : _timerRBTree()
-                         , _taskList()
+                         , _initiationQueue()
+                         , _destructionQueue()
     {}
 
 private:
@@ -144,8 +158,11 @@ private:
     /// @brief 计时器红黑树
     TimerRBTree _timerRBTree;
 
-    /// @brief 由计时器管理的协程任务
-    std::list<CoroutinePtr> _taskList;
+    /// @brief 启动队列
+    std::queue<CoroutinePtr> _initiationQueue;
+
+    /// @brief 销毁队列
+    std::queue<CoroutinePtr> _destructionQueue;
 };
 
 }}}} // namespace HX::STL::coroutine::loop

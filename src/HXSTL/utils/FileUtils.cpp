@@ -40,9 +40,6 @@ HX::STL::coroutine::task::Task<std::string> FileUtils::asyncGetFileContent(
     std::vector<char> buf(kBufMaxSize);
     std::size_t len = 0;
     uint64_t offset = 0;
-    printf("的得我\n");
-    co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(10s);
-    printf("的得我~\n");
     while ((len = static_cast<std::size_t>(
         co_await HX::STL::coroutine::loop::IoUringTask().prepRead(fd, buf, offset)
     )) == buf.size()) {

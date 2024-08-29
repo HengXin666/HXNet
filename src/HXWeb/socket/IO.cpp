@@ -1,7 +1,7 @@
 #include <HXWeb/socket/IO.h>
 
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
-#include <HXSTL/coroutine/task/TimerTask.hpp>
+#include <HXSTL/coroutine/task/TimerTask.h>
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
@@ -18,12 +18,11 @@ IO::IO(int fd)
 
 inline static HX::STL::coroutine::task::TimerTask close(int fd) {
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
-    printf("~fd\n");
 }
 
 IO::~IO() noexcept {
     // 添加到事件循环, 虽然略微延迟释放fd, 但是RAII呀~
-    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addTask(
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
         std::make_shared<HX::STL::coroutine::task::TimerTask>(
             close(_fd)
         )

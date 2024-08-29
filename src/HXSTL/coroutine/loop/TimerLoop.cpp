@@ -6,26 +6,15 @@
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 std::optional<std::chrono::system_clock::duration> TimerLoop::run() {
+    while (_initiationQueue.size()) {
+        auto&& task = _initiationQueue.front();
+        task->_coroutine.resume();
+        task->_coroutine.promise()._ptr = task;
+        _initiationQueue.pop();
+    }
 
-    /**
-     * 发现bug啦!: 如果 _coroutine 还在 co_await, 那么此时直接 resume 是未定义的!
-     * 只需要添加一个额外的变量即可!, 明天实现!
-     */
-    for (auto it = _taskList.begin(); it != _taskList.end(); ) {
-        if ((*it)->_coroutine.done()) {
-            auto tmp = it++;
-            _taskList.erase(tmp);
-            printf("删除(1)\n");
-        } else {
-            (*it)->_coroutine.resume();
-            if ((*it)->_coroutine.done()) {
-                auto tmp = it++;
-                _taskList.erase(tmp);
-                printf("删除(2)\n");
-            } else {
-                ++it;
-            }
-        }
+    while (_destructionQueue.size()) {
+        _destructionQueue.pop();
     }
 
     while (_timerRBTree.size()) {
