@@ -101,6 +101,7 @@ public:
      * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
      */
     Request& setRequestLine(const std::string& method, const std::string& url) {
+        _requestLine.resize(3);
         _requestLine[RequestLineDataType::RequestType] = method;
         _requestLine[RequestLineDataType::RequestPath] = url;
         _requestLine[RequestLineDataType::ProtocolVersion] = "HTTP/1.1";
@@ -113,9 +114,17 @@ public:
      * @return Request& 
      */
     Request& setRequestHeaders(const std::vector<std::pair<std::string, std::string>>& heads) {
-        for (auto&& [k, v] : heads) {
-            _requestHeaders[k] = v;
-        }
+        _requestHeaders.insert(heads.begin(), heads.end());
+        return *this;
+    }
+
+    /**
+     * @brief 向请求头添加一些键值对
+     * @param heads 键值对
+     * @return Request& 
+     */
+    Request& setRequestHeaders(const std::unordered_map<std::string, std::string>& heads) {
+        _requestHeaders.insert(heads.begin(), heads.end());
         return *this;
     }
 

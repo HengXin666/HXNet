@@ -216,29 +216,36 @@ std::size_t Response::parserResponse(std::span<char> buf) {
                           // 但是 char * 需要
     char *tmp = nullptr;
     char *line = nullptr;
-    if (_statusLine.empty()) { // 请求行还未解析
+    if (_statusLine.empty()) { // 响应行还未解析
         line = ::strtok_r(_buf.data(), "\r\n", &tmp); // 线程安全
         if (!line)
             return HX::STL::utils::FileUtils::kBufMaxSize;
-        _statusLine = HX::STL::utils::StringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
-        if (_statusLine.size() != 3)
+        // 解析响应行, 注意 不能按照空格直接切分! 因为 HTTP/1.1 404 NOF FOND\r\n
+        _statusLine = HX::STL::utils::StringUtil::split(line, " ");
+        if (_statusLine.size() < 3)
             return HX::STL::utils::FileUtils::kBufMaxSize;
+        if (_statusLine.size() > 3) {
+            for (std::size_t i = 4; i < _statusLine.size(); ++i) {
+                _statusLine[ResponseLineDataType::StatusMessage] += _statusLine[i];
+            }
+            _statusLine.resize(3);
+        }
     }
 
-    if (!_completeResponseHeader) { // 请求头未解析完
+    if (!_completeResponseHeader) { // 响应头未解析完
         /**
-         * @brief 解析请求头
-         * 解析请求报文算法:
-         * 请求头\r\n  | 按照 \n 分割, 这样每一个line的后面都会有\r残留, 需要pop掉
+         * @brief 响应响应头
+         * 解析响应报文算法:
+         * 响应头\r\n  | 按照 \n 分割, 这样每一个line的后面都会有\r残留, 需要pop掉
          * \r\n (空行) | 只会解析到 \r
-         * 请求体
+         * 响应体
          */
         if (tmp == nullptr) {
             line = ::strtok_r(_buf.data(), "\r\n", &tmp);
         } else {
             line = ::strtok_r(nullptr, "\n", &tmp);
         }
-        do {// 解析 请求行
+        do {// 解析 响应行
             // 计算当前子字符串的长度
             std::size_t length = (*tmp == '\0' ? ::strlen(line) : tmp - line - 1);
             auto p = HX::STL::utils::StringUtil::splitAtFirst(std::string_view {line, length}, ": ");
@@ -260,7 +267,7 @@ std::size_t Response::parserResponse(std::span<char> buf) {
         } while ((line = ::strtok_r(nullptr, "\n", &tmp)));
     }
     
-    if (_responseHeaders.count("content-length")) { // 存在请求体
+    if (_responseHeaders.count("content-length")) { // 存在响应体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
         if (!_remainingBodyLen.has_value()) {
             _responseBody = std::string {tmp};

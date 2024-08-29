@@ -24,6 +24,7 @@
 #include <span>
 #include <optional>
 #include <chrono>
+#include <unordered_map>
 
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/AddressResolver.h>
@@ -48,11 +49,62 @@ public:
     }
 
     /**
+     * @brief 独立的请求的参数包
+     */
+    struct RequestBuilder {
+        std::string method = "GET";
+        std::string url;
+        std::unordered_map<std::string, std::string> head = {};
+        std::string body = "";
+        std::chrono::milliseconds timeout = std::chrono::milliseconds {30 * 1000};
+    };
+
+    /**
+     * @brief 发起一次独立的请求
+     * @param method 请求类型, 如 "GET"
+     * @param url 请求URL
+     * @param head 请求头
+     * @param body 请求体
+     * @param timeout 超时时间 (单位: ms)
+     * @return std::shared_ptr<HX::web::protocol::http::Response>
+     */
+    static HX::STL::coroutine::task::Task<
+        std::shared_ptr<HX::web::protocol::http::Response>
+    > request(
+        const std::string& method,
+        const std::string& url,
+        const std::unordered_map<std::string, std::string> head = {},
+        const std::string& body = "",
+        std::chrono::milliseconds timeout = std::chrono::milliseconds {30 * 1000}
+    );
+
+    /**
+     * @brief 发起一次独立的请求
+     * @param reqBuilder 独立的请求的参数包
+     * @return std::shared_ptr<HX::web::protocol::http::Response> 
+     */
+    static HX::STL::coroutine::task::Task<
+        std::shared_ptr<HX::web::protocol::http::Response>
+    > request(
+        const RequestBuilder& reqBuilder
+    ) {
+        co_return co_await request(
+            reqBuilder.method,
+            reqBuilder.url,
+            reqBuilder.head,
+            reqBuilder.body,
+            reqBuilder.timeout
+        );
+    }
+
+    /**
      * @brief 开始连接服务器
-     * @param url 服务器链接
+     * @param url 目标服务器URL
      * @throw 连接出错
      */
-    HX::STL::coroutine::task::Task<> start(const std::string& url);
+    HX::STL::coroutine::task::Task<> start(
+        const std::string& url
+    );
 
     /**
      * @brief 读取服务端响应的消息

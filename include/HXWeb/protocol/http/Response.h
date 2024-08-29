@@ -260,7 +260,7 @@ public:
     // ===== ↑服务端使用↑ =====
 
     /**
-     * @brief 清空已写入的响应, 重置状态 (复用)
+     * @brief 清空的响应, 重置状态
      */
     void clear() noexcept {
         _responseHeaders.clear();

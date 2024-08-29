@@ -9,7 +9,7 @@
 #include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXSTL/coroutine/loop/TimerLoop.h>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
-#include <HXSTL/utils/byteorder.hpp>
+#include <HXSTL/utils/ByteUtils.hpp>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 
 namespace HX { namespace web { namespace protocol { namespace websocket {
@@ -99,11 +99,11 @@ HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPa
         // 解析包的长度
         if (payloadLen8 == 0x7E) {
             uint16_t payloadLen16 = co_await _io.recvStruct<uint16_t>();
-            payloadLen16 = HX::STL::utils::byteswapIfLittle(payloadLen16);
+            payloadLen16 = HX::STL::utils::ByteUtils::byteswapIfLittle(payloadLen16);
             payloadLen = static_cast<size_t>(payloadLen16);
         } else if (payloadLen8 == 0x7F) {
             uint64_t payloadLen64 = co_await _io.recvStruct<uint64_t>();
-            payloadLen64 = HX::STL::utils::byteswapIfLittle(payloadLen64);
+            payloadLen64 = HX::STL::utils::ByteUtils::byteswapIfLittle(payloadLen64);
             payloadLen = static_cast<size_t>(payloadLen64);
             if constexpr (sizeof(uint64_t) > sizeof(size_t)) {
                 if (payloadLen64 > std::numeric_limits<size_t>::max()) {
@@ -160,12 +160,12 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPacket(
     if (packet._content.size() > 0x7E) {
         if (packet._content.size() <= 0xFFFF) {
             auto payloadLen16 = static_cast<uint16_t>(packet._content.size());
-            payloadLen16 = HX::STL::utils::byteswapIfLittle(payloadLen16);
+            payloadLen16 = HX::STL::utils::ByteUtils::byteswapIfLittle(payloadLen16);
             std::span<char const> pLen(reinterpret_cast<char const *>(std::addressof(payloadLen16)), sizeof(uint16_t));
             data.append(pLen.data(), pLen.size());
         } else {
             auto payloadLen64 = static_cast<uint64_t>(packet._content.size());
-            payloadLen64 = HX::STL::utils::byteswapIfLittle(payloadLen64);
+            payloadLen64 = HX::STL::utils::ByteUtils::byteswapIfLittle(payloadLen64);
             std::span<char const> pLen(reinterpret_cast<char const *>(std::addressof(payloadLen64)), sizeof(uint64_t));
             data.append(pLen.data(), pLen.size());
         }

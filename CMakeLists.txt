@@ -21,14 +21,20 @@ if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   message("=-=-=-=-=-=-= 启用 Address Sanitizer [-fsanitize=address] =-=-=-=-=-=-=")
 endif()
 
+
 #####        ########
 # 请选择编译的示例代码#
 ########       ######
+# 部件测试
 # add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
+
+# 客户端
 # add_definitions(-DCOMPILE_PROXY_CLIENT_MAIN) # 使用代理的客户端
-# add_definitions(-DCLIENT_MAIN)  # 客户端
+add_definitions(-DCLIENT_MAIN)  # 客户端
+
+# 服务端
 # add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
-add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
+# add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 
 
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release

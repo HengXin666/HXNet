@@ -11,12 +11,13 @@ using namespace std::chrono;
  */
 
 HX::STL::coroutine::task::Task<> startClient() {
-    auto ptr = HX::web::client::Client::make();
-    co_await ptr->start("http://www.baidu.com");
-    std::string s = "GET / HTTP/1.1\r\n\r\n";
-    co_await ptr->write(s);
-    co_await ptr->read(5s);
-    std::cout << "res: " << ptr->getIO().getResponse().getResponseBody() << '\n';
+    auto ptr = co_await HX::web::client::Client::request({
+        .url = "www.baidu.com"
+    });
+    std::cout << ptr->getStatusCode() << '\n';
+    for (auto&& [k, v] : ptr->getResponseHeaders())
+        std::cout << k << ' ' << v << '\n';
+    std::cout << ptr->getResponseBody() << '\n';
     co_return;
 }
 
