@@ -57,6 +57,9 @@ public:
         std::unordered_map<std::string, std::string> head = {};
         std::string body = "";
         std::chrono::milliseconds timeout = std::chrono::milliseconds {30 * 1000};
+
+        /// @brief 代理, 如 socks5://hx:R3L9KvC8@127.0.0.1:2233
+        std::string proxy = "";
     };
 
     /**
@@ -66,6 +69,7 @@ public:
      * @param head 请求头
      * @param body 请求体
      * @param timeout 超时时间 (单位: ms)
+     * @param proxy 代理服务器 URL
      * @return std::shared_ptr<HX::web::protocol::http::Response>
      */
     static HX::STL::coroutine::task::Task<
@@ -75,7 +79,8 @@ public:
         const std::string& url,
         const std::unordered_map<std::string, std::string> head = {},
         const std::string& body = "",
-        std::chrono::milliseconds timeout = std::chrono::milliseconds {30 * 1000}
+        std::chrono::milliseconds timeout = std::chrono::milliseconds {30 * 1000},
+        const std::string& proxy = ""
     );
 
     /**
@@ -93,17 +98,20 @@ public:
             reqBuilder.url,
             reqBuilder.head,
             reqBuilder.body,
-            reqBuilder.timeout
+            reqBuilder.timeout,
+            reqBuilder.proxy
         );
     }
 
     /**
      * @brief 开始连接服务器
      * @param url 目标服务器URL
+     * @param proxy 代理服务器 URL
      * @throw 连接出错
      */
     HX::STL::coroutine::task::Task<> start(
-        const std::string& url
+        const std::string& url,
+        const std::string& proxy = ""
     );
 
     /**

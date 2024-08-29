@@ -3,7 +3,7 @@
  * Copyright Heng_Xin. All rights reserved.
  *
  * @Author: Heng_Xin
- * @Date: 2024-08-27 19:36:38
+ * @Date: 2024-08-29 22:18:01
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _HX_SOCKS5_H_
-#define _HX_SOCKS5_H_
+#ifndef _HX_SOCKS_PROXY_H_
+#define _HX_SOCKS_PROXY_H_
 
-namespace HX { namespace web { namespace protocol { namespace socks {
+#include <HXWeb/protocol/proxy/ProxyBase.h>
 
-class Socks5 {
-public:
-    /// @brief 握手
-    void handshake();
+namespace HX { namespace web { namespace protocol { namespace proxy {
 
+class Socks5Proxy : public HX::web::protocol::proxy::ProxyBash {
+protected:
+    virtual HX::STL::coroutine::task::Task<bool> _connect(
+        const std::string& url,
+        const HX::web::client::IO& io
+    );
 
+    friend HX::web::protocol::proxy::ProxyBash;
+private:
+    
 };
 
-}}}} // namespace HX::web::protocol::socks
+}}}} // namespace HX::web::protocol::proxy
 
-#endif // !_HX_SOCKS5_H_
+#endif // !_HX_SOCKS_PROXY_H_

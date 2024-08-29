@@ -2,6 +2,7 @@
 
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
+#include <HXWeb/protocol/proxy/ProxyBase.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
 #include <HXSTL/utils/FileUtils.h>
@@ -16,11 +17,12 @@ HX::STL::coroutine::task::Task<
     const std::string& url,
     const std::unordered_map<std::string, std::string> head /*= {}*/,
     const std::string& body /*= ""*/,
-    std::chrono::milliseconds timeout /*= std::chrono::milliseconds {30 * 1000}*/
+    std::chrono::milliseconds timeout /*= std::chrono::milliseconds {30 * 1000}*/,
+    const std::string& proxy /*= ""*/
 ) {
     auto ptr = HX::web::client::Client::make();
-    co_await ptr->start(url);
-    ptr->_io->_request->setRequestLine(method, HX::STL::utils::UrlUtils::UrlParser::extractPath(url))
+    co_await ptr->start(url, proxy);
+    ptr->_io->_request->setRequestLine(method, HX::STL::utils::UrlUtils::extractPath(url))
                        .setRequestHeaders(head)
                        .setRequestBody(body);
     co_await ptr->_io->_sendRequest();
@@ -32,10 +34,11 @@ HX::STL::coroutine::task::Task<
 }
 
 HX::STL::coroutine::task::Task<> Client::start(
-    const std::string& url
+    const std::string& url,
+    const std::string& proxy /*= ""*/
 ) {
     socket::AddressResolver resolver;
-    HX::STL::utils::UrlUtils::UrlParser parser(url);
+    HX::STL::utils::UrlUtils::UrlInfoExtractor parser(proxy.size() ? proxy : url);
     auto entry = resolver.resolve(parser.getHostname(), parser.getService());
     auto sockaddr = entry.getAddress();
     
@@ -55,6 +58,9 @@ HX::STL::coroutine::task::Task<> Client::start(
     );
 
     _io = std::make_unique<HX::web::client::IO>(_clientFd);
+    if (proxy.size()) { // 进行代理连接
+        co_await HX::web::protocol::proxy::ProxyBash::connect(proxy, *_io);
+    }
 }
 
 HX::STL::coroutine::task::Task<bool> Client::read(std::chrono::seconds timeout) {

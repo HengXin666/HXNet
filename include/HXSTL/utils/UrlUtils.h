@@ -21,13 +21,18 @@
 #define _HX_URL_UTILS_H_
 
 #include <string>
+#include <optional>
 
 namespace HX { namespace STL { namespace utils {
 
 struct UrlUtils {
-    class UrlParser {
+
+    /**
+     * @brief 从 URL 中提取出 主机名称(域名或者ip) 和 端口(如果没有直接提供端口则使用协议的默认服务端口, 否则默认http)
+     */
+    class UrlInfoExtractor {
     public:
-        UrlParser(const std::string& url) {
+        UrlInfoExtractor(const std::string& url) {
             parseUrl(url);
         }
 
@@ -39,18 +44,41 @@ struct UrlUtils {
             return _service;
         }
 
-        /**
-         * @brief 从 URL 从提取出 Ptah 
-         * @param url 
-         * @return std::string Ptah
-         */
-        static std::string extractPath(const std::string& url);
     private:
         std::string _hostname {};
         std::string _service {};
 
         void parseUrl(const std::string& url);
     };
+
+    /**
+     * @brief 从 URL 从提取出 Ptah 
+     * @param url 
+     * @return std::string Ptah
+     */
+    static std::string extractPath(const std::string& url);
+
+    /**
+     * @brief 从 URL 提取 Protocol(协议, 如`http:// -> http`)
+     * @param url 
+     * @return std::string Protocol
+     * @throw 如果提取失败则会抛出异常
+     */
+    static std::string extractProtocol(const std::string& url);
+
+    /**
+     * @brief 从 URL 中解析出用户名和密码, 如`hx:666@www.loli.com -> hx, 666`
+     * @return pair<用户名, 密码>, 如果解析不到, 则返回 std::nullopt
+     */
+    static std::optional<std::pair<std::string, std::string>> extractUser(const std::string& url);
+
+    /**
+     * @brief 从 URL 剔除 Protocol(协议, 如`http:// -> http`)
+     * @param url 
+     * @return std::string Protocol
+     * @throw 如果提取失败则会抛出异常
+     */
+    static std::string removeProtocol(std::string& url);
 };
 
 }}} // namespace HX::STL::utils
