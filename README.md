@@ -14,6 +14,7 @@
 > - 其他示例:
 >   - [基于轮询的聊天室](examples/ChatServer.cpp)
 >   - [WebSocket服务端](examples/WsServer.cpp)
+>   - [支持`socks5`代理的客户端](examples/Client.cpp)
 
 - 编写端点 (提供了简化使用的 API 宏)
 ```cpp

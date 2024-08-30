@@ -59,6 +59,13 @@ struct UrlUtils {
     static std::string extractPath(const std::string& url);
 
     /**
+     * @brief 从 URL 从提取出 域名
+     * @param url 
+     * @return std::string DomainName
+     */
+    static std::string extractDomainName(const std::string& url);
+
+    /**
      * @brief 从 URL 提取 Protocol(协议, 如`http:// -> http`)
      * @param url 
      * @return std::string Protocol
@@ -79,6 +86,14 @@ struct UrlUtils {
      * @throw 如果提取失败则会抛出异常
      */
     static std::string removeProtocol(std::string& url);
+
+    /**
+     * @brief 将协议转化为对应的端口, 如果常见的映射没有则假设 protocol 是端口的字符串形式
+     * @param protocol 协议, 如`"http" -> 80`
+     * @throw 不在常见的协议内
+     * @return u_int16_t 
+     */
+    static u_int16_t getProtocolPort(const std::string& protocol);
 };
 
 }}} // namespace HX::STL::utils

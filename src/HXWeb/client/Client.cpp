@@ -59,7 +59,7 @@ HX::STL::coroutine::task::Task<> Client::start(
 
     _io = std::make_unique<HX::web::client::IO>(_clientFd);
     if (proxy.size()) { // 进行代理连接
-        co_await HX::web::protocol::proxy::ProxyBash::connect(proxy, *_io);
+        co_await HX::web::protocol::proxy::ProxyBash::connect(proxy, url, *_io);
     }
 }
 

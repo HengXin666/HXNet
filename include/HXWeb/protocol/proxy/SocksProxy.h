@@ -26,14 +26,42 @@ namespace HX { namespace web { namespace protocol { namespace proxy {
 
 class Socks5Proxy : public HX::web::protocol::proxy::ProxyBash {
 protected:
-    virtual HX::STL::coroutine::task::Task<bool> _connect(
+    explicit Socks5Proxy(const HX::web::client::IO& io)
+        : HX::web::protocol::proxy::ProxyBash(io)
+    {}
+
+    virtual HX::STL::coroutine::task::Task<> _connect(
         const std::string& url,
-        const HX::web::client::IO& io
-    );
+        const std::string& targetUrl
+    ) override;
 
     friend HX::web::protocol::proxy::ProxyBash;
 private:
-    
+
+    /**
+     * @brief 子协商
+     * @param username 
+     * @param password 
+     * @throw 失败
+     */
+    HX::STL::coroutine::task::Task<> subNegotiation(
+        const std::string& username, 
+        const std::string& password
+    );
+
+    /**
+     * @brief 握手 | 协商
+     * @param authentication 是否使用用户/密码进行验证
+     * @throw 失败
+     */
+    HX::STL::coroutine::task::Task<> handshake(bool authentication);
+
+    /**
+     * @brief 发送代理请求
+     * @param targetUrl 通过代理访问的目标服务器 URL
+     * @throw 失败
+     */
+    HX::STL::coroutine::task::Task<> socks5ConnectRequest(const std::string& targetUrl);
 };
 
 }}}} // namespace HX::web::protocol::proxy

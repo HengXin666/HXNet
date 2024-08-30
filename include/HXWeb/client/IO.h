@@ -23,6 +23,12 @@
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/IO.h>
 
+namespace HX { namespace web { namespace protocol { namespace proxy {
+
+class Socks5Proxy;
+
+}}}} // namespace::HX::web::protocol::proxy
+
 namespace HX { namespace web { namespace client {
 
 class Client;
@@ -65,6 +71,7 @@ protected:
     friend HX::web::protocol::websocket::WebSocket;
     friend HX::web::protocol::http::Request;
     friend HX::web::protocol::http::Response;
+    friend HX::web::protocol::proxy::Socks5Proxy;
     friend Client;
 };
 

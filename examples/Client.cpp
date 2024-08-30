@@ -11,13 +11,18 @@ using namespace std::chrono;
  */
 
 HX::STL::coroutine::task::Task<> startClient() {
-    auto ptr = co_await HX::web::client::Client::request({
-        .url = "www.baidu.com"
-    });
-    std::cout << ptr->getStatusCode() << '\n';
-    for (auto&& [k, v] : ptr->getResponseHeaders())
-        std::cout << k << ' ' << v << '\n';
-    std::cout << ptr->getResponseBody() << '\n';
+    try {
+        auto ptr = co_await HX::web::client::Client::request({
+            .url = "www.baidu.com",
+            .proxy = "socks5://127.0.0.1:2333"
+        });
+        std::cout << ptr->getStatusCode() << '\n';
+        for (auto&& [k, v] : ptr->getResponseHeaders())
+            std::cout << k << ' ' << v << '\n';
+        std::cout << ptr->getResponseBody() << '\n';
+    } catch (const std::system_error& e) {
+        std::cerr << e.what() << '\n';
+    }
     co_return;
 }
 

@@ -32,25 +32,34 @@ namespace HX { namespace web { namespace protocol { namespace proxy {
  */
 class ProxyBash {
 protected:
+    const HX::web::client::IO& _io;
+
     /**
      * @brief 连接代理服务器
      * @param url 代理服务器URL(不带协议) (如: hx:R3L9KvC8@127.0.0.1:2233)
+     * @param targetUrl 目标服务器 URL
      * @param io 客户端IO流
-     * @return HX::STL::coroutine::task::Task<bool> 
+     * @throw 失败
      */
-    virtual HX::STL::coroutine::task::Task<bool> _connect(
+    virtual HX::STL::coroutine::task::Task<> _connect(
         const std::string& url,
-        const HX::web::client::IO& io
+        const std::string& targetUrl
     ) = 0;
+
+    explicit ProxyBash(const HX::web::client::IO& io) 
+        : _io(io)
+    {}
 public:
     /**
      * @brief 连接代理服务器
      * @param url 代理服务器URL (如: socks5://hx:R3L9KvC8@127.0.0.1:2233)
+     * @param targetUrl 目标服务器 URL
      * @param io 客户端IO流
-     * @return HX::STL::coroutine::task::Task<bool> 
+     * @throw 失败
      */
-    static HX::STL::coroutine::task::Task<bool> connect(
+    static HX::STL::coroutine::task::Task<> connect(
         const std::string& url,
+        const std::string& targetUrl,
         const HX::web::client::IO& io
     );
 
