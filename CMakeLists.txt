@@ -29,7 +29,7 @@ endif()
 # add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
 
 # 客户端
-add_definitions(-DCLIENT_MAIN)  # 客户端
+# add_definitions(-DCLIENT_MAIN)  # 客户端
 
 # 服务端
 # add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
