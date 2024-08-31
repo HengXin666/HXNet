@@ -12,13 +12,9 @@
 #include <openssl/err.h>
 #include <openssl/async.h>
 
-#include <chrono>
+#ifdef HTTPS_OPENSSL_ASYNC_MAIN
 
-using namespace std::chrono;
-
-#ifdef OPENSSL_EPOLL_MAIN
-
-#define PORT 4456
+#define PORT 4455
 #define BUFFER_SIZE 4096
 #define EPOLL_SIZE 32
 
@@ -71,75 +67,68 @@ void set_nonblocking(int sock) {
     fcntl(sock, F_SETFL, flags | O_NONBLOCK);
 }
 
-#include <thread>
-
-void handle_client(SSL* ssl, int client_fd, int epoll_fd) {
+void handle_client(SSL* ssl, int epoll_fd) {
     char buf[BUFFER_SIZE];
     int bytes;
 
+    // Create and initialize ASYNC_WAIT_CTX
+    ASYNC_WAIT_CTX *wait_ctx = ASYNC_WAIT_CTX_new();
+    if (!wait_ctx) {
+        fprintf(stderr, "Failed to create ASYNC_WAIT_CTX\n");
+        return;
+    }
+
+    // Set up wait context for the client socket
+    ASYNC_WAIT_CTX_set_wait_fd(wait_ctx, ssl, SSL_get_fd(ssl), nullptr, nullptr);
+    ASYNC_WAIT_CTX_set_callback(wait_ctx, [](void *arg) -> int {
+        return ASYNC_STATUS_OK;
+    }, nullptr);
+
     // Initiate SSL accept
-    { auto s = system_clock::now();
     A:
-    if ((bytes = SSL_do_handshake(ssl)) <= 0) {
+    if ((bytes = SSL_accept(ssl)) <= 0) {
         int err = SSL_get_error(ssl, bytes);
         ERR_print_errors_fp(stderr);
         printf("握手失败~\n");
         if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
-            // sleep(1);
-            std::this_thread::sleep_for(1ms);
+            sleep(1);
             goto A; // Retry reading or writing
         } else {
             ERR_print_errors_fp(stderr);
         }
-        printf("终了~\n");
         return;
     }
-    auto e = system_clock::now();
-    printf("%ld ns\n", nanoseconds(e - s)); }
     printf("握手成功~\n");
 
     while (true) {
-        printf("~\n");
-        struct epoll_event events[1];
-        int ret = epoll_wait(epoll_fd, events, 1, -1);
-        if (ret < 0) {
-            perror("epoll_wait");
-            break;
-        }
-
-        if (events[0].data.fd == client_fd) {
+        // Wait for I/O readiness
+        int status = ASYNC_WAIT_CTX_get_status(wait_ctx);
+        if (status == ASYNC_STATUS_OK) {
             bytes = SSL_read(ssl, buf, sizeof(buf));
             if (bytes > 0) {
                 buf[bytes] = 0;
                 std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, world!";
-                
-                auto s = system_clock::now();
                 SSL_write(ssl, response.data(), response.size());
-                auto e = system_clock::now();
-                printf("%ld ns\n", nanoseconds(e - s));
-                
-                printf("END\n");
-                return;
             } else {
-                printf("等我再次读取~\n");
                 int err = SSL_get_error(ssl, bytes);
                 if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
-                    printf("等待~~~~\n");
-                    struct epoll_event ev;
-                    ev.events = ((err == SSL_ERROR_WANT_WRITE) ? EPOLLIN : EPOLLOUT) | EPOLLET | EPOLLONESHOT;
-                    ev.data.fd = client_fd;
-                    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0) {
-                        perror("epoll_ctl");
-                        return;
-                    }
-                    continue; // Retry reading or writing
+                    // Need to wait for I/O readiness
+                    continue;
                 } else {
                     ERR_print_errors_fp(stderr);
                     break;
                 }
             }
+        } else {
+            // Handle other statuses (e.g., errors)
+            fprintf(stderr, "ASYNC_WAIT_CTX status error: %d\n", status);
         }
     }
+
+    // Clean up
+    ASYNC_WAIT_CTX_free(wait_ctx);
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
 }
 
 int main() {
@@ -197,17 +186,15 @@ int main() {
         }
 
         if (events[0].data.fd == server_fd) {
-            printf("收到连接啦~\n");
             client_fd = accept(server_fd, NULL, NULL);
             if (client_fd < 0) {
                 perror("accept");
                 continue;
             }
-            printf("连接成功啦~\n");
 
             set_nonblocking(client_fd);
 
-            ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+            ev.events = EPOLLIN | EPOLLET;
             ev.data.fd = client_fd;
             if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0) {
                 perror("epoll_ctl");
@@ -218,14 +205,9 @@ int main() {
             ssl = SSL_new(ctx);
             SSL_set_fd(ssl, client_fd);
 
-            handle_client(ssl, client_fd, epoll_fd);
-
-            SSL_shutdown(ssl);
-            SSL_free(ssl);
+            handle_client(ssl, epoll_fd);
 
             close(client_fd);
-        } else {
-            printf("!!!!!!!!!!!!大错特错!!!!!!!!!\n");
         }
     }
 
@@ -236,4 +218,4 @@ int main() {
     return 0;
 }
 
-#endif // OPENSSL_EPOLL_MAIN
+#endif // HTTPS_OPENSSL_ASYNC_MAIN

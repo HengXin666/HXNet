@@ -12,7 +12,7 @@
 
 #ifdef HTTPS_SERVER_MAIN
 
-#define PORT 4455
+#define PORT 4456
 
 void initialize_openssl() {
     SSL_load_error_strings();
@@ -140,4 +140,4 @@ int main() {
     return 0;
 }
 
-#endif HTTPS_SERVER_MAIN
+#endif // HTTPS_SERVER_MAIN
