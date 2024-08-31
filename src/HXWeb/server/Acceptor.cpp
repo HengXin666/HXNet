@@ -10,8 +10,6 @@ HX::STL::coroutine::task::Task<> Acceptor::start(
     const HX::web::socket::AddressResolver::AddressInfo& entry,
     std::chrono::seconds timeout /*= std::chrono::seconds{30}*/
 ) {
-    
-    
     int serverFd = HX::STL::tools::UringErrorHandlingTools::throwingError(
         co_await HX::STL::coroutine::loop::IoUringTask().prepSocket(
             entry._curr->ai_family,

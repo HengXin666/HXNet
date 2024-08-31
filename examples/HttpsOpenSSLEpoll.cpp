@@ -19,6 +19,8 @@
 #include <openssl/ssl.h>  
 #include <openssl/err.h>
 
+#ifdef HTTPS_OPEN_SSL_EPOLL_MAIN
+
 using namespace std;
 
 #define log(...) do { printf(__VA_ARGS__); fflush(stdout); } while(0)
@@ -129,7 +131,9 @@ void handleAccept() {
 
 // 处理 SSL 握手
 void handleHandshake(Channel* ch) {
+    printf("1\n");
     if (!ch->tcpConnected_) {
+        printf("2\n");
         struct pollfd pfd;
         pfd.fd = ch->fd_;
         pfd.events = POLLOUT | POLLERR;
@@ -146,6 +150,7 @@ void handleHandshake(Channel* ch) {
         }
     }
     if (ch->ssl_ == NULL) {
+        printf("3\n");
         ch->ssl_ = SSL_new(g_sslCtx); // 创建 SSL 结构体
         check0(ch->ssl_ == NULL, "SSL_new failed");
         int r = SSL_set_fd(ch->ssl_, ch->fd_); // 绑定文件描述符
@@ -153,12 +158,15 @@ void handleHandshake(Channel* ch) {
         log("SSL_set_accept_state for fd %d\n", ch->fd_);
         SSL_set_accept_state(ch->ssl_); // 设置为接受状态
     }
+    printf("4\n");
     int r = SSL_do_handshake(ch->ssl_); // 执行握手
     if (r == 1) {
         ch->sslConnected_ = true;
         log("ssl connected fd %d\n", ch->fd_);
+        printf("5\n");
         return;
     }
+    printf("6\n");
     int err = SSL_get_error(ch->ssl_, r);
     int oldev = ch->events_;
     if (err == SSL_ERROR_WANT_WRITE) {
@@ -213,12 +221,15 @@ void handleRead(Channel* ch) {
     if (ch->sslConnected_) {
         return handleDataRead(ch);
     }
+    printf("{\n");
     handleHandshake(ch);
+    printf("}\n");
 }
 
 // 处理写事件
 void handleWrite(Channel* ch) {
     if (!ch->sslConnected_) {
+        printf("怎么还没有链接?!\n");
         return handleHandshake(ch);
     }
     log("handle write fd %d\n", ch->fd_);
@@ -291,3 +302,5 @@ int main(int argc, char **argv)
     log("program exited\n");
     return 0;
 }
+
+#endif // HTTPS_OPEN_SSL_EPOLL_MAIN

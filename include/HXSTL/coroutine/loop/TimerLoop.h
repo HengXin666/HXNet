@@ -26,7 +26,6 @@
 #include <optional>
 #include <chrono>
 #include <utility>
-#include <thread>
 
 #include <HXSTL/coroutine/task/TimerTask.h>
 #include <HXSTL/coroutine/task/Task.hpp>

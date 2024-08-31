@@ -24,11 +24,6 @@
 #include <coroutine>
 #include <chrono>
 
-#include <unordered_map>
-#include <string>
-#include <mutex>
-#include <thread>
-
 #include <HXSTL/coroutine/task/Task.hpp>
 
 #ifdef __GNUC__
@@ -164,13 +159,17 @@ public:
         return std::move(*this);
     }
 
+    /**
+     * @brief 取消task的某些 io_uring 操作
+     * @param flags 需要取消的操作的 flags
+     * @return IoUringTask&& 
+     */
     IoUringTask&& prepCancel(
         int flags
     ) && {
         io_uring_prep_cancel(_sqe, this, flags);
         return std::move(*this);
     }
-
 
     /**
      * @brief 异步打开文件
@@ -317,6 +316,31 @@ public:
     }
 
     /**
+     * @brief 监测一个fd的pool事件
+     * @param fd 需要监测的fd
+     * @param pollMask 需要监测的poll事件 (如:`POLLIN`)
+     * @return IoUringTask&& 
+     */
+    IoUringTask&& prepPollAdd(
+        int fd, 
+        unsigned int pollMask
+    ) && {
+        ::io_uring_prep_poll_add(_sqe, fd, pollMask);
+        return std::move(*this);
+    }
+
+    // 不懂参数, 先不搞这个~
+    // IoUringTask&& prepPollUpdate(int fd, unsigned int poll_mask, int flags) && {
+    //     ::io_uring_prep_poll_update(_sqe, fd, poll_mask, flags);
+    //     return std::move(*this);
+    // }
+
+    // IoUringTask&& prepPollRemove() && {
+    //     ::io_uring_prep_poll_remove();
+    //     return std::move(*this);
+    // }
+
+    /**
      * @brief 创建未链接的超时操作
      * @param ts 超时时间
      * @param flags 
@@ -330,6 +354,10 @@ public:
         return std::move(*this);
     }
 
+    /**
+     * @brief 取消所有操作 (一般是取消`prepLinkTimeout`的)
+     * @return int
+     */
     HX::STL::coroutine::task::Task<int> cancelGuard() && {
         int res = co_await std::move(*this);
         co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
