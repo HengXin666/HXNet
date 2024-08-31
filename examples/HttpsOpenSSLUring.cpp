@@ -82,18 +82,21 @@ HX::STL::coroutine::task::TimerTask startConn(
         setNonBlock(fd)
     ).expect("setNonBlock");
 
+    if (POLLERR == co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+        fd, POLLIN | POLLOUT | POLLERR
+    )) {
+        printf("发生错误! err: %s\n", strerror(errno));
+        co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+        co_return;
+    }
+
     SSL* ssl = SSL_new(g_sslCtx);
 
     if (ssl == nullptr) {
         printf("ssl == nullptr\n");
-        exit(-1);
+        co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+        co_return;
     }
-
-    // 显式设置, 才会让 sll 从读取fd, 转移读取内存BIO
-    BIO* read_bio = BIO_new(BIO_s_mem());
-    BIO* write_bio = BIO_new(BIO_s_mem());
-
-    SSL_set_bio(ssl, read_bio, write_bio);
 
     HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         SSL_set_fd(ssl, fd) // 绑定文件描述符
@@ -102,13 +105,118 @@ HX::STL::coroutine::task::TimerTask startConn(
     SSL_set_accept_state(ssl); // 设置为接受状态
 
     // 监测 io_uring_prep_poll_add fd状态!!!
-    
-
     // 1. 握手
     while (true) {
-        // 2. 读取
+        int res = SSL_do_handshake(ssl); // 执行握手
+        if (res == 1)
+            break;
+        int err = SSL_get_error(ssl, res);
+        if (err == SSL_ERROR_WANT_WRITE) {
+            // 设置关注写事件
+            if (POLLOUT != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+                fd, POLLOUT | POLLERR
+            )) {
+                printf("POLLOUT error!\n");
+                goto END;
+            }
+        } else if (err == SSL_ERROR_WANT_READ) {
+            // 设置关注读事件
+            if (POLLIN != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+                fd, POLLIN | POLLERR
+            )) {
+                printf("POLLIN error!\n");
+                goto END;
+            }
+        } else {
+            ERR_print_errors(errBio);
+            goto END;
+        }
+    }
 
-        // 3. 写入
+    {
+        HX::web::protocol::http::Request request;
+        HX::web::protocol::http::Response response;
+        vector<char> buf(HX::STL::utils::FileUtils::kBufMaxSize);
+        while (true) {
+            // 2. 读取
+            std::size_t n = buf.size();
+            while (true) {
+                int readLen = SSL_read(ssl, buf.data(), n); // 从 SSL 连接中读取数据
+                int err = SSL_get_error(ssl, readLen);
+                if (readLen > 0) {
+                    if (std::size_t size = request.parserRequest(
+                        std::span<char> {buf.data(), (std::size_t) readLen}
+                    )) {
+                        n = std::min(n, size);
+                        if (POLLIN != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+                            fd, POLLIN | POLLERR
+                        )) {
+                            printf("SSL_read: (request) POLLIN error!\n");
+                            goto END;
+                        }
+                        continue;
+                    }
+                    break;
+                } else if (readLen == 0) { // 客户端断开连接
+                    goto END;
+                } else if (err == SSL_ERROR_WANT_READ) {
+                    if (POLLIN != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+                        fd, POLLIN | POLLERR
+                    )) {
+                        printf("SSL_read: POLLIN error!\n");
+                        goto END;
+                    }
+                } else {
+                    printf("SB SSL_read: err is %d is %s\n", err, strerror(errno));
+                    goto END;
+                }
+            }
+
+            auto&& fun = HX::web::router::Router::getSingleton().getEndpointFunc(
+                request.getRequesType(),
+                request.getRequesPath()
+            );
+
+            // 3. 写入
+            std::string resBuf = "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: 13\r\n\r\nHello, world!";
+            n = resBuf.size();
+            while (true) {
+                int writeLen = SSL_write(ssl, resBuf.data(), n); // 从 SSL 连接中读取数据
+                int err = SSL_get_error(ssl, writeLen);
+                if (writeLen > 0) {
+                    n -= writeLen;
+                    if (n > 0) {
+                        if (POLLOUT != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+                            fd, POLLOUT | POLLERR
+                        )) {
+                            printf("SSL_write: (n > 0) POLLOUT error!\n");
+                            goto END;
+                        }
+                        continue;
+                    }
+                    break;
+                } else if (writeLen == 0) { // 客户端断开连接
+                    goto END;
+                } else if (err == SSL_ERROR_WANT_WRITE) {
+                    if (POLLOUT != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+                        fd, POLLOUT | POLLERR
+                    )) {
+                        printf("SSL_write: POLLOUT error!\n");
+                        goto END;
+                    }
+                } else {
+                    printf("SB SSL_write: err is %d is %s\n", err, strerror(errno));
+                    goto END;
+                }
+            }
+        }
+    }
+
+    END:
+    co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+    if (ssl) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
     }
     co_return;
 }
