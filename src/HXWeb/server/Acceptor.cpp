@@ -3,6 +3,7 @@
 #include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXWeb/server/ConnectionHandler.h>
+#include <HXWeb/protocol/http/Http.hpp>
 
 namespace HX { namespace web { namespace server {
 
@@ -51,7 +52,7 @@ HX::STL::coroutine::task::Task<> Acceptor::start(
         // 开始读取
         HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
             std::make_shared<HX::STL::coroutine::task::TimerTask>(
-                ConnectionHandler::start(fd, timeout)
+                ConnectionHandler<HX::web::protocol::http::Http>::start(fd, timeout)
             )
         );
     }

@@ -21,13 +21,39 @@
 #define _HX_CONNECTION_HANDLER_H_
 
 #include <HXSTL/coroutine/loop/TimerLoop.h>
+#include <HXWeb/protocol/http/Http.hpp>
+#include <HXWeb/protocol/https/Https.hpp>
 
 namespace HX { namespace web { namespace server {
 
-/**
- * @brief 连接处理类
- */
+template <class T = void>
 struct ConnectionHandler {
+    // 静态断言: 不允许其他实现
+    static_assert(!std::is_same<T, T>::value, "Not supported for instantiation");
+};
+
+/**
+ * @brief Http连接处理类
+ */
+template <>
+struct ConnectionHandler<HX::web::protocol::http::Http> {
+
+    /**
+     * @brief 开始处理连接
+     * @param fd 客户端套接字
+     * @param timeout 没有收到消息, 自动断开连接的`超时时间`
+     */
+    static HX::STL::coroutine::task::TimerTask start(
+        int fd, 
+        std::chrono::seconds timeout
+    );
+};
+
+/**
+ * @brief Https连接处理类
+ */
+template <>
+struct ConnectionHandler<HX::web::protocol::https::Https> {
 
     /**
      * @brief 开始处理连接

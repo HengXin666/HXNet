@@ -7,6 +7,40 @@
 
 namespace HX { namespace web { namespace server {
 
+// HX::STL::coroutine::task::Task<std::size_t> IOImpl<HX::web::protocol::http::Http>::read(
+//     std::span<char> buf,
+//     struct __kernel_timespec *timeout
+// ) {
+//     HX::STL::coroutine::loop::IoUringTask l, r;
+//     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
+//         std::move(l).prepRecv(
+//             _fd, buf, 0
+//         ),
+//         std::move(r).prepLinkTimeout(
+//             timeout, IORING_TIMEOUT_BOOTTIME
+//         )
+//     ).cancelGuard();
+// }
+
+// HX::STL::coroutine::task::Task<std::size_t> IOImpl<HX::web::protocol::http::Http>::write(
+//     std::span<char> buf
+// ) {
+
+// }
+
+// HX::STL::coroutine::task::Task<std::size_t> IOImpl<HX::web::protocol::https::Https>::read(
+//     std::span<char> buf,
+//     struct __kernel_timespec *timeout
+// ) {
+
+// }
+
+// HX::STL::coroutine::task::Task<std::size_t> IOImpl<HX::web::protocol::https::Https>::write(
+//     std::span<char> buf
+// ) {
+
+// }
+
 HX::STL::coroutine::task::Task<> IO::sendResponse() const {
     co_await _sendResponse();
     ++_response->_sendCnt;

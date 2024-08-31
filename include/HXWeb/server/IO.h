@@ -21,18 +21,74 @@
 #define _HX_SERVER_IO_H_
 
 #include <HXSTL/coroutine/task/Task.hpp>
+#include <HXWeb/protocol/http/Http.hpp>
+#include <HXWeb/protocol/https/Https.hpp>
 #include <HXWeb/socket/IO.h>
 
 namespace HX { namespace web { namespace server {
 
+template <class T>
 struct ConnectionHandler;
+
+// template <class T>
+// class IOImpl {
+//     // 静态断言: 不允许其他非void的实现
+//     static_assert(std::is_same<T, void>::value, "Not supported for instantiation");
+// public:
+//     /**
+//      * @brief 读取
+//      * @param buf [out] 读取数据到buf里面
+//      * @param timeout 超时时间
+//      */
+//     virtual HX::STL::coroutine::task::Task<> read(
+//         std::span<char> buf,
+//         struct __kernel_timespec *timeout
+//     ) = 0;
+
+//     /**
+//      * @brief 写入
+//      * @param buf [in] 把buf的数据写入
+//      */
+//     virtual HX::STL::coroutine::task::Task<> write(std::span<char> buf) = 0;
+
+//     virtual ~IOImpl() {}
+// protected:
+//     int fd;
+// };
+
+// template <>
+// class IOImpl<HX::web::protocol::http::Http> : public IOImpl<void> {
+// public:
+//     HX::STL::coroutine::task::Task<> read(
+//         std::span<char> buf,
+//         struct __kernel_timespec *timeout
+//     ) override;
+
+//     HX::STL::coroutine::task::Task<> write(std::span<char> buf) override;
+// };
+
+// template <>
+// class IOImpl<HX::web::protocol::https::Https> : public IOImpl<void> {
+// public:
+//     HX::STL::coroutine::task::Task<> read(
+//         std::span<char> buf,
+//         struct __kernel_timespec *timeout
+//     ) override;
+
+//     HX::STL::coroutine::task::Task<> write(std::span<char> buf) override;
+// };
 
 /**
  * @brief 服务连接时候的io
  */
 class IO : public HX::web::socket::IO {
 public:
-    explicit IO(int fd) : HX::web::socket::IO(fd)
+    // explicit IO(int fd, const IOImpl<void>& impl) 
+    //     : HX::web::socket::IO(fd)
+    //     , _ioImpl(impl)
+    // {}
+    explicit IO(int fd)
+        : HX::web::socket::IO(fd)
     {}
 
     ~IO() noexcept = default;
@@ -66,7 +122,10 @@ protected:
     friend HX::web::protocol::websocket::WebSocket;
     friend HX::web::protocol::http::Request;
     friend HX::web::protocol::http::Response;
-    friend ConnectionHandler;
+    friend ConnectionHandler<HX::web::protocol::http::Http>;
+    friend ConnectionHandler<HX::web::protocol::https::Https>;
+
+    // const IOImpl<void>& _ioImpl;
 };
 
 }}} // namespace HX::web::server

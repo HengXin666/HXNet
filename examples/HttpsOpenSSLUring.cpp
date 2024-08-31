@@ -178,7 +178,7 @@ HX::STL::coroutine::task::TimerTask startConn(
             );
 
             // 3. 写入
-            std::string resBuf = "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: 13\r\n\r\nHello, world!";
+            std::string resBuf = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Length: 13\r\n\r\nHello, world!";
             n = resBuf.size();
             while (true) {
                 int writeLen = SSL_write(ssl, resBuf.data(), n); // 从 SSL 连接中读取数据
