@@ -16,7 +16,11 @@
 #include <cstring>
 #include <iostream>     // (然后空行)
 
-#include <HXSTL/tools/ErrorHandlingTools.h> // 第三方库文件
+#include <openssl/bio.h> // 第三方库
+#include <openssl/ssl.h>  
+#include <openssl/err.h> // (然后空行)
+
+#include <HXSTL/tools/ErrorHandlingTools.h> // 本项目的 库文件
 ```
 
 - 命名空间规范: 按照文件夹来, 比如`/HXSTL/coroutine/loop/IoUringLoop.h`, 其中(`HXSTL`是模块根文件夹, 其意思是`HX::STL`)

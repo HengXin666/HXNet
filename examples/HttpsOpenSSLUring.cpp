@@ -129,6 +129,12 @@ HX::STL::coroutine::task::TimerTask startConn(
             }
         } else {
             ERR_print_errors(errBio);
+            printf("握手失败, 是不是不是https呀?\n"); // 怎么感觉是固定读取了4个字节进行验证?!?!?
+            vector<char> buf(HX::STL::utils::FileUtils::kBufMaxSize);
+            int res = co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
+                fd, buf, 0
+            );
+            printf("%s (%d)\n", buf.data(), res);
             goto END;
         }
     }

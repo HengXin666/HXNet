@@ -70,7 +70,7 @@ class MyWebController {
             200, 
             "<h1> Home id 是 " + std::to_string(*id) + ", 而名字是 " 
             + *name + "</h1><h2> 来自 URL: " 
-            + io.getRequest().getRequesPath()  + " 的解析</h2>", // 默认`ENDPOINT_BEGIN`会传入 const HX::web::server::IO& io, 您可以对其进行更细致的操作
+            + io.getRequest().getRequesPath()  + " 的解析</h2>", // 默认`ENDPOINT_BEGIN`会传入 const HX::web::server::IO<>& io, 您可以对其进行更细致的操作
             "text/html", "UTF-8"
         );
         co_return true;

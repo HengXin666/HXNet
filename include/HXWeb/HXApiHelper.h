@@ -48,7 +48,7 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
     HX::web::router::Router::getSingleton().addEndpoint( \
         METHOD,\
         templatePath,\
-        [=](const HX::web::server::IO& io) -> HX::web::router::Router::EndpointReturnType
+        [=](const HX::web::server::IO<>& io) -> HX::web::router::Router::EndpointReturnType
 
 /**
  * @brief 结束端点的定义
@@ -62,7 +62,7 @@ const int _HX_endpoint_##FUNC_NAME = []() -> int { \
  * @brief 设置路由失败时候的端点函数, 其中形参定义了`io`(HX::web::server::IO)
  */
 #define ERROR_ENDPOINT_BEGIN \
-HX::web::router::Router::getSingleton().setErrorEndpointFunc([=](const HX::web::server::IO& io) -> HX::web::router::Router::EndpointReturnType
+HX::web::router::Router::getSingleton().setErrorEndpointFunc([=](const HX::web::server::IO<>& io) -> HX::web::router::Router::EndpointReturnType
 
 /**
  * @brief 结束设置路由失败时候的端点函数的定义

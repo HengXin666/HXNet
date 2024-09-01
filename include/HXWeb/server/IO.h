@@ -25,107 +25,113 @@
 #include <HXWeb/protocol/https/Https.hpp>
 #include <HXWeb/socket/IO.h>
 
+// 前置声明
+
+typedef struct ssl_st SSL;
+
 namespace HX { namespace web { namespace server {
 
 template <class T>
 struct ConnectionHandler;
 
-// template <class T>
-// class IOImpl {
-//     // 静态断言: 不允许其他非void的实现
-//     static_assert(std::is_same<T, void>::value, "Not supported for instantiation");
-// public:
-//     /**
-//      * @brief 读取
-//      * @param buf [out] 读取数据到buf里面
-//      * @param timeout 超时时间
-//      */
-//     virtual HX::STL::coroutine::task::Task<> read(
-//         std::span<char> buf,
-//         struct __kernel_timespec *timeout
-//     ) = 0;
-
-//     /**
-//      * @brief 写入
-//      * @param buf [in] 把buf的数据写入
-//      */
-//     virtual HX::STL::coroutine::task::Task<> write(std::span<char> buf) = 0;
-
-//     virtual ~IOImpl() {}
-// protected:
-//     int fd;
-// };
-
-// template <>
-// class IOImpl<HX::web::protocol::http::Http> : public IOImpl<void> {
-// public:
-//     HX::STL::coroutine::task::Task<> read(
-//         std::span<char> buf,
-//         struct __kernel_timespec *timeout
-//     ) override;
-
-//     HX::STL::coroutine::task::Task<> write(std::span<char> buf) override;
-// };
-
-// template <>
-// class IOImpl<HX::web::protocol::https::Https> : public IOImpl<void> {
-// public:
-//     HX::STL::coroutine::task::Task<> read(
-//         std::span<char> buf,
-//         struct __kernel_timespec *timeout
-//     ) override;
-
-//     HX::STL::coroutine::task::Task<> write(std::span<char> buf) override;
-// };
+template <class T = void>
+class IO {
+    // 静态断言: 不允许其他非void的实现 (这个还不起作用...)
+    static_assert(std::is_same<T, void>::value, "Not supported for instantiation");
+};
 
 /**
- * @brief 服务连接时候的io
+ * @brief 服务连接时候的io基类
  */
-class IO : public HX::web::socket::IO {
+template <>
+class IO<void> : public HX::web::socket::IO {
 public:
-    // explicit IO(int fd, const IOImpl<void>& impl) 
-    //     : HX::web::socket::IO(fd)
-    //     , _ioImpl(impl)
-    // {}
     explicit IO(int fd)
         : HX::web::socket::IO(fd)
     {}
 
-    ~IO() noexcept = default;
+    virtual ~IO() noexcept = default;
 
     /**
      * @brief 立即发送响应
      */
     HX::STL::coroutine::task::Task<> sendResponse() const;
-    HX::STL::coroutine::task::Task<> sendResponse(HX::STL::container::NonVoidHelper<>);
-
-    IO& operator=(IO&&) = delete;
+    HX::STL::coroutine::task::Task<> sendResponse(HX::STL::container::NonVoidHelper<>) const;
 protected:
-    // === start === 读取相关的函数 === start ===
     /**
      * @brief 解析一条完整的客户端请求
      * @param timeout 超时时间
      * @return bool 是否断开连接
      */
-    HX::STL::coroutine::task::Task<bool> _recvRequest(
+    virtual HX::STL::coroutine::task::Task<bool> _recvRequest(
         struct __kernel_timespec *timeout
-    );
-    // === end === 读取相关的函数 === end ===
+    ) = 0;
 
-    // === start === 写入相关的函数 === start ===
     /**
      * @brief 写入响应到套接字
+     * @param buf 需要写入的数据
      */
-    HX::STL::coroutine::task::Task<> _sendResponse() const;
-    // === end === 写入相关的函数 === end ===
+    virtual HX::STL::coroutine::task::Task<> _sendResponse(
+        std::span<char> buf
+    ) const = 0;
 
     friend HX::web::protocol::websocket::WebSocket;
     friend HX::web::protocol::http::Request;
     friend HX::web::protocol::http::Response;
+
+private:
+    HX::STL::coroutine::task::Task<> __sendResponse() const;
+};
+
+template <>
+class IO<HX::web::protocol::http::Http> : public HX::web::server::IO<> {
+public:
+    explicit IO(int fd)
+        : HX::web::server::IO<>(fd)
+    {}
+
+    ~IO() noexcept = default;
+protected:
+    virtual HX::STL::coroutine::task::Task<bool> _recvRequest(
+        struct __kernel_timespec *timeout
+    ) override;
+
+    virtual HX::STL::coroutine::task::Task<> _sendResponse(
+        std::span<char> buf
+    ) const override;
+
     friend ConnectionHandler<HX::web::protocol::http::Http>;
+};
+
+template <>
+class IO<HX::web::protocol::https::Https> : public HX::web::server::IO<> {
+public:
+    explicit IO(int fd)
+        : HX::web::server::IO<>(fd)
+    {}
+
+    ~IO() noexcept;
+protected:
+    /**
+     * @brief 进行SSL(https)握手
+     * @param timeout 超时时间
+     * @return bool 是否成功
+     */
+    HX::STL::coroutine::task::Task<bool> handshake(
+        struct __kernel_timespec *timeout
+    );
+
+    virtual HX::STL::coroutine::task::Task<bool> _recvRequest(
+        struct __kernel_timespec *timeout
+    ) override;
+
+    virtual HX::STL::coroutine::task::Task<> _sendResponse(
+        std::span<char> buf
+    ) const override;
+
     friend ConnectionHandler<HX::web::protocol::https::Https>;
 
-    // const IOImpl<void>& _ioImpl;
+    SSL* _ssl = nullptr;
 };
 
 }}} // namespace HX::web::server

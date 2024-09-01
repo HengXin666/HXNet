@@ -29,15 +29,33 @@ namespace HX { namespace web { namespace server {
 class Server {
 public:
     /**
-     * @brief [阻塞的] 启动服务器, 并且阻塞
+     * @brief [阻塞的] 启动Http服务器, 并且阻塞
      * @param name 服务器绑定的地址, 如`127.0.0.1`
      * @param port 服务器绑定的端口, 如`28205`
      * @param threadNum 线程数 (相互独立)
      * @param timeout 超时断开时间
      */
-    static void start(
+    static void startHttp(
         const std::string& name,
         const std::string& port,
+        std::size_t threadNum = std::thread::hardware_concurrency(),
+        std::chrono::seconds timeout = std::chrono::seconds {30}
+    );
+
+    /**
+     * @brief [阻塞的] 启动Http服务器, 并且阻塞
+     * @param name 服务器绑定的地址, 如`127.0.0.1`
+     * @param port 服务器绑定的端口, 如`28205`
+     * @param certificate 公钥文件路径
+     * @param privateKey 私钥文件路径
+     * @param threadNum 线程数 (相互独立)
+     * @param timeout 超时断开时间
+     */
+    static void startHttps(
+        const std::string& name,
+        const std::string& port,
+        const std::string& certificate,
+        const std::string& privateKey,
         std::size_t threadNum = std::thread::hardware_concurrency(),
         std::chrono::seconds timeout = std::chrono::seconds {30}
     );

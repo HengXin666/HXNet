@@ -37,7 +37,7 @@ inline std::string _webSocketSecretHash(std::string userKey) {
 }
 
 HX::STL::coroutine::task::Task<bool> WebSocket::httpUpgradeToWebSocket(
-    const HX::web::server::IO& io
+    const HX::web::server::IO<void>& io
 ) {
     auto& headMap = io.getRequest().getRequestHeaders();
     if (auto it = headMap.find("upgrade"); it == headMap.end() || it->second != "websocket") {
@@ -61,13 +61,13 @@ HX::STL::coroutine::task::Task<bool> WebSocket::httpUpgradeToWebSocket(
                     .addHeader("upgrade", "websocket")
                     .addHeader("sec-websocket-accept", wsNewKey)
                     .setBodyData("");
-    co_await io._sendResponse();
+    co_await io.sendResponse();
     co_return true;
     // https 的则是 wss:// ?!
 }
 
 HX::STL::coroutine::task::Task<WebSocket::pointer> WebSocket::makeServer(
-    const HX::web::server::IO& io
+    const HX::web::server::IO<void>& io
 ) {
     if (co_await httpUpgradeToWebSocket(io)) {
         co_return std::make_shared<pointer::element_type>(WebSocket {io});

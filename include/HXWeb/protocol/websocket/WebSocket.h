@@ -29,6 +29,7 @@
 
 namespace HX { namespace web { namespace server {
 
+template <class T>
 class IO;
 
 }}} // namespace HX::web::server
@@ -66,7 +67,7 @@ class WebSocket {
      * @return bool 是否升级成功
      */
     static HX::STL::coroutine::task::Task<bool> httpUpgradeToWebSocket(
-        const HX::web::server::IO& io
+        const HX::web::server::IO<void>& io
     );
 
     /**
@@ -92,7 +93,7 @@ class WebSocket {
 public:
     WebSocket(WebSocket &&) = default;
 
-    explicit WebSocket(const HX::web::server::IO& io) : _io(io)
+    explicit WebSocket(const HX::web::server::IO<void>& io) : _io(io)
     {}
 
     /**
@@ -100,7 +101,7 @@ public:
      * @return WebSocket指针
      */
     static HX::STL::coroutine::task::Task<pointer> makeServer(
-        const HX::web::server::IO& io
+        const HX::web::server::IO<void>& io
     );
 
     /**
@@ -148,7 +149,7 @@ public:
      */
     HX::STL::coroutine::task::Task<> send(const std::string& text);
 protected:
-    const HX::web::server::IO& _io;
+    const HX::web::server::IO<void>& _io;
     // === 回调函数 ===
     std::function<HX::STL::coroutine::task::Task<>(const std::string&)> _onMessage;
     std::function<HX::STL::coroutine::task::Task<>()> _onClose;

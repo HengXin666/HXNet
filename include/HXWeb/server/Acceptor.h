@@ -24,18 +24,57 @@
 #include <chrono>
 
 #include <HXSTL/coroutine/task/Task.hpp>
+#include <HXWeb/protocol/http/Http.hpp>
+#include <HXWeb/protocol/https/Https.hpp>
 #include <HXWeb/socket/AddressResolver.h>
 
 namespace HX { namespace web { namespace server {
 
 /**
+ * @brief 有空再重构! Acceptor 现在很多重复代码~
+ * @tparam T 
+ */
+
+template <class T = void>
+class Acceptor
+{};
+
+/**
  * @brief 连接接受类
  */
-class Acceptor {
+template <>
+class Acceptor<HX::web::protocol::http::Http> {
 #ifdef CLIENT_ADDRESS_LOGGING
     socket::AddressResolver::Address _addr {}; // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
 #endif
-    using pointer = std::shared_ptr<Acceptor>;
+    using pointer = std::shared_ptr<Acceptor<HX::web::protocol::http::Http>>;
+public:
+    /**
+     * @brief 静态工厂方法
+     * @return Acceptor指针
+     */
+    static pointer make() {
+        return std::make_shared<pointer::element_type>();
+    }
+
+    /**
+     * @brief 开始接受连接: 注册服务器套接字, 绑定并监听端口
+     * @param name 主机名或地址字符串(IPv4 的点分十进制表示或 IPv6 的十六进制表示)
+     * @param port 服务名可以是十进制的端口号, 也可以是已知的服务名称, 如 ftp、http 等
+     * @param timeout 没有收到消息, 超时自动断开的时间 (单位: 秒)
+     */
+    HX::STL::coroutine::task::Task<> start(
+        const HX::web::socket::AddressResolver::AddressInfo& entry,
+        std::chrono::seconds timeout = std::chrono::seconds{30}
+    );
+};
+
+template <>
+class Acceptor<HX::web::protocol::https::Https> {
+#ifdef CLIENT_ADDRESS_LOGGING
+    socket::AddressResolver::Address _addr {}; // 用于存放客户端的地址信息 (在::accept中由操作系统填写; 可复用)
+#endif
+    using pointer = std::shared_ptr<Acceptor<HX::web::protocol::https::Https>>;
 public:
     /**
      * @brief 静态工厂方法

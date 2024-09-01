@@ -31,6 +31,7 @@
 
 namespace HX { namespace web { namespace server {
 
+template <class T>
 class IO;
 
 }}} // HX::web::server
@@ -67,7 +68,7 @@ class Response {
     // @brief 仍需读取的请求体长度
     std::optional<std::size_t> _remainingBodyLen;
 
-    friend HX::web::server::IO;
+    friend HX::web::server::IO<void>;
 
     /**
      * @brief [仅服务端] 生成响应字符串, 用于写入

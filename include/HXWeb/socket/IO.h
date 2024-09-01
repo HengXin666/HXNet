@@ -66,6 +66,7 @@ public:
         return *_response;
     }
 
+    // 父类禁止, 子类也继承禁止, 除非重新声明
     IO& operator=(IO&&) = delete;
 protected:
     // === start === 读取相关的函数 === start ===

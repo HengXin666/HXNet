@@ -30,6 +30,7 @@
 
 namespace HX { namespace web { namespace server {
 
+template <class T>
 class IO;
 
 }}} // namespace HX::web::server
@@ -49,7 +50,7 @@ public:
 protected:
     /// @brief 端点函数
     using EndpointFunc = std::function<EndpointReturnType(
-        const HX::web::server::IO&
+        const HX::web::server::IO<void>&
     )>;
 
     explicit Router();
