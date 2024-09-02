@@ -107,7 +107,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
         setNonBlock(_fd)
     ).expect("setNonBlock");
 
-    if (POLLERR == co_await _pollAdd(POLLIN | POLLOUT | POLLERR)) {
+    if (POLLERR == co_await _pollAdd(POLLIN | POLLOUT | POLLERR, timeout)) {
         printf("发生错误! err: %s\n", strerror(errno));
         co_return false;
     }
@@ -132,13 +132,13 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
         int err = SSL_get_error(_ssl, res);
         if (err == SSL_ERROR_WANT_WRITE) {
             // 设置关注写事件
-            if (POLLOUT != co_await _pollAdd(POLLOUT | POLLERR)) {
+            if (POLLOUT != co_await _pollAdd(POLLOUT | POLLERR, timeout)) {
                 printf("POLLOUT error!\n");
                 co_return false;
             }
         } else if (err == SSL_ERROR_WANT_READ) {
             // 设置关注读事件
-            if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
+            if (POLLIN != co_await _pollAdd(POLLIN | POLLERR, timeout)) {
                 printf("POLLIN error!\n");
                 co_return false;
             }
@@ -158,7 +158,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
 HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvRequest(
     struct __kernel_timespec *timeout
 ) {
-    // 2. 读取
+    // 读取
     std::size_t n = _recvBuf.size();
     while (true) {
         int readLen = SSL_read(_ssl, _recvBuf.data(), n); // 从 SSL 连接中读取数据
@@ -168,7 +168,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvR
                 std::span<char> {_recvBuf.data(), (std::size_t) readLen}
             )) {
                 n = std::min(n, size);
-                if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
+                if (POLLIN != co_await _pollAdd(POLLIN | POLLERR, timeout)) {
                     printf("SSL_read: (request) POLLIN error!\n");
                     co_return true;
                 }
@@ -178,7 +178,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvR
         } else if (readLen == 0) { // 客户端断开连接
             co_return true;
         } else if (err == SSL_ERROR_WANT_READ) {
-            if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
+            if (POLLIN != co_await _pollAdd(POLLIN | POLLERR, timeout)) {
                 printf("SSL_read:  POLLIN error!\n");
                 co_return true;
             }

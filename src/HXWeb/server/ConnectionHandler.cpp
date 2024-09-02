@@ -82,9 +82,8 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler<HX::web::protocol::https::
     bool endpointRes = 0; // 是否复用连接
 
     // SSL 握手
-    LOG_INFO("开始握手!");
     co_await io.handshake(&_timeout);
-    LOG_INFO("握手结束!");
+    printf("握手成功~\n");
 
     while (true) {
         // === 读取 ===

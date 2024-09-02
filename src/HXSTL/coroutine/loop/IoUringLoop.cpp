@@ -43,8 +43,12 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&_ring, head, cqe) {
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
-        task->_res = cqe->res;
-        tasks.push_back(task->_previous);
+        if (task->_previous) {
+            task->_res = cqe->res;
+            tasks.push_back(task->_previous);
+        }
+        else
+            printf("SB\n");
         ++numGot;
     }
 

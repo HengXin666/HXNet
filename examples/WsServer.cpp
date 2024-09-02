@@ -113,7 +113,7 @@ int main() {
     } ERROR_ENDPOINT_END;
 
     // 启动服务
-    HX::web::server::Server::start("0.0.0.0", "28205"); 
+    HX::web::server::Server::startHttp("0.0.0.0", "28205"); 
     return 0;
 }
 #endif

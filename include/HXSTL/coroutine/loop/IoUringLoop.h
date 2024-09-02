@@ -96,6 +96,9 @@ struct [[nodiscard]] IoUringTask {
 
     explicit IoUringTask();
 
+    explicit IoUringTask(HX::STL::container::NonVoidHelper<>)
+    {}
+
     struct Awaiter {
         explicit Awaiter(IoUringTask *task)
             : _task(task)
@@ -359,7 +362,7 @@ public:
      * @return int
      */
     HX::STL::coroutine::task::Task<int> cancelGuard() && {
-        int res = co_await std::move(*this);
+        int res = co_await *this;
         co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
         co_return res;
     }
