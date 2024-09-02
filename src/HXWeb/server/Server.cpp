@@ -61,6 +61,7 @@ void Server::startHttps(
     socket::AddressResolver resolver;
     auto entry = resolver.resolve(name, port);
     std::vector<std::thread> threadArr;
+    signal(SIGPIPE, SIG_IGN); // 忽略信号: 对一个对端已经关闭的socket调用两次write, 第二次将会生成SIGPIPE信号, 该信号默认结束进程
 
     for (std::size_t i = 0; i < threadNum; ++i) {
         threadArr.emplace_back([&entry, timeout, &certificate, &privateKey]() {

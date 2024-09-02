@@ -45,12 +45,8 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&_ring, head, cqe) {
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
-        if (task->_previous) {
-            task->_res = cqe->res;
-            tasks.push_back(task->_previous);
-        }
-        else
-            printf("SB\n");
+        task->_res = cqe->res;
+        tasks.push_back(task->_previous);
         ++numGot;
     }
 
@@ -68,22 +64,18 @@ IoUringTask::IoUringTask() {
     ::io_uring_sqe_set_data(_sqe, this);
 }
 
-inline static HX::STL::coroutine::task::TimerTask log(long tis) {
-    printf("~\n");
-    // co_await HX::STL::utils::FileUtils::asyncPutFileContent(
-    //     "./debug.txt", 
-    //     std::to_string(tis) + "\n", 
-    //     HX::STL::utils::FileUtils::OpenMode::Append
-    // );
-    co_return;
-}
+// inline static HX::STL::coroutine::task::TimerTask log(long tis) {
+//     printf("~\n");
+//     // co_await HX::STL::utils::FileUtils::asyncPutFileContent(
+//     //     "./debug.txt", 
+//     //     std::to_string(tis) + "\n", 
+//     //     HX::STL::utils::FileUtils::OpenMode::Append
+//     // );
+//     co_return;
+// }
 
 IoUringTask::~IoUringTask() {
-    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
-        std::make_shared<HX::STL::coroutine::task::TimerTask>(
-            log((long)this)
-        )
-    );
+    // printf("~0x%u\n", this);
 }
 
 }}}} // namespace HX::STL::coroutine::loop

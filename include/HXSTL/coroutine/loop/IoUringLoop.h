@@ -94,14 +94,14 @@ private:
 struct [[nodiscard]] IoUringTask {
     IoUringTask(IoUringTask&& ) = delete;
 
-    explicit IoUringTask();
+    IoUringTask();
 
     ~IoUringTask();
 
     struct Awaiter {
-        explicit Awaiter(IoUringTask *task)
-            : _task(task)
-        {}
+        // explicit Awaiter(IoUringTask *task)
+        //     : _task(task)
+        // {}
         
         bool await_ready() const noexcept {
             return false;
@@ -133,14 +133,13 @@ struct [[nodiscard]] IoUringTask {
      * @param rhs 空连接的超时操作 (prepLinkTimeout)
      * @return IoUringTask&& 
      */
-    static IoUringTask&& linkOps(IoUringTask&& lhs, const IoUringTask& rhs) {
+    static IoUringTask&& linkOps(IoUringTask&& lhs, IoUringTask&& rhs) {
         lhs._sqe->flags |= IOSQE_IO_LINK;
-        rhs._sqe->flags |= IOSQE_IO_LINK;
         rhs._previous = std::noop_coroutine();
         return std::move(lhs);
     }
 private:
-    mutable std::coroutine_handle<> _previous = nullptr;
+    std::coroutine_handle<> _previous;
     friend IoUringLoop;
 
     union {
