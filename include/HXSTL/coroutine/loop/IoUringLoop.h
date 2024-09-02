@@ -96,8 +96,7 @@ struct [[nodiscard]] IoUringTask {
 
     explicit IoUringTask();
 
-    explicit IoUringTask(HX::STL::container::NonVoidHelper<>)
-    {}
+    ~IoUringTask();
 
     struct Awaiter {
         explicit Awaiter(IoUringTask *task)
@@ -134,13 +133,14 @@ struct [[nodiscard]] IoUringTask {
      * @param rhs 空连接的超时操作 (prepLinkTimeout)
      * @return IoUringTask&& 
      */
-    static IoUringTask&& linkOps(IoUringTask&& lhs, IoUringTask&& rhs) {
+    static IoUringTask&& linkOps(IoUringTask&& lhs, const IoUringTask& rhs) {
         lhs._sqe->flags |= IOSQE_IO_LINK;
+        rhs._sqe->flags |= IOSQE_IO_LINK;
         rhs._previous = std::noop_coroutine();
         return std::move(lhs);
     }
 private:
-    std::coroutine_handle<> _previous = nullptr;
+    mutable std::coroutine_handle<> _previous = nullptr;
     friend IoUringLoop;
 
     union {

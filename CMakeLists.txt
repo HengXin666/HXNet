@@ -35,8 +35,8 @@ endif()
 
 # 服务端
 # add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
-add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
-# add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
+# add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
+add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
 
 
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release

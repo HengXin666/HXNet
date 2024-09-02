@@ -83,7 +83,6 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler<HX::web::protocol::https::
 
     // SSL 握手
     co_await io.handshake(&_timeout);
-    printf("握手成功~\n");
 
     while (true) {
         // === 读取 ===

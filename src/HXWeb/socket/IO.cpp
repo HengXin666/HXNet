@@ -83,13 +83,14 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     struct __kernel_timespec *timeout
 ) const {
     HX::STL::coroutine::loop::IoUringTask l, r;
+    std::move(r).prepLinkTimeout(
+        timeout, IORING_TIMEOUT_BOOTTIME
+    );
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
         std::move(l).prepRecv(
             _fd, buf, 0
         ),
-        std::move(r).prepLinkTimeout(
-            timeout, IORING_TIMEOUT_BOOTTIME
-        )
+        r
     ).cancelGuard();
 }
 
@@ -116,13 +117,15 @@ HX::STL::coroutine::task::Task<int> IO::_pollAdd(
     unsigned int pollMask,
     struct __kernel_timespec *timeout
 ) const {
+    HX::STL::coroutine::loop::IoUringTask l, r;
+    std::move(r).prepLinkTimeout(
+        timeout, IORING_TIMEOUT_BOOTTIME
+    );
     co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
-        HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
+        std::move(l).prepPollAdd(
             _fd, pollMask
         ),
-        HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
-            timeout, IORING_TIMEOUT_BOOTTIME
-        )
+        r
     ).cancelGuard();
 }
 

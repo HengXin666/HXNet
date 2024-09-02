@@ -4,6 +4,8 @@
 #include <HXSTL/coroutine/task/TimerTask.h>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 
+#include <HXSTL/utils/FileUtils.h>
+
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 IoUringLoop::IoUringLoop(unsigned int entries) : _ring() {
@@ -64,6 +66,24 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
 IoUringTask::IoUringTask() {
     _sqe = HX::STL::coroutine::loop::AsyncLoop::getLoop().getIoUringLoop().getSqe();
     ::io_uring_sqe_set_data(_sqe, this);
+}
+
+inline static HX::STL::coroutine::task::TimerTask log(long tis) {
+    printf("~\n");
+    // co_await HX::STL::utils::FileUtils::asyncPutFileContent(
+    //     "./debug.txt", 
+    //     std::to_string(tis) + "\n", 
+    //     HX::STL::utils::FileUtils::OpenMode::Append
+    // );
+    co_return;
+}
+
+IoUringTask::~IoUringTask() {
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
+        std::make_shared<HX::STL::coroutine::task::TimerTask>(
+            log((long)this)
+        )
+    );
 }
 
 }}}} // namespace HX::STL::coroutine::loop
