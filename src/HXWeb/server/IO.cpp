@@ -107,19 +107,9 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
         setNonBlock(_fd)
     ).expect("setNonBlock");
 
-    {
-        HX::STL::coroutine::loop::IoUringTask l, r;
-        if (POLLERR == co_await HX::STL::coroutine::loop::IoUringTask().linkOps(
-            std::move(l).prepPollAdd(
-                _fd, POLLIN | POLLOUT | POLLERR
-            ),
-            std::move(r).prepLinkTimeout(
-                timeout, IORING_TIMEOUT_BOOTTIME
-            )
-        ).cancelGuard()) {
-            printf("发生错误! err: %s\n", strerror(errno));
-            co_return false;
-        }
+    if (POLLERR == co_await _pollAdd(POLLIN | POLLOUT | POLLERR)) {
+        printf("发生错误! err: %s\n", strerror(errno));
+        co_return false;
     }
 
     _ssl = SSL_new(HX::web::protocol::https::Context::getContext().getSslCtx());
@@ -142,29 +132,13 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
         int err = SSL_get_error(_ssl, res);
         if (err == SSL_ERROR_WANT_WRITE) {
             // 设置关注写事件
-            HX::STL::coroutine::loop::IoUringTask l, r;
-            if (POLLOUT != co_await HX::STL::coroutine::loop::IoUringTask().linkOps(
-                std::move(l).prepPollAdd(
-                    _fd, POLLOUT | POLLERR
-                ),
-                std::move(r).prepLinkTimeout(
-                    timeout, IORING_TIMEOUT_BOOTTIME
-                )
-            ).cancelGuard()) {
+            if (POLLOUT != co_await _pollAdd(POLLOUT | POLLERR)) {
                 printf("POLLOUT error!\n");
                 co_return false;
             }
         } else if (err == SSL_ERROR_WANT_READ) {
             // 设置关注读事件
-            HX::STL::coroutine::loop::IoUringTask l, r;
-            if (POLLIN != co_await HX::STL::coroutine::loop::IoUringTask().linkOps(
-                std::move(l).prepPollAdd(
-                    _fd, POLLIN | POLLERR
-                ),
-                std::move(r).prepLinkTimeout(
-                    timeout, IORING_TIMEOUT_BOOTTIME
-                )
-            ).cancelGuard()) {
+            if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
                 printf("POLLIN error!\n");
                 co_return false;
             }
@@ -190,19 +164,11 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvR
         int readLen = SSL_read(_ssl, _recvBuf.data(), n); // 从 SSL 连接中读取数据
         int err = SSL_get_error(_ssl, readLen);
         if (readLen > 0) {
-            HX::STL::coroutine::loop::IoUringTask l, r;
             if (std::size_t size = _request->parserRequest(
                 std::span<char> {_recvBuf.data(), (std::size_t) readLen}
             )) {
                 n = std::min(n, size);
-                if (POLLIN != co_await HX::STL::coroutine::loop::IoUringTask().linkOps(
-                    std::move(l).prepPollAdd(
-                        _fd, POLLIN | POLLERR
-                    ),
-                    std::move(r).prepLinkTimeout(
-                        timeout, IORING_TIMEOUT_BOOTTIME
-                    )
-                ).cancelGuard()) {
+                if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
                     printf("SSL_read: (request) POLLIN error!\n");
                     co_return true;
                 }
@@ -212,15 +178,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvR
         } else if (readLen == 0) { // 客户端断开连接
             co_return true;
         } else if (err == SSL_ERROR_WANT_READ) {
-            HX::STL::coroutine::loop::IoUringTask l, r;
-            if (POLLIN != co_await HX::STL::coroutine::loop::IoUringTask().linkOps(
-                std::move(l).prepPollAdd(
-                    _fd, POLLIN | POLLERR
-                ),
-                std::move(r).prepLinkTimeout(
-                    timeout, IORING_TIMEOUT_BOOTTIME
-                )
-            ).cancelGuard()) {
+            if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
                 printf("SSL_read:  POLLIN error!\n");
                 co_return true;
             }
@@ -242,9 +200,7 @@ HX::STL::coroutine::task::Task<> IO<HX::web::protocol::https::Https>::_sendRespo
         if (writeLen > 0) {
             n -= writeLen;
             if (n > 0) {
-                if (POLLOUT != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
-                    _fd, POLLOUT | POLLERR
-                )) {
+                if (POLLOUT != co_await _pollAdd(POLLOUT | POLLERR)) {
                     throw "SSL_write: (n > 0) POLLOUT error!";
                 }
                 continue;
@@ -253,10 +209,8 @@ HX::STL::coroutine::task::Task<> IO<HX::web::protocol::https::Https>::_sendRespo
         } else if (writeLen == 0) { // 客户端断开连接
             throw "writeLen == 0";
         } else if (err == SSL_ERROR_WANT_WRITE) {
-            if (POLLOUT != co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
-                _fd, POLLOUT | POLLERR
-            )) {
-                throw "SSL_write: POLLOUT error!\n";
+            if (POLLOUT != co_await _pollAdd(POLLOUT | POLLERR)) {
+                throw "SSL_write: POLLOUT error!";
             }
         } else {
             throw "SB SSL_write: err is ? is ?";

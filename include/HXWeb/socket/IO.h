@@ -161,6 +161,26 @@ protected:
     HX::STL::coroutine::task::Task<> _sendSpan(std::span<char> buf) const;
     // === end === 写入相关的函数 === end ===
 
+    /**
+     * @brief 监测fd的事件
+     * @param pollMask 事件
+     * @param timeout 超时时间
+     * @return int 什么事件
+     */
+    HX::STL::coroutine::task::Task<int> _pollAdd(
+        unsigned int pollMask,
+        struct __kernel_timespec *timeout
+    ) const;
+
+    /**
+     * @brief 监测fd的事件
+     * @param pollMask 事件
+     * @return int 什么事件
+     */
+    HX::STL::coroutine::task::Task<int> _pollAdd(
+        unsigned int pollMask
+    ) const;
+
     int _fd = -1;
     std::unique_ptr<HX::web::protocol::http::Request> _request;
     std::unique_ptr<HX::web::protocol::http::Response> _response;
