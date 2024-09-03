@@ -68,7 +68,7 @@ class ChatController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
             "image/x-icon"
         );
-        co_return true;
+        co_return false;
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/files/**", files) {

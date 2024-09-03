@@ -21,7 +21,7 @@ class HttpsController {
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("static/favicon.ico"),
             "image/x-icon"
         );
-        co_return true;
+        co_return false;
     } ENDPOINT_END;
 };
 

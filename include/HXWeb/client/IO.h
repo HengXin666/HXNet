@@ -52,7 +52,6 @@ public:
 
     IO& operator=(IO&&) = delete;
 protected:
-    // === start === 读取相关的函数 === start ===
     /**
      * @brief 解析一条完整的服务端响应
      * @param timeout 超时时间
@@ -61,14 +60,11 @@ protected:
     HX::STL::coroutine::task::Task<bool> _recvResponse(
         std::chrono::milliseconds timeout
     );
-    // === end === 读取相关的函数 === end ===
 
-    // === start === 写入相关的函数 === start ===
     /**
      * @brief 写入请求到套接字
      */
     HX::STL::coroutine::task::Task<> _sendRequest() const;
-    // === end === 写入相关的函数 === end ===
 
     friend HX::web::protocol::websocket::WebSocket;
     friend HX::web::protocol::http::Request;

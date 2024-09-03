@@ -1,5 +1,5 @@
 # HXNet
-学习现代Cpp的代码存放库, io_uring + 协程的http服务器, 基于压缩前缀树的路由, 支持http解析, WebSocket协议, Json解析, 万用print等
+学习现代Cpp的代码存放库, io_uring + 协程的http/https服务器, 基于压缩前缀树的路由, 支持http/https解析, WebSocket协议, Json解析, 万用print等; 客户端提供了简单的`request`方法, 并且支持`socks5`代理.
 
 ## 构建要求
 
