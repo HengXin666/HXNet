@@ -107,8 +107,11 @@ int main() {
         co_return false;
     } ERROR_ENDPOINT_END;
 
-    // 启动服务 [阻塞于此]
-    HX::web::server::Server::start("0.0.0.0", "28205", 16 /*可选*/, 10s /*可选*/); 
+    // 启动Http服务 [阻塞于此]
+    HX::web::server::Server::startHttp("0.0.0.0", "28205", 16 /*可选 线程数(互不相关)*/, 10s /*可选 超时时间*/);
+
+    // 或者, 启动Https服务 [阻塞于此], 需要提供证书和密钥
+    HX::web::server::Server::startHttps("0.0.0.0", "28205", "certs/cert.pem", "certs/key.pem");
     return 0;
 }
 ```

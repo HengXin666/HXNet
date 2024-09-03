@@ -38,7 +38,7 @@ HX::STL::coroutine::task::Task<bool> _text() {
 }
 
 HX::STL::coroutine::task::Task<> test() {
-    co_await HX::STL::coroutine::task::WhenAny::whenAny(
+    co_await HX::STL::coroutine::task::WhenAny::whenAny( // 如果下面参数互换, 则会段错误
         HX::STL::coroutine::loop::TimerLoop::sleepFor(std::chrono::seconds{3}),
         _text()
     );
