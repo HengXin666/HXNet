@@ -32,7 +32,7 @@ namespace HX { namespace web { namespace protocol { namespace proxy {
  */
 class ProxyBash {
 protected:
-    const HX::web::client::IO& _io;
+    const HX::web::client::IO<void>& _io;
 
     /**
      * @brief 连接代理服务器
@@ -46,7 +46,7 @@ protected:
         const std::string& targetUrl
     ) = 0;
 
-    explicit ProxyBash(const HX::web::client::IO& io) 
+    explicit ProxyBash(const HX::web::client::IO<void>& io) 
         : _io(io)
     {}
 public:
@@ -60,7 +60,7 @@ public:
     static HX::STL::coroutine::task::Task<> connect(
         const std::string& url,
         const std::string& targetUrl,
-        const HX::web::client::IO& io
+        const HX::web::client::IO<void>& io
     );
 
     virtual ~ProxyBash() {}

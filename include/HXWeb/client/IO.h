@@ -23,7 +23,13 @@
 #include <chrono>
 
 #include <HXSTL/coroutine/task/Task.hpp>
+#include <HXWeb/protocol/http/Http.hpp>
+#include <HXWeb/protocol/https/Https.hpp>
 #include <HXWeb/socket/IO.h>
+
+// 前置声明
+
+typedef struct ssl_st SSL;
 
 namespace HX { namespace web { namespace protocol { namespace proxy {
 
@@ -33,44 +39,107 @@ class Socks5Proxy;
 
 namespace HX { namespace web { namespace client {
 
-class Client;
+template <class T = void>
+class IO {
+    // 静态断言: 不允许其他非void的实现 (这个还不起作用...)
+    static_assert(std::is_same<T, void>::value, "Not supported for instantiation");
+};
 
 /**
- * @brief 服务连接时候的io
+ * @brief 客户端连接基类  
  */
-class IO : public HX::web::socket::IO {
+template <>
+class IO<void> : public HX::web::socket::IO {
 public:
     explicit IO(int fd) : HX::web::socket::IO(fd)
     {}
 
-    ~IO() noexcept = default;
-
-    /**
-     * @brief 立即发送请求
-     */
-    // HX::STL::coroutine::task::Task<> sendRequest() const;
+    virtual ~IO() noexcept
+    {}
 
     IO& operator=(IO&&) = delete;
-protected:
+
     /**
      * @brief 解析一条完整的服务端响应
      * @param timeout 超时时间
      * @return bool 是否断开连接
      */
-    HX::STL::coroutine::task::Task<bool> _recvResponse(
+    HX::STL::coroutine::task::Task<bool> recvResponse(
         std::chrono::milliseconds timeout
     );
 
     /**
      * @brief 写入请求到套接字
      */
-    HX::STL::coroutine::task::Task<> _sendRequest() const;
+    HX::STL::coroutine::task::Task<> sendRequest() const;
+
+protected:
+    /**
+     * @brief 解析一条完整的服务端响应
+     * @param timeout 超时时间
+     * @return bool 是否断开连接
+     */
+    virtual HX::STL::coroutine::task::Task<bool> _recvResponse() = 0;
+
+    /**
+     * @brief 写入请求到套接字
+     * @param buf 需要写入的数据
+     */
+    virtual HX::STL::coroutine::task::Task<> _sendRequest(
+        std::span<char> buf
+    ) const = 0;
 
     friend HX::web::protocol::websocket::WebSocket;
     friend HX::web::protocol::http::Request;
     friend HX::web::protocol::http::Response;
     friend HX::web::protocol::proxy::Socks5Proxy;
-    friend Client;
+    friend class Client;
+};
+
+template <>
+class IO<HX::web::protocol::http::Http> : public IO<void> {
+public:
+    explicit IO(int fd) : IO<void>(fd)
+    {}
+
+    ~IO() noexcept = default;
+protected:
+    /**
+     * @brief 解析一条完整的服务端响应
+     * @return bool 是否断开连接
+     */
+    HX::STL::coroutine::task::Task<bool> _recvResponse() override;
+
+    /**
+     * @brief 写入请求到套接字
+     */
+    HX::STL::coroutine::task::Task<> _sendRequest(
+        std::span<char> buf
+    ) const override;
+};
+
+template <>
+class IO<HX::web::protocol::https::Https> : public IO<void> {
+public:
+    explicit IO(int fd) : IO<void>(fd)
+    {}
+
+    ~IO() noexcept = default;
+protected:
+    /**
+     * @brief 解析一条完整的服务端响应
+     * @return bool 是否断开连接
+     */
+    HX::STL::coroutine::task::Task<bool> _recvResponse() override;
+
+    /**
+     * @brief 写入请求到套接字
+     */
+    HX::STL::coroutine::task::Task<> _sendRequest(
+        std::span<char> buf
+    ) const override;
+
+    SSL* _ssl = nullptr;
 };
 
 }}} // namespace HX::web::server

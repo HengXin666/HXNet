@@ -25,8 +25,8 @@ HX::STL::coroutine::task::Task<
     ptr->_io->_request->setRequestLine(method, HX::STL::utils::UrlUtils::extractPath(url))
                        .setRequestHeaders(head)
                        .setRequestBody(body);
-    co_await ptr->_io->_sendRequest();
-    co_await ptr->_io->_recvResponse(timeout);
+    co_await ptr->_io->sendRequest();
+    co_await ptr->_io->recvResponse(timeout);
     co_return std::make_shared<HX::web::protocol::http::Response>(
         std::move(ptr->_io->getResponse())
     );
@@ -55,15 +55,28 @@ HX::STL::coroutine::task::Task<> Client::start(
         sockaddr._addr,
         sockaddr._addrlen
     );
-
-    _io = std::make_unique<HX::web::client::IO>(_clientFd);
+    u_int16_t port = HX::STL::utils::UrlUtils::getProtocolPort(
+        HX::STL::utils::UrlUtils::extractProtocol(url)
+    );
+    // 如何重构?
+    if (port == 80)
+        _io = std::make_shared<HX::web::client::IO<HX::web::protocol::http::Http>>(
+            _clientFd
+        );
+    else if (port == 443)
+        _io = std::make_shared<HX::web::client::IO<HX::web::protocol::https::Https>>(
+            _clientFd
+        );
+    else
+        throw "Protocol is no in http(s)";
     if (proxy.size()) { // 进行代理连接
         co_await HX::web::protocol::proxy::ProxyBash::connect(proxy, url, *_io);
     }
 }
 
 HX::STL::coroutine::task::Task<bool> Client::read(std::chrono::milliseconds timeout) {
-    co_return co_await _io->_recvResponse(timeout);
+    // 请使用红黑树计时器
+    co_return co_await _io->_recvResponse();
 }
 
 HX::STL::coroutine::task::Task<> Client::write(std::span<char> buf) {

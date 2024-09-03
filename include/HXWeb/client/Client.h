@@ -37,7 +37,7 @@ namespace HX { namespace web { namespace client {
  */
 class Client {
     socket::AddressResolver::Address _addr {};  // 用于存放服务端的地址信息
-    std::unique_ptr<HX::web::client::IO> _io {};
+    std::shared_ptr<HX::web::client::IO<void>> _io {};
     using pointer = std::shared_ptr<Client>;
 public:
     /**
@@ -131,7 +131,7 @@ public:
      * @brief 获取客户端的IO流
      * @return const HX::web::client::IO& 
      */
-    const HX::web::client::IO& getIO() const {
+    const HX::web::client::IO<void>& getIO() const {
         return *_io;
     }
 };

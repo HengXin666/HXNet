@@ -28,6 +28,7 @@
 
 namespace HX { namespace web { namespace client {
 
+template <class T>
 class IO;
 
 }}} // namespace HX::web::client
@@ -65,7 +66,7 @@ class Request {
     // @brief 是否解析完成请求头
     bool _completeRequestHeader = false;
 
-    friend HX::web::client::IO;
+    friend HX::web::client::IO<void>;
 
     /**
      * @brief [仅客户端] 生成请求字符串, 用于写入

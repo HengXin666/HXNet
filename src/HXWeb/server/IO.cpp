@@ -87,12 +87,13 @@ IO<HX::web::protocol::https::Https>::~IO() {
 
 // 设置文件描述符为非阻塞模式
 // value 是否 为 非阻塞模式
-static int setNonBlock(int fd, bool value = true) {
+template <bool value = true>
+static int setNonBlock(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
         return errno;
     }
-    if (value) {
+    if constexpr (value) {
         return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     }
     return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);

@@ -26,7 +26,7 @@ namespace HX { namespace web { namespace protocol { namespace proxy {
 
 class Socks5Proxy : public HX::web::protocol::proxy::ProxyBash {
 protected:
-    explicit Socks5Proxy(const HX::web::client::IO& io)
+    explicit Socks5Proxy(const HX::web::client::IO<void>& io)
         : HX::web::protocol::proxy::ProxyBash(io)
     {}
 

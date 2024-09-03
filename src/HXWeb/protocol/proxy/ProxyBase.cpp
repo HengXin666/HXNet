@@ -8,7 +8,7 @@ namespace HX { namespace web { namespace protocol { namespace proxy {
 HX::STL::coroutine::task::Task<> ProxyBash::connect(
     const std::string& url,
     const std::string& targetUrl,
-    const HX::web::client::IO& io
+    const HX::web::client::IO<void>& io
 ) {
     std::string rmProtocolUrl = url;
     auto protocol = HX::STL::utils::UrlUtils::removeProtocol(rmProtocolUrl);
