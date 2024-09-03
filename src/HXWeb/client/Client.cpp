@@ -1,5 +1,7 @@
 #include <HXWeb/client/Client.h>
 
+#include <openssl/ssl.h>
+
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXWeb/protocol/proxy/ProxyBase.h>
@@ -18,10 +20,11 @@ HX::STL::coroutine::task::Task<
     const std::unordered_map<std::string, std::string> head /*= {}*/,
     const std::string& body /*= ""*/,
     std::chrono::milliseconds timeout /*= std::chrono::milliseconds {30 * 1000}*/,
-    const std::string& proxy /*= ""*/
+    const std::string& proxy /*= ""*/,
+    std::optional<HX::web::protocol::https::HttpsVerifyBuilder> verifyBuilder /*= std::nullopt*/
 ) {
     auto ptr = HX::web::client::Client::make();
-    co_await ptr->start(url, proxy);
+    co_await ptr->start(url, proxy, timeout, verifyBuilder);
     ptr->_io->_request->setRequestLine(method, HX::STL::utils::UrlUtils::extractPath(url))
                        .setRequestHeaders(head)
                        .setRequestBody(body);
@@ -34,7 +37,9 @@ HX::STL::coroutine::task::Task<
 
 HX::STL::coroutine::task::Task<> Client::start(
     const std::string& url,
-    const std::string& proxy /*= ""*/
+    const std::string& proxy /*= ""*/,
+    std::chrono::milliseconds timeout /*= std::chrono::milliseconds {5 * 1000}*/,
+    std::optional<HX::web::protocol::https::HttpsVerifyBuilder> verifyBuilder /*= std::nullopt*/
 ) {
     socket::AddressResolver resolver;
     HX::STL::utils::UrlUtils::UrlInfoExtractor parser(proxy.size() ? proxy : url);
@@ -63,15 +68,23 @@ HX::STL::coroutine::task::Task<> Client::start(
         _io = std::make_shared<HX::web::client::IO<HX::web::protocol::http::Http>>(
             _clientFd
         );
-    else if (port == 443)
+    else if (port == 443) {
         _io = std::make_shared<HX::web::client::IO<HX::web::protocol::https::Https>>(
             _clientFd
         );
+        if (!HX::web::protocol::https::Context::getContext().getSslCtx() && verifyBuilder.has_value()) {
+            HX::web::protocol::https::Context::getContext().initClientSSL(*verifyBuilder);
+        } else {
+            throw "Is no init Client SSL";
+        }
+    }
     else
         throw "Protocol is no in http(s)";
     if (proxy.size()) { // 进行代理连接
         co_await HX::web::protocol::proxy::ProxyBash::connect(proxy, url, *_io);
     }
+    if (!co_await _io->init(timeout))
+        throw "init Client Error";
 }
 
 HX::STL::coroutine::task::Task<bool> Client::read(std::chrono::milliseconds timeout) {

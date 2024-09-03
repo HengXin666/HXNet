@@ -73,10 +73,17 @@ public:
      */
     HX::STL::coroutine::task::Task<> sendRequest() const;
 
+    /**
+     * @brief 初始化连接
+     * @param timeout 超时时间
+     * @return bool 是否成功
+     */
+    virtual HX::STL::coroutine::task::Task<bool> init(
+        std::chrono::milliseconds timeout
+    ) = 0;
 protected:
     /**
      * @brief 解析一条完整的服务端响应
-     * @param timeout 超时时间
      * @return bool 是否断开连接
      */
     virtual HX::STL::coroutine::task::Task<bool> _recvResponse() = 0;
@@ -103,6 +110,12 @@ public:
     {}
 
     ~IO() noexcept = default;
+
+    HX::STL::coroutine::task::Task<bool> init(
+        std::chrono::milliseconds
+    ) override {
+        co_return true;
+    }
 protected:
     /**
      * @brief 解析一条完整的服务端响应
@@ -124,8 +137,21 @@ public:
     explicit IO(int fd) : IO<void>(fd)
     {}
 
-    ~IO() noexcept = default;
+    ~IO() noexcept;
+
+    HX::STL::coroutine::task::Task<bool> init(
+        std::chrono::milliseconds timeout
+    ) override;
 protected:
+    /**
+     * @brief 进行SSL(https)握手
+     * @param timeout 超时时间
+     * @return bool 是否成功
+     */
+    HX::STL::coroutine::task::Task<bool> handshake(
+        std::chrono::milliseconds timeout
+    );
+
     /**
      * @brief 解析一条完整的服务端响应
      * @return bool 是否断开连接

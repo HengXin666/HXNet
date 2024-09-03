@@ -28,6 +28,7 @@
 
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/AddressResolver.h>
+#include <HXWeb/protocol/https/Context.h>
 #include <HXWeb/client/IO.h>
 
 namespace HX { namespace web { namespace client {
@@ -60,6 +61,9 @@ public:
 
         /// @brief 代理, 如 socks5://hx:R3L9KvC8@127.0.0.1:2233
         std::string proxy = "";
+
+        /// @brief 如果是 https 协议, 则可以设置验证参数包
+        std::optional<HX::web::protocol::https::HttpsVerifyBuilder> verifyBuilder;
     };
 
     /**
@@ -70,6 +74,7 @@ public:
      * @param body 请求体
      * @param timeout 超时时间 (单位: ms)
      * @param proxy 代理服务器 URL
+     * @param verifyBuilder 如果是 https 协议, 则可以设置验证参数包
      * @return std::shared_ptr<HX::web::protocol::http::Response>
      */
     static HX::STL::coroutine::task::Task<
@@ -80,7 +85,8 @@ public:
         const std::unordered_map<std::string, std::string> head = {},
         const std::string& body = "",
         std::chrono::milliseconds timeout = std::chrono::milliseconds {30 * 1000},
-        const std::string& proxy = ""
+        const std::string& proxy = "",
+        std::optional<HX::web::protocol::https::HttpsVerifyBuilder> verifyBuilder = std::nullopt
     );
 
     /**
@@ -99,20 +105,52 @@ public:
             reqBuilder.head,
             reqBuilder.body,
             reqBuilder.timeout,
-            reqBuilder.proxy
+            reqBuilder.proxy,
+            reqBuilder.verifyBuilder
         );
     }
+
+    /**
+     * @brief 独立的`开始连接服务器`参数包
+     */
+    struct StartBuilder {
+        std::string url;
+        std::string proxy = "";
+        std::chrono::milliseconds timeout = std::chrono::milliseconds {5 * 1000};
+    };
 
     /**
      * @brief 开始连接服务器
      * @param url 目标服务器URL
      * @param proxy 代理服务器 URL
+     * @param timeout 超时时间
+     * @param verifyBuilder 如果是 https 协议, 则可以设置验证参数包
      * @throw 连接出错
      */
     HX::STL::coroutine::task::Task<> start(
-        const std::string& url,
-        const std::string& proxy = ""
+        const std::string& url = "",
+        const std::string& proxy = "",
+        std::chrono::milliseconds timeout = std::chrono::milliseconds {5 * 1000},
+        std::optional<HX::web::protocol::https::HttpsVerifyBuilder> verifyBuilder = std::nullopt
     );
+
+    /**
+     * @brief 开始连接服务器
+     * @param startBuilder 独立的`开始连接服务器`参数包
+     * @throw 连接出错
+     */
+    HX::STL::coroutine::task::Task<> start(
+        const StartBuilder& startBuilder
+    ) {
+        if (startBuilder.url.empty()) [[unlikely]] {
+            throw std::invalid_argument("Error: startBuilder: url is null");
+        }
+        co_await start(
+            startBuilder.url,
+            startBuilder.proxy,
+            startBuilder.timeout
+        );
+    }
 
     /**
      * @brief 读取服务端响应的消息

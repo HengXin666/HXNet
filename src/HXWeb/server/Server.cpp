@@ -65,9 +65,11 @@ void Server::startHttps(
 
     for (std::size_t i = 0; i < threadNum; ++i) {
         threadArr.emplace_back([&entry, timeout, &certificate, &privateKey]() {
-            HX::web::protocol::https::Context::getContext().initSSL(
-                certificate,
-                privateKey
+            HX::web::protocol::https::Context::getContext().initServerSSL( 
+                HX::web::protocol::https::HttpsVerifyBuilder {
+                    .certificate = certificate,
+                    .privateKey = privateKey
+                }
             );
             HX::STL::coroutine::task::runTask(
                 HX::STL::coroutine::loop::AsyncLoop::getLoop(),

@@ -94,6 +94,19 @@ public:
         OpenMode flags,
         mode_t mode = 0644
     );
+
+    /**
+     * @brief 设置套接字为非阻塞
+     * @param fd 
+     * @return int `fcntl` 的返回值
+     */
+    static int setNonBlock(int fd) {
+        int flags = ::fcntl(fd, F_GETFL, 0);
+        if (flags < 0) [[unlikely]] {
+            return errno;
+        }
+        return ::fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    }
 };
 
 /**

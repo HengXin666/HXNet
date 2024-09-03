@@ -36,6 +36,26 @@ typedef struct ssl_ctx_st SSL_CTX;
 namespace HX { namespace web { namespace protocol { namespace https {
 
 /**
+ * @brief Https验证模式设置参数包
+ */
+struct HttpsVerifyBuilder {
+    std::string certificate = "";
+    std::string privateKey = "";
+
+    /**
+     * @brief 校验模式
+     * SSL_VERIFY_NONE: 不验证对方证书 (通常不推荐)
+     * SSL_VERIFY_PEER: 验证对方证书
+     * SSL_VERIFY_FAIL_IF_NO_PEER_CERT: 如果对方证书不存在, 则验证失败
+     */
+    int verifyMod = 0x01; // = SSL_VERIFY_PEER
+
+    // HttpsVerifyBuilder();
+
+    // HttpsVerifyBuilder() = default;
+};
+
+/**
  * @brief Https 上下文, 用于管理公钥/秘钥, 以及提供`sslCtx`
  */
 class Context {
@@ -52,15 +72,23 @@ public:
     }
 
     /**
-     * @brief 初始化SSL
-     * @param certificate 公钥文件路径
-     * @param privateKey 私钥文件路径
+     * @brief 初始化服务端的SSL
+     * @param verifyBuilder Https验证模式设置参数包
      * @throw 加载证书出现问题
      * @throw 证书不匹配
      */
-    void initSSL(
-        const std::string& certificate,
-        const std::string& privateKey
+    void initServerSSL(
+        const HttpsVerifyBuilder& verifyBuilder
+    );
+
+    /**
+     * @brief 初始化客户端的SSL
+     * @param verifyBuilder Https验证模式设置参数包
+     * @throw 加载证书出现问题
+     * @throw 证书不匹配
+     */
+    void initClientSSL(
+        const HttpsVerifyBuilder& verifyBuilder
     );
 
     BIO* getErrBio() const {

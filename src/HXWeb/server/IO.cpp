@@ -9,6 +9,7 @@
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXWeb/protocol/https/Context.h>
+#include <HXSTL/utils/FileUtils.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 
 namespace HX { namespace web { namespace server {
@@ -80,39 +81,25 @@ HX::STL::coroutine::task::Task<> IO<HX::web::protocol::http::Http>::_sendRespons
 
 IO<HX::web::protocol::https::Https>::~IO() {
     if (_ssl) {
-        SSL_shutdown(_ssl);
-        SSL_free(_ssl);
+        ::SSL_shutdown(_ssl);
+        ::SSL_free(_ssl);
     }
-}
-
-// 设置文件描述符为非阻塞模式
-// value 是否 为 非阻塞模式
-template <bool value = true>
-static int setNonBlock(int fd) {
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags < 0) {
-        return errno;
-    }
-    if constexpr (value) {
-        return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    }
-    return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
 }
 
 HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handshake() {
     HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
-        setNonBlock(_fd)
+        HX::STL::utils::FileUtils::setNonBlock(_fd)
     ).expect("setNonBlock");
 
     if (POLLERR == co_await _pollAdd(POLLIN | POLLOUT | POLLERR)) {
-        printf("发生错误! err: %s\n", strerror(errno));
+        // printf("发生错误! err: %s\n", strerror(errno));
         co_return false;
     }
 
-    _ssl = SSL_new(HX::web::protocol::https::Context::getContext().getSslCtx());
+    _ssl = ::SSL_new(HX::web::protocol::https::Context::getContext().getSslCtx());
 
-    if (_ssl == nullptr) {
-        printf("ssl == nullptr\n");
+    if (_ssl == nullptr) [[unlikely]] {
+        // printf("ssl == nullptr\n");
         co_return false;
     }
 
