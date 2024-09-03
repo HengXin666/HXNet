@@ -1,6 +1,7 @@
 #include <HXWeb/client/IO.h>
 
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
+#include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
@@ -8,13 +9,24 @@
 namespace HX { namespace web { namespace client {
 
 HX::STL::coroutine::task::Task<bool> IO::_recvResponse(
-        struct __kernel_timespec *timeout
+    std::chrono::milliseconds timeout
 ) {
-    // TODO 没有设置超时~
-    std::size_t n = co_await recvN(_recvBuf, _recvBuf.size()); // 读取到的字节数
+    std::size_t n = 0;
+    {
+        auto&& res = co_await HX::STL::coroutine::task::WhenAny::whenAny(
+            HX::STL::coroutine::loop::TimerLoop::sleepFor(timeout),
+            recvN(_recvBuf, _recvBuf.size())
+        );
+
+        if (!res.index())
+            goto END;
+
+        n = std::get<1>(res);
+    }
     while (true) {
         if (n == 0) {
             // 断开连接
+        END:
             co_return true;
         }
 

@@ -119,7 +119,7 @@ public:
      * @param timeout 超时时间
      * @return 是否断开连接
      */
-    HX::STL::coroutine::task::Task<bool> read(std::chrono::seconds timeout);
+    HX::STL::coroutine::task::Task<bool> read(std::chrono::milliseconds timeout);
 
     /**
      * @brief 向服务端发送消息

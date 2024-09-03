@@ -20,6 +20,8 @@
 #ifndef _HX_CLIENT_IO_H_
 #define _HX_CLIENT_IO_H_
 
+#include <chrono>
+
 #include <HXSTL/coroutine/task/Task.hpp>
 #include <HXWeb/socket/IO.h>
 
@@ -57,7 +59,7 @@ protected:
      * @return bool 是否断开连接
      */
     HX::STL::coroutine::task::Task<bool> _recvResponse(
-        struct __kernel_timespec *timeout
+        std::chrono::milliseconds timeout
     );
     // === end === 读取相关的函数 === end ===
 

@@ -82,20 +82,6 @@ HX::STL::coroutine::task::Task<> IO::_sendSpan(std::span<char> buf) const {
 }
 
 HX::STL::coroutine::task::Task<int> IO::_pollAdd(
-    unsigned int pollMask,
-    struct __kernel_timespec *timeout
-) const {
-    co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
-        HX::STL::coroutine::loop::IoUringTask().prepPollAdd(
-            _fd, pollMask
-        ),
-        HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
-            timeout, IORING_TIMEOUT_BOOTTIME
-        )
-    ).cancelGuard();
-}
-
-HX::STL::coroutine::task::Task<int> IO::_pollAdd(
     unsigned int pollMask
 ) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask().prepPollAdd(

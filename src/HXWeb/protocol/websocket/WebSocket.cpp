@@ -8,6 +8,7 @@
 #include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXSTL/coroutine/loop/TimerLoop.h>
+#include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
 #include <HXSTL/utils/ByteUtils.hpp>
 #include <HXSTL/tools/ErrorHandlingTools.h>
@@ -76,11 +77,18 @@ HX::STL::coroutine::task::Task<WebSocket::pointer> WebSocket::makeServer(
 }
 
 HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPacket(
-    struct __kernel_timespec *timeout
+    std::chrono::steady_clock::duration timeout
 ) {
     WebSocketPacket packet;
-    // TODO 没有设置超时~
-    std::optional<std::string> head = co_await _io.recvN(2);
+    auto&& res = co_await HX::STL::coroutine::task::WhenAny::whenAny(
+        HX::STL::coroutine::loop::TimerLoop::sleepFor(timeout),
+        _io.recvN(2)
+    );
+
+    if (!res.index())
+        co_return std::nullopt;
+
+    auto&& head = std::get<1>(res);
     if (!head.has_value()) // 超时: 没有读取到数据
         co_return std::nullopt;
     bool fin;
@@ -200,9 +208,8 @@ HX::STL::coroutine::task::Task<> WebSocket::sendPing() {
 HX::STL::coroutine::task::Task<> WebSocket::start(
     std::chrono::steady_clock::duration pingPongTimeout /*= std::chrono::seconds(5)*/
 ) {
-    auto timeout = HX::STL::coroutine::loop::durationToKernelTimespec(pingPongTimeout);
     while (true) {
-        auto maybePacket = co_await recvPacket(&timeout);
+        auto maybePacket = co_await recvPacket(pingPongTimeout);
 
         if (!maybePacket.has_value()) { // index == 1
             // 主动Ping

@@ -134,17 +134,6 @@ protected:
     /**
      * @brief 监测fd的事件
      * @param pollMask 事件
-     * @param timeout 超时时间
-     * @return int 什么事件
-     */
-    HX::STL::coroutine::task::Task<int> _pollAdd(
-        unsigned int pollMask,
-        struct __kernel_timespec *timeout
-    ) const;
-
-    /**
-     * @brief 监测fd的事件
-     * @param pollMask 事件
      * @return int 什么事件
      */
     HX::STL::coroutine::task::Task<int> _pollAdd(

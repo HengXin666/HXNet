@@ -96,12 +96,10 @@ struct [[nodiscard]] IoUringTask {
 
     IoUringTask();
 
-    ~IoUringTask();
-
     struct Awaiter {
-        // explicit Awaiter(IoUringTask *task)
-        //     : _task(task)
-        // {}
+        explicit Awaiter(IoUringTask *task)
+            : _task(task)
+        {}
         
         bool await_ready() const noexcept {
             return false;
@@ -133,11 +131,11 @@ struct [[nodiscard]] IoUringTask {
      * @param rhs 空连接的超时操作 (prepLinkTimeout)
      * @return IoUringTask&& 
      */
-    static IoUringTask&& linkOps(IoUringTask&& lhs, IoUringTask&& rhs) {
-        lhs._sqe->flags |= IOSQE_IO_LINK;
-        rhs._previous = std::noop_coroutine();
-        return std::move(lhs);
-    }
+    // static IoUringTask&& linkOps(IoUringTask&& lhs, IoUringTask&& rhs) {
+    //     lhs._sqe->flags |= IOSQE_IO_LINK;
+    //     rhs._previous = std::noop_coroutine();
+    //     return std::move(lhs);
+    // }
 private:
     std::coroutine_handle<> _previous;
     friend IoUringLoop;
@@ -348,23 +346,23 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepLinkTimeout(
-        struct __kernel_timespec *ts,
-        unsigned int flags
-    ) && {
-        ::io_uring_prep_link_timeout(_sqe, ts, flags);
-        return std::move(*this);
-    }
+    // IoUringTask&& prepLinkTimeout(
+    //     struct __kernel_timespec *ts,
+    //     unsigned int flags
+    // ) && {
+    //     ::io_uring_prep_link_timeout(_sqe, ts, flags);
+    //     return std::move(*this);
+    // }
 
     /**
      * @brief 取消所有操作 (一般是取消`prepLinkTimeout`的)
      * @return int
      */
-    HX::STL::coroutine::task::Task<int> cancelGuard() && {
-        int res = co_await *this;
-        co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
-        co_return res;
-    }
+    // HX::STL::coroutine::task::Task<int> cancelGuard() && {
+    //     int res = co_await *this;
+    //     co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
+    //     co_return res;
+    // }
 };
 
 }}}} // namespace HX::STL::coroutine::loop

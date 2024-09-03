@@ -74,8 +74,4 @@ IoUringTask::IoUringTask() {
 //     co_return;
 // }
 
-IoUringTask::~IoUringTask() {
-    // printf("~0x%u\n", this);
-}
-
 }}}} // namespace HX::STL::coroutine::loop

@@ -26,8 +26,7 @@ HX::STL::coroutine::task::Task<
                        .setRequestHeaders(head)
                        .setRequestBody(body);
     co_await ptr->_io->_sendRequest();
-    auto timespec = HX::STL::coroutine::loop::durationToKernelTimespec(timeout);
-    co_await ptr->_io->_recvResponse(&timespec);
+    co_await ptr->_io->_recvResponse(timeout);
     co_return std::make_shared<HX::web::protocol::http::Response>(
         std::move(ptr->_io->getResponse())
     );
@@ -63,9 +62,8 @@ HX::STL::coroutine::task::Task<> Client::start(
     }
 }
 
-HX::STL::coroutine::task::Task<bool> Client::read(std::chrono::seconds timeout) {
-    auto timespec = HX::STL::coroutine::loop::durationToKernelTimespec(timeout);
-    co_return co_await _io->_recvResponse(&timespec);
+HX::STL::coroutine::task::Task<bool> Client::read(std::chrono::milliseconds timeout) {
+    co_return co_await _io->_recvResponse(timeout);
 }
 
 HX::STL::coroutine::task::Task<> Client::write(std::span<char> buf) {

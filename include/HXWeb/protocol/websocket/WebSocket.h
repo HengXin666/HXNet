@@ -76,7 +76,7 @@ class WebSocket {
      * @return std::optional<WebSocketPacket>
      */
     HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> recvPacket(
-        struct __kernel_timespec *timeout
+        std::chrono::steady_clock::duration timeout
     );
 
     /**
