@@ -29,7 +29,7 @@ namespace HX { namespace web { namespace server {
 template <class T = void>
 struct ConnectionHandler {
     // 静态断言: 不允许其他实现
-    static_assert(!std::is_same<T, T>::value, "Not supported for instantiation");
+    static_assert(sizeof(T) == 0, "ConnectionHandler is not implemented for this type");
 };
 
 /**

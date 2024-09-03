@@ -30,14 +30,11 @@
 
 namespace HX { namespace web { namespace server {
 
-/**
- * @brief 有空再重构! Acceptor 现在很多重复代码~
- * @tparam T 
- */
-
 template <class T = void>
-class Acceptor
-{};
+class Acceptor {
+    // 禁止默认实现
+    static_assert(sizeof(T) == 0, "Acceptor is not implemented for this type");
+};
 
 /**
  * @brief 连接接受类

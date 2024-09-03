@@ -22,7 +22,6 @@
 
 #include <HXSTL/coroutine/loop/TimerLoop.h>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
-#include <HXSTL/coroutine/loop/EpollLoop.h>
 
 #ifdef __GNUC__
 #define HOT_FUNCTION [[gnu::hot]]
@@ -38,7 +37,6 @@ namespace HX { namespace STL { namespace coroutine { namespace loop {
 class AsyncLoop {
     explicit AsyncLoop() : _timerLoop()
                          , _ioUringLoop()
-                         , _epollLoop()
     {}
 public:
 
@@ -67,18 +65,9 @@ public:
         return _ioUringLoop;
     }
 
-    HOT_FUNCTION EpollLoop& getEpollLoop() {
-        return _epollLoop;
-    }
-
-    operator EpollLoop &() {
-        return _epollLoop;
-    }
-
 private:
     TimerLoop _timerLoop;
     IoUringLoop _ioUringLoop;
-    EpollLoop _epollLoop;
 };
 
 }}}} // namespace HX::STL::coroutine::loop
