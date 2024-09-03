@@ -163,6 +163,7 @@ public:
      * @tparam Ts... 协程 (返回值不能为`void`, 
      * 但是可以用`HX::STL::container::NonVoidHelper<void>`来擦除void类型)
      * @return 执行成功的那个协程的返回值 (std::variant<...>)
+     * @warning 请把计时放在第一个参数(如果有的话), 否则可能报错?!
      */
     template <HX::STL::coroutine::awaiter::Awaitable... Ts>
         requires(sizeof...(Ts) != 0)

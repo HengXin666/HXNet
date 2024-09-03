@@ -79,7 +79,8 @@ HX::STL::coroutine::task::Task<std::optional<WebSocketPacket>> WebSocket::recvPa
     struct __kernel_timespec *timeout
 ) {
     WebSocketPacket packet;
-    std::optional<std::string> head = co_await _io.recvN(2, timeout);
+    // TODO 没有设置超时~
+    std::optional<std::string> head = co_await _io.recvN(2);
     if (!head.has_value()) // 超时: 没有读取到数据
         co_return std::nullopt;
     bool fin;

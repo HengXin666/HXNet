@@ -10,7 +10,8 @@ namespace HX { namespace web { namespace client {
 HX::STL::coroutine::task::Task<bool> IO::_recvResponse(
         struct __kernel_timespec *timeout
 ) {
-    std::size_t n = co_await recvN(_recvBuf, _recvBuf.size(), timeout); // 读取到的字节数
+    // TODO 没有设置超时~
+    std::size_t n = co_await recvN(_recvBuf, _recvBuf.size()); // 读取到的字节数
     while (true) {
         if (n == 0) {
             // 断开连接
@@ -22,7 +23,7 @@ HX::STL::coroutine::task::Task<bool> IO::_recvResponse(
             std::span<char> {_recvBuf.data(), n}
         )) {
             // LOG_INFO("二次读取中..., 还需要读取 size = %llu", size);
-            n = co_await recvN(_recvBuf, std::min(size, _recvBuf.size()), timeout);
+            n = co_await recvN(_recvBuf, std::min(size, _recvBuf.size()));
             continue;
         }
         break;

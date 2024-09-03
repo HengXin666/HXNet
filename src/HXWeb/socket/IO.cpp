@@ -17,6 +17,7 @@ IO::IO(int fd)
 {}
 
 inline static HX::STL::coroutine::task::TimerTask close(int fd) {
+    // 如果这个fd被关闭, 那么会自动取消(无效化)等待队列的任务
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
 }
 
@@ -44,29 +45,12 @@ HX::STL::coroutine::task::Task<std::optional<std::string>> IO::recvN(
     co_return std::nullopt;
 }
 
-HX::STL::coroutine::task::Task<std::optional<std::string>> IO::recvN(
-    std::size_t n,
-    struct __kernel_timespec *timeout
-) const {
-    std::string s;
-    s.resize(n);
-    int len = std::max(
-        co_await _recvSpan(s, timeout), 0
-    );
-
-    if (len) {
-        co_return s;
-    }
-    co_return std::nullopt;
-}
-
 HX::STL::coroutine::task::Task<std::size_t> IO::recvN(
     std::span<char> buf,
-    std::size_t n,
-    struct __kernel_timespec *timeout
+    std::size_t n
 ) const {
     co_return static_cast<std::size_t>(std::max(
-        co_await _recvSpan(std::span{buf.data(), n}, timeout), 0
+        co_await _recvSpan(std::span{buf.data(), n}), 0
     ));
 }
 
@@ -76,20 +60,6 @@ HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     co_return co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
         _fd, buf, 0
     );
-}
-
-HX::STL::coroutine::task::Task<int> IO::_recvSpan(
-    std::span<char> buf, 
-    struct __kernel_timespec *timeout
-) const {
-    co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
-        HX::STL::coroutine::loop::IoUringTask().prepRecv(
-            _fd, buf, 0
-        ),
-        HX::STL::coroutine::loop::IoUringTask().prepLinkTimeout(
-            timeout, IORING_TIMEOUT_BOOTTIME
-        )
-    ).cancelGuard();
 }
 
 HX::STL::coroutine::task::Task<> IO::_sendSpan(std::span<char> buf) const {

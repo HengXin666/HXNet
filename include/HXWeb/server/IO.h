@@ -60,12 +60,9 @@ public:
 protected:
     /**
      * @brief 解析一条完整的客户端请求
-     * @param timeout 超时时间
      * @return bool 是否断开连接
      */
-    virtual HX::STL::coroutine::task::Task<bool> _recvRequest(
-        struct __kernel_timespec *timeout
-    ) = 0;
+    virtual HX::STL::coroutine::task::Task<bool> _recvRequest() = 0;
 
     /**
      * @brief 写入响应到套接字
@@ -92,9 +89,7 @@ public:
 
     ~IO() noexcept = default;
 protected:
-    virtual HX::STL::coroutine::task::Task<bool> _recvRequest(
-        struct __kernel_timespec *timeout
-    ) override;
+    virtual HX::STL::coroutine::task::Task<bool> _recvRequest() override;
 
     virtual HX::STL::coroutine::task::Task<> _sendResponse(
         std::span<char> buf
@@ -114,16 +109,11 @@ public:
 protected:
     /**
      * @brief 进行SSL(https)握手
-     * @param timeout 超时时间
      * @return bool 是否成功
      */
-    HX::STL::coroutine::task::Task<bool> handshake(
-        struct __kernel_timespec *timeout
-    );
+    HX::STL::coroutine::task::Task<bool> handshake();
 
-    virtual HX::STL::coroutine::task::Task<bool> _recvRequest(
-        struct __kernel_timespec *timeout
-    ) override;
+    virtual HX::STL::coroutine::task::Task<bool> _recvRequest() override;
 
     virtual HX::STL::coroutine::task::Task<> _sendResponse(
         std::span<char> buf

@@ -25,11 +25,30 @@ class HttpsController {
     } ENDPOINT_END;
 };
 
+#include <HXSTL/coroutine/task/WhenAny.hpp>
+#include <chrono>
+
+HX::STL::coroutine::task::Task<bool> __text() {
+    co_return false;
+}
+
+HX::STL::coroutine::task::Task<bool> _text() {
+    // co_await HX::STL::coroutine::loop::TimerLoop::sleepFor(std::chrono::seconds{0});
+    co_return co_await __text();
+}
+
+HX::STL::coroutine::task::Task<> test() {
+    co_await HX::STL::coroutine::task::WhenAny::whenAny(
+        HX::STL::coroutine::loop::TimerLoop::sleepFor(std::chrono::seconds{3}),
+        _text()
+    );
+}
+
 int main() {
     chdir("..");
     setlocale(LC_ALL, "zh_CN.UTF-8");
     ROUTER_BIND(HttpsController);
-
+    // HX::STL::coroutine::task::runTask(HX::STL::coroutine::loop::AsyncLoop::getLoop(), test());
     // 启动服务
     HX::web::server::Server::startHttps("0.0.0.0", "28205", "certs/cert.pem", "certs/key.pem");
     return 0;

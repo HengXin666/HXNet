@@ -81,49 +81,25 @@ protected:
 
     /**
      * @brief 尝试读取 n 个字符
-     * @param n 读取字符个数
-     * @param timeout 超时时间
-     * @return std::optional<std::string>, 超时或者断开连接, 则为 std::nullpot
-     */
-    HX::STL::coroutine::task::Task<std::optional<std::string>> recvN(
-        std::size_t n,
-        struct __kernel_timespec *timeout
-    ) const;
-
-    /**
-     * @brief 尝试读取 n 个字符
      * @param buf 存储读取字符的字符数组视图
      * @param n 读取字符个数 (buf.size() >= n)
-     * @param timeout 超时时间
      * @return 读取的字节数
      */
     HX::STL::coroutine::task::Task<std::size_t> recvN(
         std::span<char> buf,
-        std::size_t n,
-        struct __kernel_timespec *timeout
+        std::size_t n
     ) const;
 
     /**
      * @brief 读取一个大小为`sizeof(T)`字节的内容, 并且构造为T类型的数据
      * @tparam T 读取的类型
      * @param res [in, out] 原地在`res`的内存上重新构造对象
-     * @param timeout 超时时间, 为`nullptr`即永久, 直到读取到内容或者出错
      * @return T
      */
     template <class T>
     HX::STL::coroutine::task::Task<T> recvStruct(
-        T& res, 
-        struct __kernel_timespec *timeout = nullptr
+        T& res
     ) const {
-        if (timeout) {
-            co_return co_await _recvSpan(
-                std::span<char>(
-                    reinterpret_cast<char *>(&res), 
-                    sizeof(T)
-                ),
-                timeout
-            );
-        }
         co_return co_await _recvSpan(
             std::span<char>(
                 reinterpret_cast<char *>(&res), 
@@ -138,19 +114,13 @@ protected:
      * @return T 读取的类型
      */
     template <class T>
-    HX::STL::coroutine::task::Task<T> recvStruct(
-        struct __kernel_timespec *timeout = nullptr
-    ) const {
+    HX::STL::coroutine::task::Task<T> recvStruct() const {
         T res;
-        co_await recvStruct<T>(res, timeout);
+        co_await recvStruct<T>(res);
         co_return res;
     }
 
     HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf) const;
-    HX::STL::coroutine::task::Task<int> _recvSpan(
-        std::span<char> buf, 
-        struct __kernel_timespec *timeout
-    ) const;
     // === end === 读取相关的函数 === end ===
 
     // === start === 写入相关的函数 === start ===
