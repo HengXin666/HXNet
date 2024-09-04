@@ -264,6 +264,7 @@ public:
      * @brief 清空的响应, 重置状态
      */
     void clear() noexcept {
+        _statusLine.clear();
         _responseHeaders.clear();
         _responseBody.clear();
         _buf.clear();

@@ -7,6 +7,8 @@
 #include <HXWeb/protocol/proxy/ProxyBase.h>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXSTL/coroutine/loop/IoUringLoop.h>
+#include <HXSTL/coroutine/loop/TimerLoop.h>
+#include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <HXSTL/utils/FileUtils.h>
 #include <HXSTL/utils/UrlUtils.h>
 
@@ -26,10 +28,18 @@ HX::STL::coroutine::task::Task<
     auto ptr = HX::web::client::Client::make();
     co_await ptr->start(url, proxy, timeout, verifyBuilder);
     ptr->_io->_request->setRequestLine(method, HX::STL::utils::UrlUtils::extractPath(url))
-                       .setRequestHeaders(head)
-                       .setRequestBody(body);
+                       .setRequestHeaders(head);
+    if (body.size())
+        ptr->_io->_request->setRequestBody(body);
     co_await ptr->_io->sendRequest();
     co_await ptr->_io->recvResponse(timeout);
+
+    // // 重定向
+    // if (ptr->_io->_response->getStatusCode() == "301") {
+    //     // printf("重定向~\n");
+    //     // request(method, url, head, body, timeout, proxy, verifyBuilder);
+    // }
+
     co_return std::make_shared<HX::web::protocol::http::Response>(
         std::move(ptr->_io->getResponse())
     );
@@ -88,8 +98,13 @@ HX::STL::coroutine::task::Task<> Client::start(
 }
 
 HX::STL::coroutine::task::Task<bool> Client::read(std::chrono::milliseconds timeout) {
-    // 请使用红黑树计时器
-    co_return co_await _io->_recvResponse();
+    auto&& res = co_await HX::STL::coroutine::task::WhenAny::whenAny(
+        HX::STL::coroutine::loop::TimerLoop::sleepFor(timeout),
+        _io->_recvResponse()
+    );
+    if (res.index())
+        co_return std::get<1>(res);
+    co_return true;
 }
 
 HX::STL::coroutine::task::Task<> Client::write(std::span<char> buf) {

@@ -145,12 +145,9 @@ public:
 protected:
     /**
      * @brief 进行SSL(https)握手
-     * @param timeout 超时时间
      * @return bool 是否成功
      */
-    HX::STL::coroutine::task::Task<bool> handshake(
-        std::chrono::milliseconds timeout
-    );
+    HX::STL::coroutine::task::Task<bool> handshake();
 
     /**
      * @brief 解析一条完整的服务端响应

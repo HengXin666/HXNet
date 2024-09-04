@@ -45,6 +45,7 @@ void Context::initClientSSL(const HttpsVerifyBuilder& verifyBuilder) {
     if (!_sslCtx)
         throw std::runtime_error("SSL_CTX_new failed");
 
+    return;
     // 设置验证模式
     SSL_CTX_set_verify(_sslCtx, verifyBuilder.verifyMod, nullptr);
 

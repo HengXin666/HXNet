@@ -14,9 +14,14 @@ HX::STL::coroutine::task::Task<> startClient() {
     try {
         auto ptr = co_await HX::web::client::Client::request({
             .url = "https://github.com/HengXin666/HXNet",
+            .head = {
+                {"Host", "github.com"},
+                {"User-Agent", "curl/8.8.0"},
+                {"Accept", "*/*"}
+            },
             .proxy = "socks5://127.0.0.1:2333",
             .verifyBuilder = HX::web::protocol::https::HttpsVerifyBuilder {
-                .verifyMod = 0x00
+                .verifyMod = 0x01
             }
         });
         std::cout << ptr->getStatusCode() << '\n';

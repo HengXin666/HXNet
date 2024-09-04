@@ -33,6 +33,7 @@ HX::STL::coroutine::task::Task<> IO<void>::sendRequest() const {
     _response->clear();
     // 生成请求字符串, 用于写入
     _request->createRequestBuffer();
+    printf("> %s\n", _request->_buf.data());
     co_await _sendRequest(_request->_buf);
     // 全部写入啦
     _request->clear();
@@ -88,13 +89,16 @@ IO<HX::web::protocol::https::Https>::~IO() {
 HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::init(
     std::chrono::milliseconds timeout
 ) {
-    
-    co_return co_await handshake(timeout);
+    auto&& res = co_await HX::STL::coroutine::task::WhenAny::whenAny(
+        HX::STL::coroutine::loop::TimerLoop::sleepFor(timeout),
+        handshake()
+    );
+    if (res.index())
+        co_return std::get<1>(res);
+    co_return false;
 }
 
-HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handshake(
-    std::chrono::milliseconds timeout
-) {
+HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handshake() {
     HX::STL::tools::LinuxErrorHandlingTools::convertError<int>(
         HX::STL::utils::FileUtils::setNonBlock(_fd)
     ).expect("setNonBlock");

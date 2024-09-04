@@ -254,9 +254,11 @@ std::size_t Response::parserResponse(std::span<char> buf) {
                     // 应该剩下的参与下次解析
                     _buf = HX::STL::utils::StringUtil::rfindAndTrim(_buf.data(), "\r\n");
                     _buf.pop_back();
+                    printf("继续解析呀~\n");
                     return HX::STL::utils::FileUtils::kBufMaxSize;
                 }
                 // 是空行
+                printf("解析完了~\n");
                 _completeResponseHeader = true;
                 break;
             }
@@ -265,6 +267,8 @@ std::size_t Response::parserResponse(std::span<char> buf) {
             _responseHeaders.insert(p);
             // printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
         } while ((line = ::strtok_r(nullptr, "\n", &tmp)));
+        if (!_completeResponseHeader)
+            return HX::STL::utils::FileUtils::kBufMaxSize;
     }
     
     if (_responseHeaders.count("content-length")) { // 存在响应体
