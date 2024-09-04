@@ -1,10 +1,13 @@
-# HXNet
-学习现代Cpp的代码存放库, io_uring + 协程的http/https服务器, 基于压缩前缀树的路由, 支持http/https解析, WebSocket协议, Json解析, 万用print等; 客户端提供了简单的`request`方法, 并且支持`socks5`代理.
+<h1 style="text-align:center; color:yellow">HXNet</h1>
+> [!NOTE]
+> *Heng_Xin学习现代Cpp的代码存放库*
+
+基于`io_uring`+协程的`http/https`服务器, 基于压缩前缀树的路由, 支持`http/https`解析, `WebSocket`协议, `Json`解析, 万用`print`等; 客户端提供了简单的`request`方法(API), 并且支持使用`socks5`代理.
 
 ## 构建要求
 
-- Linux 系统
-- GCC 编译器
+- Linux 5.1+ 
+- GCC 编译器 (推荐)
 - C++20
 
 ## 快速开始
@@ -122,6 +125,7 @@ int main() {
 |---|---|---|
 |liburing|io_uring的封装|https://github.com/axboe/liburing|
 |hashlib|用于`WebSocket`构造`SHA-1`信息摘要; 以及进行`Base64`编码|https://create.stephan-brumme.com/hash-library/|
+|OpenSSL 3.3.1|用于https的证书/握手|https://github.com/openssl/openssl|
 
 ## 代码规范
 > --> [C++ 编码规范](documents/CodingStandards/CppStyle.md)
