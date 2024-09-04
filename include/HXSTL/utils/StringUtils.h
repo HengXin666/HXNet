@@ -67,16 +67,16 @@ struct StringUtil final {
 
     /**
      * @brief 从右到左查找字符并截取后面的子字符串
-     * @param 目标字符串
-     * @param 模版字符串
-     * @return 截取后面的子字符串, 如果没有则返回: 空字符串`""`
+     * @param str 目标字符串
+     * @param delim 模版字符串
+     * @return 截取后面的子字符串, 如果没有则返回: 返回原字符串
      */
-    static std::string rfindAndTrim(std::string_view  str, std::string_view delim) {
+    static std::string rfindAndTrim(std::string_view str, std::string_view delim) {
         std::size_t pos = str.rfind(delim);
         if (pos != std::string::npos) {
             return std::string {str.substr(pos + 1)};
         }
-        return ""; // 如果未找到分隔符，返回原字符串
+        return std::string {str}; // 如果未找到分隔符, 返回原字符串
     }
 };
 

@@ -161,8 +161,11 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvR
             if (std::size_t size = _response->parserResponse(
                 std::span<char> {_recvBuf.data(), (std::size_t) readLen}
             )) {
-                n = std::min(n, size);
-                if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
+                n = std::min(_recvBuf.size(), size);
+                printf("giao~ {\n");
+                int res = co_await _pollAdd(POLLIN | POLLERR);
+                printf("} // 嗷~\n");
+                if (POLLIN != res) {
                     printf("SSL_read: (request) POLLIN error!\n");
                     co_return true;
                 }

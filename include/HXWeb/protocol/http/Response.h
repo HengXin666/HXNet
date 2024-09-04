@@ -205,7 +205,7 @@ public:
      * @return std::string 
      */
     std::string getResponseBody() const {
-        return std::move(_responseBody);
+        return _responseBody;
     }
 
     // ===== ↑客户端使用↑ =====

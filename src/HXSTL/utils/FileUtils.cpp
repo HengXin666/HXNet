@@ -59,10 +59,12 @@ HX::STL::coroutine::task::Task<int> FileUtils::asyncPutFileContent(
     int fd = co_await HX::STL::coroutine::loop::IoUringTask().prepOpenat(
         AT_FDCWD, path.c_str(), static_cast<int>(flags), mode
     );
-
     // 无需设置 offset, 因为内核会根据 open 的 flags 来
-    int res = co_await HX::STL::coroutine::loop::IoUringTask().prepWrite(fd, content, static_cast<std::uint64_t>(-1));
+    int res = co_await HX::STL::coroutine::loop::IoUringTask().prepWrite(
+        fd, content, static_cast<std::uint64_t>(-1)
+    );
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+    printf("%d\n", content.size());
     co_return res;
 }
 

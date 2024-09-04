@@ -252,9 +252,9 @@ std::size_t Response::parserResponse(std::span<char> buf) {
             if (p.first == "") { // 解析失败, 说明当前是空行, 也有可能是没有读取完毕
                 if (*line != '\r') { 
                     // 应该剩下的参与下次解析
-                    _buf = HX::STL::utils::StringUtil::rfindAndTrim(_buf.data(), "\r\n");
+                    printf("继续解析呀~ (%s)\n", _buf.data());
                     _buf.pop_back();
-                    printf("继续解析呀~\n");
+                    _buf = HX::STL::utils::StringUtil::rfindAndTrim(_buf.data(), "\r\n");
                     return HX::STL::utils::FileUtils::kBufMaxSize;
                 }
                 // 是空行
@@ -267,8 +267,11 @@ std::size_t Response::parserResponse(std::span<char> buf) {
             _responseHeaders.insert(p);
             // printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
         } while ((line = ::strtok_r(nullptr, "\n", &tmp)));
-        if (!_completeResponseHeader)
+        if (!_completeResponseHeader) {
+            _buf.clear();
+            printf("\n");
             return HX::STL::utils::FileUtils::kBufMaxSize;
+        }
     }
     
     if (_responseHeaders.count("content-length")) { // 存在响应体
@@ -278,8 +281,8 @@ std::size_t Response::parserResponse(std::span<char> buf) {
             _remainingBodyLen = std::stoll(_responseHeaders["content-length"]) 
                               - _responseBody.size();
         } else {
-            *_remainingBodyLen -= buf.size();
             _buf.pop_back();
+            *_remainingBodyLen -= buf.size();
             _responseBody.append(
                 std::string_view {
                     _buf.data(), 
