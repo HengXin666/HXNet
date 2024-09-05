@@ -3,7 +3,9 @@
 > [!NOTE]
 > *Heng_Xin学习现代Cpp的代码存放库*
 
-基于`io_uring`+协程的`http/https`服务器, 基于压缩前缀树的路由, 支持`http/https`解析, `WebSocket`协议, `Json`解析, 万用`print`等; 客户端提供了简单的`request`方法(API), 并且支持使用`socks5`代理.
+- 基于`io_uring`+协程的`http/https`服务器, 基于压缩前缀树的路由, 支持`http/https`解析, `WebSocket`协议, `Json`解析, 万用`print`等; 
+
+- 客户端提供了简单的协程的`request`方法(API), 并且支持使用`socks5`代理. 支持`http/https`, 以及解析`Transfer-Encoding`分块编码的响应体
 
 ## 构建要求
 
@@ -18,7 +20,7 @@
 > - 其他示例:
 >   - [基于轮询的聊天室](examples/ChatServer.cpp)
 >   - [WebSocket服务端](examples/WsServer.cpp)
->   - [支持`socks5`代理的客户端](examples/Client.cpp)
+>   - [支持`socks5`代理的`Http/Https`客户端](examples/Client.cpp)
 
 - 编写端点 (提供了简化使用的 API 宏)
 ```cpp
