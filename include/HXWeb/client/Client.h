@@ -63,7 +63,7 @@ public:
         std::string proxy = "";
 
         /// @brief 如果是 https 协议, 则可以设置验证参数包
-        std::optional<HX::web::protocol::https::HttpsVerifyBuilder> verifyBuilder;
+        std::optional<HX::web::protocol::https::HttpsVerifyBuilder> verifyBuilder = std::nullopt;
     };
 
     /**

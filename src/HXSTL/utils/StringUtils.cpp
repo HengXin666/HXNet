@@ -1,22 +1,6 @@
 #include <HXSTL/utils/StringUtils.h>
 
 #include <chrono>
-#include <sstream>
-#include <iomanip>
-
-/**
- * 注: SV开头是适配std::string_view
- */
-#ifdef __linux__
-#include <string.h>
-#define S_CPY(de, len, sr) snprintf(de, len, "%s", sr.c_str())
-#define SV_CPY(de, len, sr) snprintf(de, len, "%s", sr.data())
-#define STOK strtok_r
-#else
-#define S_CPY(de, len, sr) strcpy_s(de, len, sr.c_str())
-#define SV_CPY(de, len, sr) strcpy_s(de, len, sr.data())
-#define STOK strtok_s
-#endif
 
 namespace HX { namespace STL { namespace utils {
 
@@ -25,27 +9,19 @@ std::vector<std::string> StringUtil::split(
     std::string_view delim, 
     std::vector<std::string> res /*= std::vector<std::string>{}*/
 )  {
-    // 空字符处理
-    if ("" == str) 
+    if (str.empty()) 
         return res;
 
-    // 字符串从string类型转换为char*类型
-    char* source = new char[str.length() + 1];
-    SV_CPY(source, str.length() + 1, str);
-    char* d = new char[delim.length() + 1];
-    SV_CPY(d, delim.length() + 1, delim);
-
-    // 拆分字符串逻辑
-    char* nextToken = NULL;
-    char* strToken = STOK(source, d, &nextToken);
-    while (strToken) {
-        // 分割得到的字符串转换为string类型
-        res.emplace_back(strToken);
-        // 继续分隔
-        strToken = STOK(NULL, d, &nextToken);
+    size_t start = 0;
+    size_t end = 0;
+    while ((end = str.find(delim, start)) != std::string_view::npos) {
+        res.emplace_back(str.substr(start, end - start));
+        start = end + delim.size();
     }
-    delete[] source;
-    delete[] d;
+
+    // 添加最后一个分割的部分
+    res.emplace_back(str.substr(start));
+
     return res;
 }
 

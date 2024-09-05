@@ -20,7 +20,7 @@ HX::STL::coroutine::task::Task<> startClient() {
                 {"User-Agent", "curl/8.8.0"},
                 {"Accept", "*/*"}
             },
-            .proxy = "socks5://127.0.0.1:2333",
+            .proxy = "socks5://127.0.0.1:2333"
         });
         std::cout << ptr->getStatusCode() << '\n';
         // for (auto&& [k, v] : ptr->getResponseHeaders())
@@ -29,12 +29,7 @@ HX::STL::coroutine::task::Task<> startClient() {
         //     << "\n";
         std::string body = ptr->getResponseBody();
         printf("等我写入 (body.size %lu)\n", body.size());
-        // std::cout << body << '\n';
-        co_await HX::STL::utils::FileUtils::asyncPutFileContent(
-            "github.html",
-            body, 
-            HX::STL::utils::FileUtils::OpenMode::Append
-        );
+        std::cout << body << '\n';
         printf("写入完毕~\n");
     } catch (const std::system_error& e) {
         std::cerr << e.what() << '\n';
