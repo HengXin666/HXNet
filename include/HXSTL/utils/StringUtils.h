@@ -59,7 +59,7 @@ struct StringUtil final {
      * @param str [in, out] 待处理字符串
      */
     static void toSmallLetter(std::string& str) {
-        std::size_t n = str.size();
+        const std::size_t n = str.size();
         for (std::size_t i = 0; i < n; ++i)
             if ('A' <= str[i] && str[i] <= 'Z')
                 str[i] ^= ' ';

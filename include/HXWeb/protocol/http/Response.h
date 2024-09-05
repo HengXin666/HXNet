@@ -57,8 +57,10 @@ class Response {
     // 空行
     std::string _responseBody; // 响应体
 
-    // @brief 待写入的内容
-    std::string _buf;
+    // 指向上一次解析的响应头的键值对; 无效时候指向 `.end()`
+    std::unordered_map<std::string, std::string>::iterator _responseHeadersIt; 
+
+    std::string _buf; // 上一次未解析权的
 
     unsigned _sendCnt = 0;     // 写入计数
 
@@ -147,6 +149,7 @@ public:
     explicit Response() : _statusLine()
                         , _responseHeaders()
                         , _responseBody()
+                        , _responseHeadersIt(_responseHeaders.end())
                         , _buf()
                         , _sendCnt(0)
     {}
@@ -166,7 +169,7 @@ public:
      *         `>  0`: 需要继续解析`size_t`个字节
      * @warning 假定内容是符合Http协议的
      */
-    std::size_t parserResponse(std::span<char> buf);
+    std::size_t parserResponse(std::string_view buf);
 
     /**
      * @brief 获取协议版本
@@ -267,6 +270,7 @@ public:
         _statusLine.clear();
         _responseHeaders.clear();
         _responseBody.clear();
+        _responseHeadersIt = _responseHeaders.end();
         _buf.clear();
         _completeResponseHeader = false;
     }

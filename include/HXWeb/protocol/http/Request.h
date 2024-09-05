@@ -114,7 +114,7 @@ public:
      * @param heads 键值对
      * @return Request& 
      */
-    Request& setRequestHeaders(const std::vector<std::pair<std::string, std::string>>& heads) {
+    Request& addRequestHeaders(const std::vector<std::pair<std::string, std::string>>& heads) {
         _requestHeaders.insert(heads.begin(), heads.end());
         return *this;
     }
@@ -124,7 +124,7 @@ public:
      * @param heads 键值对
      * @return Request& 
      */
-    Request& setRequestHeaders(const std::unordered_map<std::string, std::string>& heads) {
+    Request& addRequestHeaders(const std::unordered_map<std::string, std::string>& heads) {
         _requestHeaders.insert(heads.begin(), heads.end());
         return *this;
     }

@@ -28,18 +28,15 @@ HX::STL::coroutine::task::Task<
     auto ptr = HX::web::client::Client::make();
     co_await ptr->start(url, proxy, timeout, verifyBuilder);
     ptr->_io->_request->setRequestLine(method, HX::STL::utils::UrlUtils::extractPath(url))
-                       .setRequestHeaders(head);
+                       .addRequestHeaders(std::vector<std::pair<std::string, std::string>> {
+                            {"Host", HX::STL::utils::UrlUtils::extractDomainName(url)},
+                            {"Accept-Encoding", "identity"}, // 指定使用明文传输
+                        })
+                       .addRequestHeaders(head);
     if (body.size())
         ptr->_io->_request->setRequestBody(body);
     co_await ptr->_io->sendRequest();
     co_await ptr->_io->recvResponse(timeout);
-
-    // // 重定向
-    // if (ptr->_io->_response->getStatusCode() == "301") {
-    //     // printf("重定向~\n");
-    //     // request(method, url, head, body, timeout, proxy, verifyBuilder);
-    // }
-
     co_return std::make_shared<HX::web::protocol::http::Response>(
         std::move(ptr->_io->getResponse())
     );
@@ -82,10 +79,14 @@ HX::STL::coroutine::task::Task<> Client::start(
         _io = std::make_shared<HX::web::client::IO<HX::web::protocol::https::Https>>(
             _clientFd
         );
-        if (!HX::web::protocol::https::Context::getContext().getSslCtx() && verifyBuilder.has_value()) {
-            HX::web::protocol::https::Context::getContext().initClientSSL(*verifyBuilder);
-        } else {
-            throw "Is no init Client SSL";
+
+        // 如果是第一次使用, 则初始化 https::Context
+        if (!HX::web::protocol::https::Context::getContext().getSslCtx()) {
+            if (verifyBuilder.has_value()) {
+                HX::web::protocol::https::Context::getContext().initClientSSL(*verifyBuilder);
+            } else {
+                HX::web::protocol::https::Context::getContext().initClientSSL({});
+            }
         }
     }
     else

@@ -33,7 +33,6 @@ HX::STL::coroutine::task::Task<> IO<void>::sendRequest() const {
     _response->clear();
     // 生成请求字符串, 用于写入
     _request->createRequestBuffer();
-    printf("> %s\n", _request->_buf.data());
     co_await _sendRequest(_request->_buf);
     // 全部写入啦
     _request->clear();
@@ -49,7 +48,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::http::Http>::_recvRes
 
         // LOG_INFO("读取一次结束... (%llu)", n);
         if (std::size_t size = _response->parserResponse(
-            std::span<char> {_recvBuf.data(), n}
+            std::string_view {_recvBuf.data(), n}
         )) {
             // LOG_INFO("二次读取中..., 还需要读取 size = %llu", size);
             n = co_await recvN(_recvBuf, std::min(size, _recvBuf.size()));
@@ -159,12 +158,10 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvR
         int err = SSL_get_error(_ssl, readLen);
         if (readLen > 0) {
             if (std::size_t size = _response->parserResponse(
-                std::span<char> {_recvBuf.data(), (std::size_t) readLen}
+                std::string_view {_recvBuf.data(), (std::size_t) readLen}
             )) {
                 n = std::min(_recvBuf.size(), size);
-                printf("giao~ {\n");
                 int res = co_await _pollAdd(POLLIN | POLLERR);
-                printf("} // 嗷~\n");
                 if (POLLIN != res) {
                     printf("SSL_read: (request) POLLIN error!\n");
                     co_return true;

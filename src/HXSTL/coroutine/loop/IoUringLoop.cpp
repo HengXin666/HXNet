@@ -56,6 +56,9 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     for (const auto& it : tasks) {
         it.resume();
     }
+    // for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
+    //     it->resume();
+    // }
     return true;
 }
 
