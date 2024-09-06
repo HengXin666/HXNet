@@ -26,9 +26,11 @@ class HttpsController {
 
     ENDPOINT_BEGIN(API_GET, "/files/**", files) {
         // 使用分块编码
-        io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
-                        .setContentType("text/html", "UTF-8");
-        co_await io.sendResponseWithChunkedEncoding("static/text.html");
+        RESPONSE_FILE(
+            200,                 // 状态码
+            "static/text.html",  // 分块读写的文件
+            "text/html", "UTF-8" // 文件类型, 编码
+        );
         co_return true;
     } ENDPOINT_END;
 

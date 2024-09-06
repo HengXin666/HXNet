@@ -83,6 +83,18 @@ io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE
   .setContentType(__VA_ARGS__)
 
 /**
+ * @brief 使用`Transfer-Encoding`分块编码响应, 以传输文件
+ * @param CODE 状态码 (如`200`)
+ * @param PATH 需要传输的文件的文件路径
+ * @param __VA_ARGS__ 响应类型(第一个是响应类型(必选), 第二个是响应编码(可选)), 
+ * 如 `"text/html", "UTF-8"`, `"image/x-icon"`
+ */
+#define RESPONSE_FILE(CODE, PATH, ...) \
+io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_##CODE) \
+                .setContentType(__VA_ARGS__); \
+co_await io.sendResponseWithChunkedEncoding(PATH)
+
+/**
  * @brief 设置状态码 (接下来可以继续操作)
  * @param 状态码 (如`200`)
  */
