@@ -28,7 +28,7 @@ class HttpsController {
         // 使用分块编码
         RESPONSE_FILE(
             200,                 // 状态码
-            "static/text.html",  // 分块读写的文件
+            "static/test/github.html",  // 分块读写的文件
             "text/html", "UTF-8" // 文件类型, 编码
         );
         co_return true;
@@ -37,7 +37,7 @@ class HttpsController {
     ENDPOINT_BEGIN(API_GET, "/test", test) {
         RESPONSE_DATA(
             200, 
-            co_await HX::STL::utils::FileUtils::asyncGetFileContent("static/text.html"),
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("static/test/github.html"),
             "text/html", "UTF-8"
         );
         co_return true;

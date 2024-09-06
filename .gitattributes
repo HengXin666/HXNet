@@ -1,2 +1,2 @@
 lib/ linguist-vendored
-static/text.html linguist-detectable
+static/test/*.html linguist-vendored
