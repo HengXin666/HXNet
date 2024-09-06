@@ -1,7 +1,7 @@
 <h1 align="center" style="color:yellow">HXNet</h1>
 
 > [!NOTE]
-> *Heng_Xin学习现代Cpp的代码存放库,* 包含一下内容:
+> *Heng_Xin学习现代Cpp的代码存放库,* 包含以下内容:
 
 - 基于`io_uring`+协程的`http/https`服务器, 基于压缩前缀树的路由, 支持`http/https`解析, `WebSocket`协议, 支持`Transfer-Encoding`分块编码传输文件.
 

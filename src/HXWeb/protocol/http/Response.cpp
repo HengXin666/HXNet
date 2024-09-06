@@ -2,7 +2,12 @@
 
 #include <sys/socket.h>
 #include <cstring>
+
+#ifndef HEXADECIMAL_CONVERSION
 #include <format>
+#else
+#include <HXSTL/utils/NumericBaseConverter.h>
+#endif // HEXADECIMAL_CONVERSION
 
 #include <HXSTL/utils/StringUtils.h>
 #include <HXSTL/utils/FileUtils.h>
@@ -320,10 +325,6 @@ std::size_t Response::parserResponse(std::string_view buf) {
     return 0; // 解析完毕
 }
 
-// Response& Response::setFileBodyWithChunkedEncoding(const std::string& path) {
-
-// }
-
 void Response::_buildResponseLineAndHeaders() {
     _buf.append(_statusLine[ResponseLineDataType::ProtocolVersion]);
     _buf.append(" ");
@@ -342,7 +343,11 @@ void Response::_buildResponseLineAndHeaders() {
 
 void Response::_buildToChunkedEncoding(std::string_view buf) {
     _buf.clear();
+#ifdef HEXADECIMAL_CONVERSION
+    _buf.append(HX::STL::utils::NumericBaseConverter::hexadecimalConversion(buf.size()));
+#else
     _buf.append(std::format("{:X}", buf.size())); // 需要十六进制嘞
+#endif // HEXADECIMAL_CONVERSION
     _buf.append("\r\n");
     _buf.append(buf);
     _buf.append("\r\n");

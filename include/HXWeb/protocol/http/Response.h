@@ -264,13 +264,6 @@ public:
     }
 
     /**
-     * @brief 设置响应体使用`TransferEncoding`分块编码, 以传输读取的文件
-     * @param path 需要读取的文件的路径
-     * @return Response& 
-     */
-    // Response& setFileBodyWithChunkedEncoding(const std::string& path);
-
-    /**
      * @brief 向响应头部添加一个键值对
      * @param key 键
      * @param val 值
