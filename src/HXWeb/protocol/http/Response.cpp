@@ -251,7 +251,7 @@ std::size_t Response::parserResponse(std::string_view buf) {
         std::string_view subStr = buf.substr(0, pos);
         auto p = HX::STL::utils::StringUtil::splitAtFirst(subStr, ": ");
         if (p.first.empty()) { // 找不到 ": "
-            if (subStr.size()) {
+            if (subStr.size()) [[unlikely]] { // 很少会有分片传输响应头的
                 _responseHeadersIt->second.append(subStr);
             } else { // 请求头解析完毕!
                 _completeResponseHeader = true;
@@ -266,12 +266,12 @@ std::size_t Response::parserResponse(std::string_view buf) {
     if (_responseHeaders.count("content-length")) { // 存在content-length模式接收的响应体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
         if (!_remainingBodyLen.has_value()) {
-            _responseBody = buf;
+            _body = buf;
             _remainingBodyLen = std::stoll(_responseHeaders["content-length"]) 
-                              - _responseBody.size();
+                              - _body.size();
         } else {
             *_remainingBodyLen -= buf.size();
-            _responseBody.append(buf);
+            _body.append(buf);
         }
 
         if (*_remainingBodyLen != 0) {
@@ -281,11 +281,11 @@ std::size_t Response::parserResponse(std::string_view buf) {
     } else if (_responseHeaders.count("transfer-encoding")) { // 存在响应体以`分块传输编码`
         if (_remainingBodyLen) { // 处理没有读取完的
             if (buf.size() <= *_remainingBodyLen) { // 还没有读取完毕
-                _responseBody += buf;
+                _body += buf;
                 *_remainingBodyLen -= buf.size();
                 return HX::STL::utils::FileUtils::kBufMaxSize;
             } else { // 读取完了
-                _responseBody.append(buf, 0, *_remainingBodyLen);
+                _body.append(buf, 0, *_remainingBodyLen);
                 buf = buf.substr(std::min(*_remainingBodyLen + 2, buf.size()));
                 _remainingBodyLen.reset();
             }
@@ -307,11 +307,11 @@ std::size_t Response::parserResponse(std::string_view buf) {
             }
             buf = buf.substr(posLen + 2);
             if (buf.size() <= *_remainingBodyLen) { // 没有读完
-                _responseBody += buf;
+                _body += buf;
                 *_remainingBodyLen -= buf.size();
                 return HX::STL::utils::FileUtils::kBufMaxSize;
             }
-            _responseBody.append(buf.substr(0, *_remainingBodyLen));
+            _body.append(buf.substr(0, *_remainingBodyLen));
             buf = buf.substr(*_remainingBodyLen + 2);
         }
     }
@@ -417,13 +417,13 @@ std::size_t Response::parserResponse(std::span<char> buf) {
     if (_responseHeaders.count("content-length")) { // 存在响应体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
         if (!_remainingBodyLen.has_value()) {
-            _responseBody = std::string {tmp};
+            _body = std::string {tmp};
             _remainingBodyLen = std::stoll(_responseHeaders["content-length"]) 
-                              - _responseBody.size();
+                              - _body.size();
         } else {
             _buf.pop_back();
             *_remainingBodyLen -= buf.size();
-            _responseBody.append(
+            _body.append(
                 std::string_view {
                     _buf.data(), 
                     _buf.size()
@@ -457,9 +457,9 @@ void Response::createResponseBuffer() {
         _buf.append("\r\n");
     }
     _buf.append("Content-Length: ");
-    _buf.append(std::to_string(_responseBody.size()));
+    _buf.append(std::to_string(_body.size()));
     _buf.append("\r\n\r\n");
-    _buf.append(_responseBody);
+    _buf.append(_body);
 }
 
 }}}} // namespace HX::web::protocol::http

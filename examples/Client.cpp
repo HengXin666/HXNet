@@ -28,8 +28,8 @@ HX::STL::coroutine::task::Task<> startClient() {
         //     << " -> " << v 
         //     << "\n";
         std::string body = ptr->getResponseBody();
+        // std::cout << body << '\n';
         printf("等我写入 (body.size %lu)\n", body.size());
-        std::cout << body << '\n';
         printf("写入完毕~\n");
     } catch (const std::system_error& e) {
         std::cerr << e.what() << '\n';

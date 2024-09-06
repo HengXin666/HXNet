@@ -22,92 +22,117 @@ void Request::createRequestBuffer() {
         _buf.append(val);
         _buf.append("\r\n");
     }
-    if (_body) {
+    if (_body.size()) {
         _buf.append("Content-Length: ");
-        _buf.append(std::to_string(_body->size()));
+        _buf.append(std::to_string(_body.size()));
         _buf.append("\r\n\r\n");
-        _buf.append(*_body);
+        _buf.append(_body);
     } else {
         _buf.append("\r\n\r\n");
     }
 }
 
 std::size_t Request::parserRequest(
-    std::span<char> buf
+    std::string_view buf
 ) {
-    _buf.append(std::string {buf.data(), buf.size()});
-    _buf.push_back('\0'); // HTTP 请求的请求体在传输过程中没有特定的 \0 结束标志, 
-                          // 但是 char * 需要
-    char *tmp = nullptr;
-    char *line = nullptr;
-    if (_requestLine.empty()) { // 请求行还未解析
-        line = ::strtok_r(_buf.data(), "\r\n", &tmp); // 线程安全
-        if (!line)
-            return HX::STL::utils::FileUtils::kBufMaxSize;
-        _requestLine = HX::STL::utils::StringUtil::split(line, " "); // 解析请求头: GET /PTAH HTTP/1.1
-        if (_requestLine.size() != 3)
-            return HX::STL::utils::FileUtils::kBufMaxSize;
+    if (_buf.size()) {
+        _buf += buf;
+        buf = _buf;
     }
 
-    if (!_completeRequestHeader) { // 请求头未解析完
-        /**
-         * @brief 解析请求头
-         * 解析请求报文算法:
-         * 请求头\r\n  | 按照 \n 分割, 这样每一个line的后面都会有\r残留, 需要pop掉
-         * \r\n (空行) | 只会解析到 \r
-         * 请求体
-         */
-        if (tmp == nullptr) {
-            line = ::strtok_r(_buf.data(), "\r\n", &tmp);
-        } else {
-            line = ::strtok_r(nullptr, "\n", &tmp);
+    if (_requestLine.empty()) { // 响应行还未解析
+        std::size_t pos = buf.find("\r\n");
+        if (pos == std::string_view::npos) [[unlikely]] { // 不可能事件
+            return HX::STL::utils::FileUtils::kBufMaxSize;
         }
-        do {// 解析 请求行
-            // 计算当前子字符串的长度
-            std::size_t length = (*tmp == '\0' ? ::strlen(line) : tmp - line - 1);
-            auto p = HX::STL::utils::StringUtil::splitAtFirst(std::string_view {line, length}, ": ");
-            if (p.first == "") { // 解析失败, 说明当前是空行, 也有可能是没有读取完毕
-                if (*line != '\r') { 
-                    // 应该剩下的参与下次解析
-                    _buf = HX::STL::utils::StringUtil::rfindAndTrim(_buf.data(), "\r\n");
-                    _buf.pop_back();
-                    return HX::STL::utils::FileUtils::kBufMaxSize;
-                }
-                // 是空行
-                _completeRequestHeader = true;
-                break;
-            }
-            HX::STL::utils::StringUtil::toSmallLetter(p.first);
-            p.second.pop_back(); // 去掉 '\r'
-            _requestHeaders.insert(p);
-            // printf("%s -> %s\n", p.first.c_str(), p.second.c_str());
-        } while ((line = ::strtok_r(nullptr, "\n", &tmp)));
+
+        // 解析响应行
+        _requestLine = HX::STL::utils::StringUtil::split(buf.substr(0, pos), " ");
+        if (_requestLine.size() != 3)
+            return HX::STL::utils::FileUtils::kBufMaxSize;
+        buf = buf.substr(pos + 2); // 再前进, 以去掉 "\r\n"
     }
-    
-    if (_requestHeaders.count("content-length")) { // 存在请求体
+
+    /**
+     * @brief 请求头
+     * 通过`\r\n`分割后, 取最前面的, 先使用最左的`:`以判断是否是需要作为独立的键值对;
+     * -  如果找不到`:`, 并且 非空, 那么它需要接在上一个解析的键值对的值尾
+     * -  否则即请求头解析完毕!
+     */
+    while (!_completeRequestHeader) { // 响应头未解析完
+        std::size_t pos = buf.find("\r\n");
+        if (pos == std::string_view::npos) { // 没有读取完
+            _buf = buf;
+            return HX::STL::utils::FileUtils::kBufMaxSize;
+        }
+        std::string_view subStr = buf.substr(0, pos);
+        auto p = HX::STL::utils::StringUtil::splitAtFirst(subStr, ": ");
+        if (p.first.empty()) { // 找不到 ": "
+            if (subStr.size()) [[unlikely]] { // 很少会有分片传输响应头的
+                _requestHeadersIt->second.append(subStr);
+            } else { // 请求头解析完毕!
+                _completeRequestHeader = true;
+            }
+        } else {
+            HX::STL::utils::StringUtil::toSmallLetter(p.first);
+            _requestHeadersIt = _requestHeaders.insert(p).first;
+        }
+        buf = buf.substr(pos + 2);
+    }
+
+    if (_requestHeaders.count("content-length")) { // 存在content-length模式接收的响应体
         // 是 空行之后 (\r\n\r\n) 的内容大小(char)
         if (!_remainingBodyLen.has_value()) {
-            _body = std::string {tmp};
+            _body = buf;
             _remainingBodyLen = std::stoll(_requestHeaders["content-length"]) 
-                              - _body->size();
+                              - _body.size();
         } else {
             *_remainingBodyLen -= buf.size();
-            _buf.pop_back();
-            _body->append(
-                std::string_view {
-                    _buf.data(), 
-                    _buf.size()
-                }
-            );
+            _body.append(buf);
         }
 
         if (*_remainingBodyLen != 0) {
             _buf.clear();
             return *_remainingBodyLen;
         }
+    } else if (_requestHeaders.count("transfer-encoding")) { // 存在响应体以`分块传输编码`
+        if (_remainingBodyLen) { // 处理没有读取完的
+            if (buf.size() <= *_remainingBodyLen) { // 还没有读取完毕
+                _body += buf;
+                *_remainingBodyLen -= buf.size();
+                return HX::STL::utils::FileUtils::kBufMaxSize;
+            } else { // 读取完了
+                _body.append(buf, 0, *_remainingBodyLen);
+                buf = buf.substr(std::min(*_remainingBodyLen + 2, buf.size()));
+                _remainingBodyLen.reset();
+            }
+        }
+        while (true) {
+            std::size_t posLen = buf.find("\r\n");
+            if (posLen == std::string_view::npos) { // 没有读完
+                _buf = buf;
+                return HX::STL::utils::FileUtils::kBufMaxSize;
+            }
+            if (!posLen && buf[0] == '\r') [[unlikely]] { // posLen == 0
+                // \r\n 贴脸, 触发原因, std::min(*_remainingBodyLen + 2, buf.size()) 只能 buf.size()
+                buf = buf.substr(posLen + 2);
+                continue;
+            }
+            _remainingBodyLen = std::stol(std::string {buf.substr(0, posLen)}, nullptr, 16); // 转换为十进制整数
+            if (!*_remainingBodyLen) { // 解析完毕
+                return 0;
+            }
+            buf = buf.substr(posLen + 2);
+            if (buf.size() <= *_remainingBodyLen) { // 没有读完
+                _body += buf;
+                *_remainingBodyLen -= buf.size();
+                return HX::STL::utils::FileUtils::kBufMaxSize;
+            }
+            _body.append(buf.substr(0, *_remainingBodyLen));
+            buf = buf.substr(*_remainingBodyLen + 2);
+        }
     }
 
-    _buf.clear();
     return 0; // 解析完毕
 }
 

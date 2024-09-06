@@ -31,10 +31,10 @@ endif()
 # add_definitions(-DHTTPS_OPEN_SSL_URING_MAIN)  # 基于using的异步openssl+https服务端
 
 # 客户端
-add_definitions(-DCLIENT_MAIN)  # 客户端
+# add_definitions(-DCLIENT_MAIN)  # 客户端
 
 # 服务端
-# add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
+add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
 # add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 # add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
 

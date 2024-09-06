@@ -23,6 +23,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <string_view>
 #include <optional>
 #include <span>
 
@@ -57,8 +58,11 @@ class Request {
     std::vector<std::string> _requestLine; // 请求行
     std::unordered_map<std::string, std::string> _requestHeaders; // 请求头
 
+    // 上一次解析的请求头
+    std::unordered_map<std::string, std::string>::iterator _requestHeadersIt;
+
     // 请求体
-    std::optional<std::string> _body;
+    std::string _body;
 
     // @brief 仍需读取的请求体长度
     std::optional<std::size_t> _remainingBodyLen;
@@ -91,7 +95,8 @@ public:
 
     explicit Request() : _requestLine()
                        , _requestHeaders()
-                       , _body(std::nullopt)
+                       , _requestHeadersIt(_requestHeaders.end())
+                       , _body()
                        , _remainingBodyLen(std::nullopt)
     {}
     // ===== ↓客户端使用↓ =====
@@ -161,7 +166,7 @@ public:
      *         `>  0`: 需要继续解析`size_t`个字节
      * @warning 假定内容是符合Http协议的
      */
-    std::size_t parserRequest(std::span<char> buf);
+    std::size_t parserRequest(std::string_view buf);
 
     /**
      * @brief 获取请求头键值对的引用
@@ -191,9 +196,7 @@ public:
      * @return 如果没有请求体, 则返回`""`
      */
     std::string getRequesBody() const noexcept {
-        if (_body)
-            return *_body;
-        return "";
+        return _body;
     }
 
     /**
@@ -231,8 +234,9 @@ public:
     void clear() noexcept {
         _requestLine.clear();
         _requestHeaders.clear();
+        _requestHeadersIt = _requestHeaders.end();
         _buf.clear();
-        _body.reset();
+        _body.clear();
         _completeRequestHeader = false;
         _remainingBodyLen.reset();
     }

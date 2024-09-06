@@ -55,7 +55,7 @@ class Response {
     std::vector<std::string> _statusLine; // 状态行
     std::unordered_map<std::string, std::string> _responseHeaders; // 响应头部
     // 空行
-    std::string _responseBody; // 响应体
+    std::string _body; // 响应体
 
     // 指向上一次解析的响应头的键值对; 无效时候指向 `.end()`
     std::unordered_map<std::string, std::string>::iterator _responseHeadersIt; 
@@ -148,7 +148,7 @@ public:
 
     explicit Response() : _statusLine()
                         , _responseHeaders()
-                        , _responseBody()
+                        , _body()
                         , _responseHeadersIt(_responseHeaders.end())
                         , _buf()
                         , _sendCnt(0)
@@ -208,7 +208,7 @@ public:
      * @return std::string 
      */
     std::string getResponseBody() const {
-        return _responseBody;
+        return _body;
     }
 
     // ===== ↑客户端使用↑ =====
@@ -246,7 +246,7 @@ public:
      * @warning 不需要手动写`/r`或`/n`以及尾部的`/r/n`
      */
     Response& setBodyData(const std::string& data) {
-        _responseBody = data;
+        _body = data;
         return *this;
     }
 
@@ -269,7 +269,7 @@ public:
     void clear() noexcept {
         _statusLine.clear();
         _responseHeaders.clear();
-        _responseBody.clear();
+        _body.clear();
         _responseHeadersIt = _responseHeaders.end();
         _buf.clear();
         _completeResponseHeader = false;

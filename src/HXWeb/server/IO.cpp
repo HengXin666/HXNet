@@ -49,7 +49,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::http::Http>::_recvReq
 
         // LOG_INFO("读取一次结束... (%llu)", n);
         if (std::size_t size = _request->parserRequest(
-            std::span<char> {_recvBuf.data(), n}
+            std::string_view {_recvBuf.data(), n}
         )) {
             // LOG_INFO("二次读取中..., 还需要读取 size = %llu", size);
             n = co_await recvN(_recvBuf, std::min(size, _recvBuf.size()));
@@ -147,7 +147,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvR
         int err = SSL_get_error(_ssl, readLen);
         if (readLen > 0) {
             if (std::size_t size = _request->parserRequest(
-                std::span<char> {_recvBuf.data(), (std::size_t) readLen}
+                std::string_view {_recvBuf.data(), (std::size_t) readLen}
             )) {
                 n = std::min(n, size);
                 if (POLLIN != co_await _pollAdd(POLLIN | POLLERR)) {
