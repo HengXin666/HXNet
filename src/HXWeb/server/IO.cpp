@@ -39,6 +39,23 @@ HX::STL::coroutine::task::Task<> IO<>::__sendResponse() const {
     _response->clear();
 }
 
+HX::STL::coroutine::task::Task<> IO<>::sendResponseWithChunkedEncoding(
+    const std::string& path
+) const {
+    // 本次请求使用结束, 清空, 复用
+    _request->clear();
+    _response->addHeader("Transfer-Encoding", "chunked");
+    _response->_buildResponseLineAndHeaders();
+    co_await _sendResponse(_response->_buf);
+    uint64_t offset = 0;
+    while (true) {
+        // 读取文件
+    }
+
+    // 全部写入啦
+    _response->clear();
+}
+
 HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::http::Http>::_recvRequest() {
     std::size_t n = co_await recvN(_recvBuf, _recvBuf.size()); // 读取到的字节数
     while (true) {

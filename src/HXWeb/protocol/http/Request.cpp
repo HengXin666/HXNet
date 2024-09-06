@@ -40,13 +40,13 @@ std::size_t Request::parserRequest(
         buf = _buf;
     }
 
-    if (_requestLine.empty()) { // 响应行还未解析
+    if (_requestLine.empty()) { // 请求行还未解析
         std::size_t pos = buf.find("\r\n");
         if (pos == std::string_view::npos) [[unlikely]] { // 不可能事件
             return HX::STL::utils::FileUtils::kBufMaxSize;
         }
 
-        // 解析响应行
+        // 解析请求行
         _requestLine = HX::STL::utils::StringUtil::split(buf.substr(0, pos), " ");
         if (_requestLine.size() != 3)
             return HX::STL::utils::FileUtils::kBufMaxSize;
@@ -59,7 +59,7 @@ std::size_t Request::parserRequest(
      * -  如果找不到`:`, 并且 非空, 那么它需要接在上一个解析的键值对的值尾
      * -  否则即请求头解析完毕!
      */
-    while (!_completeRequestHeader) { // 响应头未解析完
+    while (!_completeRequestHeader) { // 请求头未解析完
         std::size_t pos = buf.find("\r\n");
         if (pos == std::string_view::npos) { // 没有读取完
             _buf = buf;
@@ -68,7 +68,7 @@ std::size_t Request::parserRequest(
         std::string_view subStr = buf.substr(0, pos);
         auto p = HX::STL::utils::StringUtil::splitAtFirst(subStr, ": ");
         if (p.first.empty()) { // 找不到 ": "
-            if (subStr.size()) [[unlikely]] { // 很少会有分片传输响应头的
+            if (subStr.size()) [[unlikely]] { // 很少会有分片传输请求头的
                 _requestHeadersIt->second.append(subStr);
             } else { // 请求头解析完毕!
                 _completeRequestHeader = true;
@@ -95,7 +95,10 @@ std::size_t Request::parserRequest(
             _buf.clear();
             return *_remainingBodyLen;
         }
-    } else if (_requestHeaders.count("transfer-encoding")) { // 存在响应体以`分块传输编码`
+    } else if (_requestHeaders.count("transfer-encoding")) { // 存在请求体以`分块传输编码`
+        /**
+         * TODO: 目前只支持 chunked 编码, 不支持压缩的 (2024-9-6 09:36:25) 
+         * */
         if (_remainingBodyLen) { // 处理没有读取完的
             if (buf.size() <= *_remainingBodyLen) { // 还没有读取完毕
                 _body += buf;

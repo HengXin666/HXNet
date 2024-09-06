@@ -73,7 +73,19 @@ class Response {
     friend HX::web::server::IO<void>;
 
     /**
-     * @brief [仅服务端] 生成响应字符串, 用于写入
+     * @brief [仅服务端] 生成响应行和响应头
+     */
+    void _buildResponseLineAndHeaders();
+
+    /**
+     * @brief [仅服务端] 将`buf`转化为`ChunkedEncoding`的Body, 放入`_body`以分片发送
+     * @param buf 
+     */
+    void _buildToChunkedEncoding(std::string_view buf);
+
+    /**
+     * @brief [仅服务端] 生成完整的响应字符串, 用于写入
+     * @warning 本方法子适用于`Content-Length`的短消息, 无法使用分块编码
      */
     void createResponseBuffer();
 public:
@@ -249,6 +261,13 @@ public:
         _body = data;
         return *this;
     }
+
+    /**
+     * @brief 设置响应体使用`TransferEncoding`分块编码, 以传输读取的文件
+     * @param path 需要读取的文件的路径
+     * @return Response& 
+     */
+    // Response& setFileBodyWithChunkedEncoding(const std::string& path);
 
     /**
      * @brief 向响应头部添加一个键值对

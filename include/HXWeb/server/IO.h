@@ -57,6 +57,15 @@ public:
      */
     HX::STL::coroutine::task::Task<> sendResponse() const;
     HX::STL::coroutine::task::Task<> sendResponse(HX::STL::container::NonVoidHelper<>) const;
+
+    /**
+     * @brief 设置响应体使用`TransferEncoding`分块编码, 以传输读取的文件
+     * @param path 需要读取的文件的路径
+     * @warning 在此之前都不需要使用`setBodyData`
+     */
+    HX::STL::coroutine::task::Task<> sendResponseWithChunkedEncoding(
+        const std::string& path
+    ) const;
 protected:
     /**
      * @brief 解析一条完整的客户端请求

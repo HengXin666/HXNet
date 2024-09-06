@@ -319,131 +319,11 @@ std::size_t Response::parserResponse(std::string_view buf) {
     return 0; // 解析完毕
 }
 
-#if 0
-std::size_t Response::parserResponse(std::span<char> buf) {
-    _buf.append(std::string {buf.data(), buf.size()});
-    _buf.push_back('\0'); // HTTP 响应的响应体在传输过程中没有特定的 \0 结束标志, 
-                          // 但是 char * 需要
-    char *tmp = nullptr;
-    char *line = nullptr;
-    if (_statusLine.empty()) { // 响应行还未解析
-        line = ::strtok_r(_buf.data(), "\r\n", &tmp); // 线程安全
-        if (!line)
-            return HX::STL::utils::FileUtils::kBufMaxSize;
-        // 解析响应行, 注意 不能按照空格直接切分! 因为 HTTP/1.1 404 NOF FOND\r\n
-        _statusLine = HX::STL::utils::StringUtil::split(line, " ");
-        if (_statusLine.size() < 3)
-            return HX::STL::utils::FileUtils::kBufMaxSize;
-        if (_statusLine.size() > 3) {
-            for (std::size_t i = 4; i < _statusLine.size(); ++i) {
-                _statusLine[ResponseLineDataType::StatusMessage] += _statusLine[i];
-            }
-            _statusLine.resize(3);
-        }
-    }
+// Response& Response::setFileBodyWithChunkedEncoding(const std::string& path) {
 
-    if (!_completeResponseHeader) { // 响应头未解析完
-        /**
-         * @brief 响应响应头
-         * 解析响应报文算法:
-         * 响应头\r\n  | 按照 \n 分割, 这样每一个line的后面都会有\r残留, 需要pop掉
-         * \r\n (空行) | 只会解析到 \r
-         * 响应体
-         */
-        if (tmp == nullptr) { // 之前就没有解析完
-            line = ::strtok_r(_buf.data(), "\n", &tmp);
-        } else { // 第一次解析到
-            line = ::strtok_r(nullptr, "\n", &tmp);
-        }
+// }
 
-        /**
-         * @brief 假设你有一个非常长的 Content-Security-Policy 头字段
-         * 它可能会被分成多个行发送. 每个分片的格式应如下:
-         * Content-Security-Policy: default-src 'none'; base-uri 'self'; child-src github.com/... \r\n
-         * github.com/webpack/... \r\n
-         * github.com/assets/... \r\n
-         * ... (其余部分) \r\n
-         */
-
-        do {// 解析 响应行
-            // 计算当前子字符串的长度
-            std::size_t length = (*tmp == '\0' ? ::strlen(line) : tmp - line - 1);
-            auto p = HX::STL::utils::StringUtil::splitAtFirst(std::string_view {line, length}, ": ");
-            if (p.first == "") { // 解析失败, 说明当前是空行, 也有可能是没有读取完毕
-                if (*line != '\r') { 
-                    // 应该剩下的参与下次解析
-                    printf("继续解析呀~\n"); // (%s)\n", _buf.data());
-                    _buf.pop_back();
-                    _buf = HX::STL::utils::StringUtil::rfindAndTrim(_buf.data(), "\r\n");
-                    std::cout << _buf << '\n';
-                    return HX::STL::utils::FileUtils::kBufMaxSize;
-                }
-                // 是空行
-                printf("解析完了~\n");
-                _completeResponseHeader = true;
-                break;
-            }
-            HX::STL::utils::StringUtil::toSmallLetter(p.first);
-            p.second.pop_back(); // 去掉 '\r'
-            _responseHeaders.insert(p);
-            printf("%lu -> %lu\n", p.first.size(), p.second.size());
-        } while ((line = ::strtok_r(nullptr, "\n", &tmp)));
-
-        if (!_completeResponseHeader) { // 解析完整了, 但是并没有`\r\n`
-            _buf.clear();
-            printf("\n");
-            return HX::STL::utils::FileUtils::kBufMaxSize;
-        }
-    }
-
-    /**
-     * @brief 支持分块传输编码
-     * HTTP/1.1 200 OK\r\n
-     * Content-Type: text/plain\r\n
-     * Transfer-Encoding: chunked\r\n
-     * \r\n  <-- 这是请求头和主体之间的空行, 标志着请求头结束
-     * 4\r\n
-     * This \r\n
-     * 7\r\n
-     * is a \r\n
-     * 9\r\n
-     * chunked \r\n
-     * 6\r\n
-     * message\r\n
-     * 0\r\n
-     * \r\n
-     */
-    
-    if (_responseHeaders.count("content-length")) { // 存在响应体
-        // 是 空行之后 (\r\n\r\n) 的内容大小(char)
-        if (!_remainingBodyLen.has_value()) {
-            _body = std::string {tmp};
-            _remainingBodyLen = std::stoll(_responseHeaders["content-length"]) 
-                              - _body.size();
-        } else {
-            _buf.pop_back();
-            *_remainingBodyLen -= buf.size();
-            _body.append(
-                std::string_view {
-                    _buf.data(), 
-                    _buf.size()
-                }
-            );
-        }
-
-        if (*_remainingBodyLen != 0) {
-            _buf.clear();
-            return *_remainingBodyLen;
-        }
-    }
-
-    _buf.clear();
-    return 0; // 解析完毕
-}
-#endif
-
-void Response::createResponseBuffer() {
-    _buf.clear();
+void Response::_buildResponseLineAndHeaders() {
     _buf.append(_statusLine[ResponseLineDataType::ProtocolVersion]);
     _buf.append(" ");
     _buf.append(_statusLine[ResponseLineDataType::StatusCode]);
@@ -456,6 +336,22 @@ void Response::createResponseBuffer() {
         _buf.append(val);
         _buf.append("\r\n");
     }
+    _buf.append("\r\n");
+}
+
+void Response::_buildToChunkedEncoding(std::string_view buf) {
+    _buf.append(std::to_string(buf.size()));
+    _buf.append("\r\n");
+    _buf.append(buf);
+    _buf.append("\r\n");
+}
+
+void Response::createResponseBuffer() {
+    _buf.clear();
+    _buildResponseLineAndHeaders();
+    _buf.pop_back(); // 去掉\n
+    _buf.pop_back(); // 去掉\r
+    // 补充这个
     _buf.append("Content-Length: ");
     _buf.append(std::to_string(_body.size()));
     _buf.append("\r\n\r\n");

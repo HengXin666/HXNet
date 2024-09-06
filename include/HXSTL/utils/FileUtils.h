@@ -96,6 +96,37 @@ public:
     );
 
     /**
+     * @brief 异步文件类
+     */
+    class AsyncFile {
+    public:
+        explicit AsyncFile(
+            const std::string& path,
+            OpenMode flags = OpenMode::ReadWrite,
+            mode_t mode = 0644
+        );
+
+        /**
+         * @brief 读取文件内容到 buf
+         * @param buf [out] 读取到的数据
+         * @return int 读取的字节数
+         */
+        HX::STL::coroutine::task::Task<int> read(std::string& buf);
+
+        /**
+         * @brief 将 buf 写入到文件中
+         * @param buf [in] 需要写入的数据
+         * @return int 写入的字节数
+         */
+        HX::STL::coroutine::task::Task<int> write(const std::string& buf);
+
+        ~AsyncFile() noexcept;
+    protected:
+        int _fd = -1;
+        uint64_t _offset = 0;
+    };
+
+    /**
      * @brief 设置套接字为非阻塞
      * @param fd 
      * @return int `fcntl` 的返回值
