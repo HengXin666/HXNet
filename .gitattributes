@@ -1,2 +1,2 @@
-lib/ export-ignore
-static/text.html export-ignore
+lib/ linguist-vendored
+static/text.html linguist-detectable
