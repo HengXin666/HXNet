@@ -1,5 +1,35 @@
 # 开发日志
 
+- [2024-9-6 20:08:19] : 可以粗略的估计, 确实有性能提升 | 但是不知道为什么提示`timeout`, 明明浏览器也可以正常访问のくせに (发现为什么`timeout`了, 你只要设置为`--timeout 5s`就不会啦)
+```sh
+# 测试环境: [WSL: Arch Linux]
+# 文件读写: `static/text.html` 大小约: 366 KB
+
+# 分片编码(`transfer-encoding`), 每次只读取最多`4096`字节, 就直接发送
+╰─ wrk -c900 -d300s https://localhost:28205/files/awa
+Running 5m test @ https://localhost:28205/files/awa
+  2 threads and 900 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   637.13ms  267.39ms   2.00s    74.85%
+    Req/Sec     1.35k   181.32     2.23k    71.08%
+  803134 requests in 5.00m, 140.47GB read
+  Socket errors: connect 0, read 0, write 0, timeout 942
+Requests/sec:   2676.27   # 可以发现, 并发量翻倍
+Transfer/sec:    479.32MB # 每秒读取速率差不多 (可以估计算是硬件速度上限?)
+
+# 单文件全部读取, 再发送 (使用`Content-Length`)
+╰─ wrk -c900 -d300s https://localhost:28205/test
+Running 5m test @ https://localhost:28205/test
+  2 threads and 900 connections
+^C  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   661.61ms  298.27ms   2.00s    76.56%
+    Req/Sec   668.50    131.92     0.94k    84.11%
+  28499 requests in 22.03s, 10.08GB read
+  Socket errors: connect 0, read 0, write 0, timeout 331
+Requests/sec:   1293.60
+Transfer/sec:    468.65MB
+```
+
 - [2024-9-6 18:16:09] : 服务端支持分片编码(`transfer-encoding`)以发送大文件
 - [2024-9-6 09:34:20] : 重构服务端请求解析, 现在可以解析带有`transfer-encoding`的客户端请求~
 - [2024-9-5 15:25:57] : 修改`StringUtil::split`使用C++风格分割, 而不是: C语言风格并且在栈上分配

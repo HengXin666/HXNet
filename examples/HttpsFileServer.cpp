@@ -29,7 +29,16 @@ class HttpsController {
         io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
                         .setContentType("text/html", "UTF-8");
         co_await io.sendResponseWithChunkedEncoding("static/text.html");
-        co_return false;
+        co_return true;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/test", test) {
+        RESPONSE_DATA(
+            200, 
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("static/text.html"),
+            "text/html", "UTF-8"
+        );
+        co_return true;
     } ENDPOINT_END;
 };
 
