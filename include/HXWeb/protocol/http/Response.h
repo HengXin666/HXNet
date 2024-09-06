@@ -80,6 +80,7 @@ class Response {
     /**
      * @brief [仅服务端] 将`buf`转化为`ChunkedEncoding`的Body, 放入`_body`以分片发送
      * @param buf 
+     * @warning 内部会清空 `_buf`, 再以`ChunkedEncoding`格式写入 buf 到 `_buf`!
      */
     void _buildToChunkedEncoding(std::string_view buf);
 

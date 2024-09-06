@@ -47,11 +47,20 @@ HX::STL::coroutine::task::Task<> IO<>::sendResponseWithChunkedEncoding(
     _response->addHeader("Transfer-Encoding", "chunked");
     _response->_buildResponseLineAndHeaders();
     co_await _sendResponse(_response->_buf);
-    uint64_t offset = 0;
+    HX::STL::utils::FileUtils::AsyncFile file;
+    co_await file.open(path);
+    std::vector<char> buf(HX::STL::utils::FileUtils::kBufMaxSize);
     while (true) {
         // 读取文件
+        std::size_t size = static_cast<std::size_t>(co_await file.read(buf));
+        _response->_buildToChunkedEncoding({buf.data(), size});
+        co_await _sendResponse(_response->_buf);
+        if (size != buf.size()) {
+            _response->_buildToChunkedEncoding("");
+            co_await _sendResponse(_response->_buf);
+            break;
+        }
     }
-
     // 全部写入啦
     _response->clear();
 }
@@ -212,7 +221,7 @@ HX::STL::coroutine::task::Task<> IO<HX::web::protocol::https::Https>::_sendRespo
                 throw "SSL_write: POLLOUT error!";
             }
         } else {
-            throw "SB SSL_write: err is ? is ?";
+            throw "SSL_write: Err: " + std::to_string(err) + " is " + strerror(errno);
         }
     }
 }

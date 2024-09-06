@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <string>
 #include <string_view>
+#include <span>
 
 #include <HXSTL/coroutine/task/Task.hpp>
 
@@ -100,7 +101,16 @@ public:
      */
     class AsyncFile {
     public:
-        explicit AsyncFile(
+        explicit AsyncFile() = default;
+
+        /**
+         * @brief 异步打开文件
+         * @param path 文件路径
+         * @param flags 打开方式: OpenMode (枚举 如: OpenMode::Write | OpenMode::Append)
+         * @param mode 文件权限模式, 仅在文件创建时有效 (一般写0644)
+         * @return HX::STL::coroutine::task::Task<> 
+         */
+        HX::STL::coroutine::task::Task<> open(
             const std::string& path,
             OpenMode flags = OpenMode::ReadWrite,
             mode_t mode = 0644
@@ -111,14 +121,14 @@ public:
          * @param buf [out] 读取到的数据
          * @return int 读取的字节数
          */
-        HX::STL::coroutine::task::Task<int> read(std::string& buf);
+        HX::STL::coroutine::task::Task<int> read(std::span<char> buf);
 
         /**
          * @brief 将 buf 写入到文件中
          * @param buf [in] 需要写入的数据
          * @return int 写入的字节数
          */
-        HX::STL::coroutine::task::Task<int> write(const std::string& buf);
+        HX::STL::coroutine::task::Task<int> write(std::span<char> buf);
 
         ~AsyncFile() noexcept;
     protected:

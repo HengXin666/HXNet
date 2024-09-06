@@ -2,6 +2,7 @@
 
 #include <sys/socket.h>
 #include <cstring>
+#include <format>
 
 #include <HXSTL/utils/StringUtils.h>
 #include <HXSTL/utils/FileUtils.h>
@@ -340,7 +341,8 @@ void Response::_buildResponseLineAndHeaders() {
 }
 
 void Response::_buildToChunkedEncoding(std::string_view buf) {
-    _buf.append(std::to_string(buf.size()));
+    _buf.clear();
+    _buf.append(std::format("{:X}", buf.size())); // 需要十六进制嘞
     _buf.append("\r\n");
     _buf.append(buf);
     _buf.append("\r\n");

@@ -69,23 +69,17 @@ HX::STL::coroutine::task::Task<int> FileUtils::asyncPutFileContent(
     co_return res;
 }
 
-explicit FileUtils::AsyncFile::AsyncFile(
+HX::STL::coroutine::task::Task<> FileUtils::AsyncFile::open(
     const std::string& path,
-    OpenMode flags = OpenMode::Read,
-    mode_t mode = 0644
+    FileUtils::OpenMode flags /*= OpenMode::Read*/,
+    mode_t mode /*= 0644*/
 ) {
-    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
-        std::make_shared<HX::STL::coroutine::task::TimerTask>(
-            [=, this]() -> HX::STL::coroutine::task::TimerTask {
-                _fd = co_await HX::STL::coroutine::loop::IoUringTask().prepOpenat(
-                    AT_FDCWD, path.c_str(), static_cast<int>(flags), mode
-                );
-            }
-        )
+    _fd = co_await HX::STL::coroutine::loop::IoUringTask().prepOpenat(
+        AT_FDCWD, path.c_str(), static_cast<int>(flags), mode
     );
 }
 
-HX::STL::coroutine::task::Task<int> FileUtils::AsyncFile::read(std::string& buf) {
+HX::STL::coroutine::task::Task<int> FileUtils::AsyncFile::read(std::span<char> buf) {
     int len = HX::STL::tools::UringErrorHandlingTools::throwingError(
         co_await HX::STL::coroutine::loop::IoUringTask().prepRead(_fd, buf, _offset)
     );
@@ -93,7 +87,7 @@ HX::STL::coroutine::task::Task<int> FileUtils::AsyncFile::read(std::string& buf)
     co_return len;
 }
 
-HX::STL::coroutine::task::Task<int> FileUtils::AsyncFile::write(const std::string& buf) {
+HX::STL::coroutine::task::Task<int> FileUtils::AsyncFile::write(std::span<char> buf) {
     co_return HX::STL::tools::UringErrorHandlingTools::throwingError(
         co_await HX::STL::coroutine::loop::IoUringTask().prepWrite(
             _fd, buf, static_cast<std::uint64_t>(-1)
@@ -101,12 +95,15 @@ HX::STL::coroutine::task::Task<int> FileUtils::AsyncFile::write(const std::strin
     );
 }
 
+inline static HX::STL::coroutine::task::TimerTask close(int fd) {
+    // 如果这个fd被关闭, 那么会自动取消(无效化)等待队列的任务
+    co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+}
+
 FileUtils::AsyncFile::~AsyncFile() {
     HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
         std::make_shared<HX::STL::coroutine::task::TimerTask>(
-            [=]() -> HX::STL::coroutine::task::TimerTask {
-                co_await HX::STL::coroutine::loop::IoUringTask().prepClose(_fd);
-            }
+            close(_fd)
         )
     );
 }

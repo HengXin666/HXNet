@@ -207,7 +207,7 @@ HX::STL::coroutine::task::Task<> IO<HX::web::protocol::https::Https>::_sendReque
                 throw "SSL_write: POLLOUT error!";
             }
         } else {
-            throw "SB SSL_write: err is ? is ?";
+            throw "SSL_write: Err: " + std::to_string(err) + " is " + strerror(errno);
         }
     }
 }

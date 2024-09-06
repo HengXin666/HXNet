@@ -26,12 +26,9 @@ class HttpsController {
 
     ENDPOINT_BEGIN(API_GET, "/files/**", files) {
         // 使用分块编码
-        // 先发送响应头, 然后分块响应体
-        RESPONSE_DATA(
-            200, 
-            co_await HX::STL::utils::FileUtils::asyncGetFileContent("static/favicon.ico"),
-            "image/x-icon"
-        );
+        io.getResponse().setResponseLine(HX::web::protocol::http::Response::Status::CODE_200)
+                        .setContentType("text/html", "UTF-8");
+        co_await io.sendResponseWithChunkedEncoding("static/text.html");
         co_return false;
     } ENDPOINT_END;
 };

@@ -30,6 +30,11 @@ HX::STL::coroutine::task::Task<> startClient() {
         std::string body = ptr->getResponseBody();
         // std::cout << body << '\n';
         printf("等我写入 (body.size %lu)\n", body.size());
+        co_await HX::STL::utils::FileUtils::asyncPutFileContent(
+            "text.html",
+            body,
+            HX::STL::utils::FileUtils::OpenMode::Append
+        );
         printf("写入完毕~\n");
     } catch (const std::system_error& e) {
         std::cerr << e.what() << '\n';
