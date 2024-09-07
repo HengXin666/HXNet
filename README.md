@@ -24,6 +24,7 @@
 >   - [WebSocket服务端](examples/WsServer.cpp)
 >   - [使用`Transfer-Encoding`分块编码传输文件的服务端](examples/HttpsFileServer.cpp)
 >   - [支持`socks5`代理的`Http/Https`客户端](examples/Client.cpp)
+>   - [自实现のJson解析和结构体静态反射到Json的示例](examples/JsonTest.cpp)
 
 - 编写端点 (提供了简化使用的 API 宏)
 ```cpp

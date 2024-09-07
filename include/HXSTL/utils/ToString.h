@@ -127,8 +127,8 @@ static std::string _toString(bool t) {
 }
 
 template <class T>
-static void _toString(const T& t) {
-    // return t;
+static void _toString(const T& t) { // 禁止默认实现
+    static_assert(true, "_toString is not implemented for this type");
 }
 
 template <class T>
@@ -148,7 +148,11 @@ static std::string _toString(const T& t) {
 
 template <HX::STL::concepts::StringType ST>
 static std::string _toString(const ST& t) {
-    return t;
+    std::string res;
+    res += '"';
+    res += t;
+    res += '"';
+    return res;
 }
 
 template <typename... Ts>

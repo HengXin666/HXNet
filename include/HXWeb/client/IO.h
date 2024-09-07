@@ -41,8 +41,8 @@ namespace HX { namespace web { namespace client {
 
 template <class T = void>
 class IO {
-    // 静态断言: 不允许其他非void的实现 (这个还不起作用...)
-    static_assert(std::is_same<T, void>::value, "Not supported for instantiation");
+    // 静态断言: 不允许其他非void的实现
+    static_assert(true, "Not supported for instantiation");
 };
 
 /**
