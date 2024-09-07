@@ -5,7 +5,7 @@
 - [2024-9-6 20:08:19] : 可以粗略的估计, 确实有性能提升 | 但是不知道为什么提示`timeout`, 明明浏览器也可以正常访问のくせに (发现为什么`timeout`了, 你只要设置为`--timeout 5s`就不会啦)
 ```sh
 # 测试环境: [WSL: Arch Linux]
-# 文件读写: `static/text.html` 大小约: 366 KB
+# 文件读写: `static/test/github.html` 大小约: 366 KB
 
 # 分片编码(`transfer-encoding`), 每次只读取最多`4096`字节, 就直接发送
 ╰─ wrk -c900 -d300s https://localhost:28205/files/awa
