@@ -31,7 +31,7 @@
 
 // 下期目标: 实现一个将Json数据转存为Json文件的Code
 
-namespace HX::Json {
+namespace HX { namespace Json {
 
 struct JsonObject;
 
@@ -42,8 +42,6 @@ struct JsonObject {
     using JsonData = std::variant
     < std::nullptr_t  // null
     , bool            // true
-    , int             // 42
-    , long long       // 12321312321312312LL
     , double          // 3.14
     , std::string     // "hello"
     , JsonList        // [42, "hello"]
@@ -58,17 +56,47 @@ struct JsonObject {
     explicit JsonObject(JsonData&& data) : _inner(data) 
     {}
 
-    // 鸭子
+    /**
+     * @brief 打印值
+     */
     void print() const;
 
-    template<class T>
+    /**
+     * @brief 转化为字符串形式
+     * @return std::string 
+     */
+    std::string toString() const;
+
+    template <class T>
     const T& get() const {
         return std::get<T>(_inner);
     }
 
     template <class T>
+        requires (std::is_same_v<T, double> || 
+                 (!std::is_integral_v<T> && !std::is_floating_point_v<T>))
     T &get() {
         return std::get<T>(_inner);
+    }
+
+    template <class T>
+        requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
+    T get() {
+        return static_cast<T>(std::get<double>(_inner));
+    }
+
+    /**
+     * @warning 请保证当前是`JsonList`
+     */
+    auto& operator [](std::size_t index) {
+        return std::get<JsonList>(_inner)[index];
+    }
+
+    /**
+     * @warning 请保证当前是`JsonDict`
+     */
+    auto& operator [](const std::string& key) {
+        return std::get<JsonDict>(_inner)[key];
     }
 };
 
@@ -88,7 +116,6 @@ std::optional<T> try_parse_num(std::string_view str) {
 
 char unescaped_char(char c);
 
-
 // 跳过末尾的空白字符 如: [1      , 2]
 std::size_t skipTail(std::string_view json, std::size_t i, char ch);
 
@@ -99,7 +126,7 @@ std::size_t skipTail(std::string_view json, std::size_t i, char ch);
  * @param json JSON字符串
  * @return JSON对象, 解析的JSON内容长度
  */
-template<bool analysisKey = false>
+template <bool analysisKey = false>
 std::pair<JsonObject, std::size_t> parse(std::string_view json) {
     if (json.empty()) { // 如果没有内容则返回空
         return {JsonObject{std::nullptr_t{}}, 0};
@@ -113,11 +140,12 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
         if (std::regex_search(json.data(), json.data() + json.size(), match, num_re)) { // re解析成功
             std::string str = match.str();
             // 支持识别为 int 或者 double
-            if (auto num = try_parse_num<int>(str)) {
-                return {JsonObject{*num}, str.size()};
-            } else if (auto num = try_parse_num<long long>(str)) {
-                return {JsonObject{*num}, str.size()};
-            } else if (auto num = try_parse_num<double>(str)) {
+            // if (auto num = try_parse_num<int>(str)) {
+            //     return {JsonObject{*num}, str.size()};
+            // } else if (auto num = try_parse_num<long long>(str)) {
+            //     return {JsonObject{*num}, str.size()};
+            // } else 
+            if (auto num = try_parse_num<double>(str)) {
                 return {JsonObject{*num}, str.size()};
             }
         }
@@ -206,15 +234,23 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
     } else if (json.size() > 3) { // 解析 null, false, true
         switch (json[0]) {
         case 'n':
-            if (json[1] == 'u' && json[2] == 'l' && json[3] == 'l')
+            if (json[1] == 'u' && 
+                json[2] == 'l' && 
+                json[3] == 'l')
                 return {JsonObject{std::nullptr_t{}}, 4};
             break;
         case 't':
-            if (json[1] == 'r' && json[2] == 'u' && json[3] == 'e')
+            if (json[1] == 'r' && 
+                json[2] == 'u' && 
+                json[3] == 'e')
                 return {JsonObject{true}, 4};
             break;
         case 'f':
-            if (json.size() > 4 && json[1] == 'a' && json[2] == 'l' && json[3] == 's' && json[4] == 'e')
+            if (json.size() == 5 && 
+                json[1] == 'a' && 
+                json[2] == 'l' && 
+                json[3] == 's' && 
+                json[4] == 'e')
                 return {JsonObject{false}, 5};
             break;
         default:
@@ -224,6 +260,6 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
     return {JsonObject{std::nullptr_t{}}, 0};
 }
 
-} // namespace HXJson
+}} // namespace HX::Json
 
 #endif // _HX_JSON_H_

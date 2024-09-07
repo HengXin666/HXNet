@@ -44,6 +44,7 @@ class HttpsController {
     } ENDPOINT_END;
 };
 
+#if 0 // 测试代码, 下面发现了一个潜在的问题
 #include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <chrono>
 
@@ -62,6 +63,8 @@ HX::STL::coroutine::task::Task<> test() {
         _text()
     );
 }
+
+#endif
 
 int main() {
     chdir("..");

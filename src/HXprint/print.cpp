@@ -1,7 +1,8 @@
-#include <HXprint/HXprint.h>
+#include <HXprint/print.h>
 
-namespace HX::print {
+namespace HX { namespace print {
 
+#ifdef _HX_DEBUG_
 void _::logMessage(LogLevel level, const char* format, ...) {
     va_list args;
     va_start(args, format);
@@ -20,5 +21,6 @@ void _::logMessage(LogLevel level, const char* format, ...) {
     printf("\033[0m\n");
     va_end(args);
 }
+#endif // _HX_DEBUG_
 
-} // namespace HX::print
+}} // namespace HX::print

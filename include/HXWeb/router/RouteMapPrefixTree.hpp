@@ -29,7 +29,7 @@ namespace HX { namespace web { namespace router {
 /**
  * @brief 路由映射前缀树
  */
-template<class T>
+template <class T>
 class RouteMapPrefixTree : public HX::STL::container::RadixTree<T> {
 
     std::optional<T> _find(

@@ -25,7 +25,7 @@
 #include <type_traits>
 #include <netdb.h>
 
-#include <HXprint/HXprint.h>
+#include <HXprint/print.h>
 
 namespace HX { namespace STL { namespace tools {
 

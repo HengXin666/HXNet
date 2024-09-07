@@ -8,7 +8,7 @@
 #include <HXWeb/protocol/https/Context.h>
 #include <HXWeb/protocol/http/Http.hpp>
 #include <HXWeb/protocol/https/Https.hpp>
-#include <HXprint/HXprint.h>
+#include <HXprint/print.h>
 
 namespace HX { namespace web { namespace server {
 

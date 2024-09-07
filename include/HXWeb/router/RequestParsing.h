@@ -52,7 +52,7 @@ struct RequestTemplateParsing {
     static std::size_t getUniversalWildcardPathBeginIndex(std::string_view path);
 };
 
-template<class T>
+template <class T>
 struct TypeInterpretation {
     /**
      * @brief 将通配符元素(字符串)转为指定类型, 转换失败返回`std::nullopt`
@@ -62,7 +62,7 @@ struct TypeInterpretation {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<int32_t> {
     static std::optional<int32_t> wildcardElementTypeConversion(std::string_view we) {
         int32_t value;
@@ -74,7 +74,7 @@ struct TypeInterpretation<int32_t> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<int16_t> {
     static std::optional<int16_t> wildcardElementTypeConversion(std::string_view we) {
         int16_t value;
@@ -86,7 +86,7 @@ struct TypeInterpretation<int16_t> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<int64_t> {
     static std::optional<int64_t> wildcardElementTypeConversion(std::string_view we) {
         int64_t value;
@@ -98,7 +98,7 @@ struct TypeInterpretation<int64_t> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<u_int32_t> {
     static std::optional<u_int32_t> wildcardElementTypeConversion(std::string_view we) {
         u_int32_t value;
@@ -110,7 +110,7 @@ struct TypeInterpretation<u_int32_t> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<u_int16_t> {
     static std::optional<u_int16_t> wildcardElementTypeConversion(std::string_view we) {
         u_int16_t value;
@@ -122,7 +122,7 @@ struct TypeInterpretation<u_int16_t> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<u_int64_t> {
     static std::optional<u_int64_t> wildcardElementTypeConversion(std::string_view we) {
         u_int64_t value;
@@ -134,7 +134,7 @@ struct TypeInterpretation<u_int64_t> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<float> {
     static std::optional<float> wildcardElementTypeConversion(std::string_view we) {
         char* end;
@@ -146,7 +146,7 @@ struct TypeInterpretation<float> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<double> {
     static std::optional<double> wildcardElementTypeConversion(std::string_view we) {
         char* end;
@@ -158,7 +158,7 @@ struct TypeInterpretation<double> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<long double> {
     static std::optional<long double> wildcardElementTypeConversion(std::string_view we) {
         char* end;
@@ -170,21 +170,21 @@ struct TypeInterpretation<long double> {
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<std::string> {
     static std::optional<std::string> wildcardElementTypeConversion(std::string& we) {
         return we; // 这里是非严格的模版特化, 单纯为了提高性能
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<std::string_view> {
     static std::optional<std::string_view> wildcardElementTypeConversion(std::string_view we) {
         return we;
     }
 };
 
-template<>
+template <>
 struct TypeInterpretation<bool> {
     static std::optional<bool> wildcardElementTypeConversion(std::string_view we) {
         if (we.size() == 1) {

@@ -33,7 +33,7 @@ namespace _ {
 /// @brief 编译器递归深度: [-MAGIC_ENUM_RECURSION_DEPTH, +MAGIC_ENUM_RECURSION_DEPTH]
 static constexpr int MAGIC_ENUM_RECURSION_DEPTH = 16;
 
-template<class T, T N>
+template <class T, T N>
 constexpr const char * _getNameByPrettyFunc() {
 #if defined(_MSC_VER)
     return __FUNCSIG__;
@@ -42,26 +42,26 @@ constexpr const char * _getNameByPrettyFunc() {
 #endif
 }
 
-template<bool C>
+template <bool C>
 struct HXEnableIf {
 };
 
-template<>
+template <>
 struct HXEnableIf<true> {
     using type = void;
 };
 
-template<int Begin, int End, class F>
+template <int Begin, int End, class F>
 typename HXEnableIf<Begin == End>::type _staticFor(const F& /*func*/) {
 }
 
-template<int Begin, int End, class F>
+template <int Begin, int End, class F>
 typename HXEnableIf<Begin != End>::type _staticFor(const F& func) {
     func.template call<Begin>();
     _staticFor<Begin + 1, End>(func);
 }
 
-template<class T>
+template <class T>
 struct _GetEnumNameFunctor {
     int _n;
     std::string& _str;
@@ -70,7 +70,7 @@ struct _GetEnumNameFunctor {
                                                  , _str(str)
     {}
 
-    template<int I>
+    template <int I>
     constexpr void call() const {
         if (_n == I)
             _str = _getNameByPrettyFunc<T, (T)I>();
@@ -79,7 +79,7 @@ struct _GetEnumNameFunctor {
 
 } /// @bug 模版+函数重载如果相互调用, 请放到相同命名空间下
 
-template<class T, int Begin, int End>
+template <class T, int Begin, int End>
 constexpr std::string getEnumName(T n) {
     std::string data;
     _::_staticFor<Begin, End + 1>(_::_GetEnumNameFunctor<T>((int)n, data));
@@ -108,12 +108,12 @@ constexpr std::string getEnumName(T n) {
  * @return 值对应的字符串, 找不到则为`""`
  * @warning 这个时间复杂度是`O(1)`
  */
-template<class T>
+template <class T>
 constexpr std::string getEnumName(T n) {
     return getEnumName<T, -_::MAGIC_ENUM_RECURSION_DEPTH, _::MAGIC_ENUM_RECURSION_DEPTH>(n);
 }
 
-template<class T, T Begin, T End>
+template <class T, T Begin, T End>
 constexpr T nameFromEnum(const std::string& name) {
     for (int i = (int)Begin; i <= (int)End; ++i) {
         if (name == getEnumName<T>((T)i))
@@ -130,7 +130,7 @@ constexpr T nameFromEnum(const std::string& name) {
  * @throw 如果找不到, 则会抛出异常
  * @warning 这个时间复杂度是`O(n)`
  */
-template<class T>
+template <class T>
 constexpr T nameFromEnum(const std::string& name) {
     return nameFromEnum<T, (T)-_::MAGIC_ENUM_RECURSION_DEPTH, (T)_::MAGIC_ENUM_RECURSION_DEPTH>(name);
 }

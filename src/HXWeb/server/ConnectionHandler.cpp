@@ -14,7 +14,7 @@
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXWeb/server/IO.h>
-#include <HXprint/HXprint.h>
+#include <HXprint/print.h>
 
 namespace HX { namespace web { namespace server {
 

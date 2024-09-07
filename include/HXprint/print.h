@@ -28,20 +28,17 @@
 #include <unordered_map>
 #include <optional>
 #include <variant>
-#include <vector>
-#include <deque>
-#include <list>
-#include <set>
-#include <unordered_set>
-#include <string>
-#include <string_view>
-#include <type_traits>
 #include <concepts>
 
 #ifdef _HX_DEBUG_
 #include <cstdio>
 #include <cstdarg>
-#endif
+#endif // _HX_DEBUG_
+
+#include <HXSTL/concepts/KeyValueContainer.hpp>
+#include <HXSTL/concepts/PairContainer.hpp>
+#include <HXSTL/concepts/SingleElementContainer.hpp>
+#include <HXSTL/concepts/StringType.hpp>
 
 // 屏蔽未使用函数、变量和参数的警告
 #if defined(_MSC_VER) // MSVC
@@ -60,7 +57,7 @@
     #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-namespace HX::print { // C++20
+namespace HX { namespace print { // C++20
 
 // 内部使用的命名空间啊喂!
 namespace _ {
@@ -69,7 +66,6 @@ namespace _ {
 // === 仅DEBUG编译期(未发布)有的日志打印 ===
 
 #ifdef _HX_DEBUG_
-
 enum LogLevel {
     LOG_ERROR,
     LOG_WARNING,
@@ -88,49 +84,15 @@ void logMessage(LogLevel level, const char* format, ...);
 #define LOG_WARNING(...)
 #define LOG_INFO(...)
 
-#endif
+#endif // _HX_DEBUG_
+
 /////////////////////////////////////////////////////////
-
-#ifdef __cpp_lib_concepts // C++ >= 20 && concepts
-
-// 概念: 判断类型 T 是否是键值对的关联容器
-template <typename T>
-concept KeyValueContainer = requires(T t) {
-    typename T::key_type;
-    typename T::mapped_type;
-};
-
-// 概念: 判断类型 T 是否是单元素容器
-template <typename T>
-concept SingleElementContainer = std::is_same_v<T, std::set<typename T::value_type>> ||
-                                 std::is_same_v<T, std::multiset<typename T::value_type>> ||
-                                 std::is_same_v<T, std::vector<typename T::value_type>> ||
-                                 std::is_same_v<T, std::list<typename T::value_type>> ||
-                                 std::is_same_v<T, std::deque<typename T::value_type>> ||
-                                 std::is_same_v<T, std::unordered_multiset<typename T::value_type>> ||
-                                 std::is_same_v<T, std::unordered_set<typename T::value_type>>;
-template <typename T>
-concept PairContainer = requires(T t) {
-    typename T::first_type;
-    typename T::second_type;
-};
 
 // 概念: 鸭子类型: 只需要满足有一个成员函数是print的, 即可
 template <typename T>
 concept PrintClassType = requires(T t) {
     t.print();
 };
-
-// 概念: 如果这个类型和str沾边, 那么使用""包裹, 注: 普通的const char * 是不会包裹的qwq
-template <typename T>
-concept StringType = std::is_same_v<T, std::string> ||
-                     std::is_same_v<T, std::string_view>;
-
-// 概念: 如果这个类型和wstr沾边, 那么使用""包裹 [不支持...]
-// template <typename T>
-// concept WStringType = std::is_same_v<T, const wchar_t *> ||
-//                      std::is_same_v<T, std::wstring_view> ||
-//                      std::is_same_v<T, std::wstring>;
 
 /////////////////////////////////////////////////////////
 
@@ -143,44 +105,44 @@ static void _HXprint(const std::monostate& t);
 static void _HXprint(bool t);
 
 // 基础类型
-template<typename T>
+template <typename T>
 static void _HXprint(const T& t);
 
 // std::optional
-template<typename... Ts>
+template <typename... Ts>
 static void _HXprint(const std::optional<Ts...>& t);
 
 // str相关的类型
-template<StringType ST>
+template <HX::STL::concepts::StringType ST>
 static void _HXprint(const ST& t);
 
 // std::pair
-template<PairContainer Container>
+template <HX::STL::concepts::PairContainer Container>
 static void _HXprint(const Container& p);
 
 // std::的常见的支持迭代器的单元素容器
-template<SingleElementContainer Container>
+template <HX::STL::concepts::SingleElementContainer Container>
 static void _HXprint(const Container& sc);
 
 // std::的常见的支持迭代器的键值对容器
-template <KeyValueContainer Container>
+template <HX::STL::concepts::KeyValueContainer Container>
 static void _HXprint(const Container& map);
 
 // std::variant 现代共用体
-template<typename... Ts>
+template <typename... Ts>
 static void _HXprint(const std::variant<Ts...>& t);
 
 /////////////////////////////////////////////////////////
 
-static void _HXprint(const std::nullptr_t& t) { // 普通指针不行
+static void _HXprint(const std::nullptr_t&) { // 普通指针不行
     _HXprint("nullptr");
 }
 
-static void _HXprint(const std::nullopt_t& t) {
+static void _HXprint(const std::nullopt_t&) {
     _HXprint("nullopt");
 }
 
-static void _HXprint(const std::monostate& t) {
+static void _HXprint(const std::monostate&) {
     _HXprint("monostate");
 }
 
@@ -191,17 +153,17 @@ static void _HXprint(bool t) {
         _HXprint("false");
 }
 
-template<typename T>
+template <typename T>
 static void _HXprint(const T& t) {
     std::cout << t;
 }
 
-template<StringType ST>
+template <HX::STL::concepts::StringType ST>
 static void _HXprint(const ST& t) {
     std::cout << std::quoted(t);
 }
 
-template<typename... Ts>
+template <typename... Ts>
 static void _HXprint(const std::optional<Ts...>& t) {
     if (t.has_value())
         _HXprint(*t);
@@ -209,19 +171,19 @@ static void _HXprint(const std::optional<Ts...>& t) {
         _HXprint(std::nullopt);
 }
 
-template<typename... Ts>
+template <typename... Ts>
 static void _HXprint(const std::variant<Ts...>& t) {
     std::visit([] (const auto &v) -> void { // 访问者模式
         _HXprint(v);
     }, t);
 }
 
-template<PrintClassType T>
+template <PrintClassType T>
 static void _HXprint(const T& t) {
     t.print();
 }
 
-template<PairContainer Container>
+template <HX::STL::concepts::PairContainer Container>
 static void _HXprint(const Container& p) {
     _HXprint('(');
     _HXprint(std::get<0>(p));
@@ -250,7 +212,7 @@ static void _HXprint(const std::tuple<Ts...>& tup) {
     _HXprint(')');
 }
 
-template <KeyValueContainer Container>
+template <HX::STL::concepts::KeyValueContainer Container>
 static void _HXprint(const Container& map) {
     _HXprint('{');
     bool once = false;
@@ -266,7 +228,7 @@ static void _HXprint(const Container& map) {
     _HXprint('}');
 }
 
-template<SingleElementContainer Container>
+template <HX::STL::concepts::SingleElementContainer Container>
 static void _HXprint(const Container& sc) {
     _HXprint('[');
     bool once = false;
@@ -302,9 +264,7 @@ void printnl(T0 const &t0, Ts const &...ts) {
 }
 // 注: 建议鸭子类型使用printnl!
 
-#endif // __cpp_lib_concepts
-
-} // namespace HX::print
+}} // namespace HX::print
 
 // 恢复删除的警告
 #if defined(_MSC_VER) // MSVC
