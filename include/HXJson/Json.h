@@ -85,6 +85,12 @@ struct JsonObject {
         return static_cast<T>(std::get<double>(_inner));
     }
 
+    template <class T>
+        requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
+    T get() const {
+        return static_cast<T>(std::get<double>(_inner));
+    }
+
     /**
      * @warning 请保证当前是`JsonList`
      */
@@ -93,10 +99,28 @@ struct JsonObject {
     }
 
     /**
+     * @warning 请保证当前是`JsonList`
+     */
+    auto& operator [](std::size_t index) const {
+        return std::get<JsonList>(_inner)[index];
+    }
+
+    /**
      * @warning 请保证当前是`JsonDict`
+     * @throw 当前不是`JsonDict`
+     * @throw `key`不存在
      */
     auto& operator [](const std::string& key) {
-        return std::get<JsonDict>(_inner)[key];
+        return std::get<JsonDict>(_inner).at(key);
+    }
+
+    /**
+     * @warning 请保证当前是`JsonDict`
+     * @throw 当前不是`JsonDict`
+     * @throw `key`不存在
+     */
+    const auto& operator [](const std::string& key) const {
+        return std::get<JsonDict>(_inner).at(key);
     }
 };
 

@@ -1,5 +1,6 @@
 #include <HXJson/Json.h>
 #include <HXprint/print.h>
+#include <HXSTL/concepts/SingleElementContainer.hpp>
 
 #if 0
 #include <variant>
@@ -86,8 +87,8 @@ void test_01() {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// 需要实现 HXJson -> Student -> string
-#include <HXJson/ReflectJson.hpp> // <-- REFLECT 宏的头文件
+#include <HXJson/ReflectJson.hpp> // <-- 反射 宏的头文件: 对外提供的是 以`REFLECT`开头, 以`_`开头的是内部使用的宏
+
 struct Student {
     std::string name;
     int age;
@@ -96,43 +97,61 @@ struct Student {
         int age;
         int kawaiiCnt;
 
-        REFLECT(name, age, kawaiiCnt) // 可以嵌套, 但是也需要进行静态反射(需要实现`toString`方法)
+        REFLECT_CONSTRUCTOR_ALL(Loli, name, age, kawaiiCnt) // 可以嵌套, 但是也需要进行静态反射(需要实现`toString`方法)
     };
     std::vector<Loli> lolis;
     std::unordered_map<std::string, std::string> woc;
+    std::unordered_map<std::string, Loli> awa;
 
-    REFLECT(name, age, lolis, woc) // 静态反射, 到时候提供`toString`方法以序列化为JSON
+    // 静态反射, 到时候提供`toString`方法以序列化为JSON
+    // 提供 构造函数(从json字符串和json构造, 以及所有成员的默认构造函数)
+    // 注: 如果不希望生成 [所有成员的默认构造函数], 可以使用 REFLECT_CONSTRUCTOR 宏
+    REFLECT_CONSTRUCTOR_ALL(Student, name, age, lolis, woc, awa)
 };
-#include <HXJson/UnReflectJson.hpp> // <-- undef REFLECT 相关的所有宏的头文件, 因为宏会污染全局命名空间
 
-// JSON 序列化示例
+#include <HXJson/UnReflectJson.hpp> // <-- undef 相关的所有宏的头文件, 因为宏会污染全局命名空间
+
+// JSON 序列化(结构体 toJsonString)示例
 void test_02() {
-    Student stu = {
-        .name = "Heng_Xin",
-        .age = 20,
-        .lolis = {{
-            .name = "ラストオーダー",
-            .age = 13,
-            .kawaiiCnt = 100
+    Student stu { // 此处使用了 宏生成的 [所有成员的默认构造函数] (方便我调试awa)
+        "Heng_Xin",
+        20,
+        {{
+            "ラストオーダー",
+            13,
+            100
         }, {
-            .name = "みりむ",
-            .age = 14,
-            .kawaiiCnt = 100
+            "みりむ",
+            14,
+            100
         }},
-        .woc = {
+        {
             {"hello", "word"},
             {"op", "ed"}
+        },
+        {
+            {"hello", {
+                "みりむ",
+                14,
+                100
+            }}
         }
     };
+    // 示例: 转化为json字符串(紧凑的)
     HX::print::print(stu.toString());
     auto json = HX::Json::parse(stu.toString()).first;
     json.print();
+    printf("\n\n");
+
+    // 示例: 从json对象 / json字符串转为 结构体
+    Student x(json);
+    HX::Json::parse(x.toString()).first.print();
 }
 
 int main () {
     HX::print::print("示例1: json解析\n");
     test_01();
-    HX::print::print("\n\n示例2: json合成\n");
+    HX::print::print("\n\n示例2: json合成string || jsonString合成到结构体\n");
     test_02();
     return 0;
 }

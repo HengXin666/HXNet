@@ -84,6 +84,137 @@
 #undef _REFLECT_PP_FOREACH_62
 #undef _REFLECT_PP_FOREACH_63
 #undef _REFLECT_PP_FOREACH_64
+
+#undef _GET_LAST_ARG_1
+#undef _GET_LAST_ARG_2
+#undef _GET_LAST_ARG_3
+#undef _GET_LAST_ARG_4
+#undef _GET_LAST_ARG_5
+#undef _GET_LAST_ARG_6
+#undef _GET_LAST_ARG_7
+#undef _GET_LAST_ARG_8
+#undef _GET_LAST_ARG_9
+#undef _GET_LAST_ARG_10
+#undef _GET_LAST_ARG_11
+#undef _GET_LAST_ARG_12
+#undef _GET_LAST_ARG_13
+#undef _GET_LAST_ARG_14
+#undef _GET_LAST_ARG_15
+#undef _GET_LAST_ARG_16
+#undef _GET_LAST_ARG_17
+#undef _GET_LAST_ARG_18
+#undef _GET_LAST_ARG_19
+#undef _GET_LAST_ARG_20
+#undef _GET_LAST_ARG_21
+#undef _GET_LAST_ARG_22
+#undef _GET_LAST_ARG_23
+#undef _GET_LAST_ARG_24
+#undef _GET_LAST_ARG_25
+#undef _GET_LAST_ARG_26
+#undef _GET_LAST_ARG_27
+#undef _GET_LAST_ARG_28
+#undef _GET_LAST_ARG_29
+#undef _GET_LAST_ARG_30
+#undef _GET_LAST_ARG_31
+#undef _GET_LAST_ARG_32
+#undef _GET_LAST_ARG_33
+#undef _GET_LAST_ARG_34
+#undef _GET_LAST_ARG_35
+#undef _GET_LAST_ARG_36
+#undef _GET_LAST_ARG_37
+#undef _GET_LAST_ARG_38
+#undef _GET_LAST_ARG_39
+#undef _GET_LAST_ARG_40
+#undef _GET_LAST_ARG_41
+#undef _GET_LAST_ARG_42
+#undef _GET_LAST_ARG_43
+#undef _GET_LAST_ARG_44
+#undef _GET_LAST_ARG_45
+#undef _GET_LAST_ARG_46
+#undef _GET_LAST_ARG_47
+#undef _GET_LAST_ARG_48
+#undef _GET_LAST_ARG_49
+#undef _GET_LAST_ARG_50
+#undef _GET_LAST_ARG_51
+#undef _GET_LAST_ARG_52
+#undef _GET_LAST_ARG_53
+#undef _GET_LAST_ARG_54
+#undef _GET_LAST_ARG_55
+#undef _GET_LAST_ARG_56
+#undef _GET_LAST_ARG_57
+#undef _GET_LAST_ARG_58
+#undef _GET_LAST_ARG_59
+#undef _GET_LAST_ARG_60
+#undef _GET_LAST_ARG_61
+#undef _GET_LAST_ARG_62
+#undef _GET_LAST_ARG_63
+#undef _GET_LAST_ARG_64
+
+#undef _DEL_LAST_ARG_1
+#undef _DEL_LAST_ARG_2
+#undef _DEL_LAST_ARG_3
+#undef _DEL_LAST_ARG_4
+#undef _DEL_LAST_ARG_5
+#undef _DEL_LAST_ARG_6
+#undef _DEL_LAST_ARG_7
+#undef _DEL_LAST_ARG_8
+#undef _DEL_LAST_ARG_9
+#undef _DEL_LAST_ARG_10
+#undef _DEL_LAST_ARG_11
+#undef _DEL_LAST_ARG_12
+#undef _DEL_LAST_ARG_13
+#undef _DEL_LAST_ARG_14
+#undef _DEL_LAST_ARG_15
+#undef _DEL_LAST_ARG_16
+#undef _DEL_LAST_ARG_17
+#undef _DEL_LAST_ARG_18
+#undef _DEL_LAST_ARG_19
+#undef _DEL_LAST_ARG_20
+#undef _DEL_LAST_ARG_21
+#undef _DEL_LAST_ARG_22
+#undef _DEL_LAST_ARG_23
+#undef _DEL_LAST_ARG_24
+#undef _DEL_LAST_ARG_25
+#undef _DEL_LAST_ARG_26
+#undef _DEL_LAST_ARG_27
+#undef _DEL_LAST_ARG_28
+#undef _DEL_LAST_ARG_29
+#undef _DEL_LAST_ARG_30
+#undef _DEL_LAST_ARG_31
+#undef _DEL_LAST_ARG_32
+#undef _DEL_LAST_ARG_33
+#undef _DEL_LAST_ARG_34
+#undef _DEL_LAST_ARG_35
+#undef _DEL_LAST_ARG_36
+#undef _DEL_LAST_ARG_37
+#undef _DEL_LAST_ARG_38
+#undef _DEL_LAST_ARG_39
+#undef _DEL_LAST_ARG_40
+#undef _DEL_LAST_ARG_41
+#undef _DEL_LAST_ARG_42
+#undef _DEL_LAST_ARG_43
+#undef _DEL_LAST_ARG_44
+#undef _DEL_LAST_ARG_45
+#undef _DEL_LAST_ARG_46
+#undef _DEL_LAST_ARG_47
+#undef _DEL_LAST_ARG_48
+#undef _DEL_LAST_ARG_49
+#undef _DEL_LAST_ARG_50
+#undef _DEL_LAST_ARG_51
+#undef _DEL_LAST_ARG_52
+#undef _DEL_LAST_ARG_53
+#undef _DEL_LAST_ARG_54
+#undef _DEL_LAST_ARG_55
+#undef _DEL_LAST_ARG_56
+#undef _DEL_LAST_ARG_57
+#undef _DEL_LAST_ARG_58
+#undef _DEL_LAST_ARG_59
+#undef _DEL_LAST_ARG_60
+#undef _DEL_LAST_ARG_61
+#undef _DEL_LAST_ARG_62
+#undef _DEL_LAST_ARG_63
+#undef _DEL_LAST_ARG_64
+
 #undef _REFLECT_PP_FOREACH_SIZEOF_IMPL
 #undef _REFLECT_PP_FOREACH_SIZEOF
 /**
@@ -91,17 +222,39 @@
 import sys
 
 n = int(sys.argv[1])
+
+# 调用辅助宏
 for i in range(1, n+1):
     print("#undef _REFLECT_PP_FOREACH_{0}".format(i))
 
 print("#undef _REFLECT_PP_FOREACH_SIZEOF_IMPL")
 print("#undef _REFLECT_PP_FOREACH_SIZEOF")
+
+# 获取最后一个参数
+for i in range(1, n+1):
+    print("#undef _GET_LAST_ARG_{0}".format(i))
+
+# 删除最后一个参数
+for i in range(1, n+1):
+    print("#undef _DEL_LAST_ARG_{0}".format(i))
  */
 
 #undef _REFLECT_TO_JSON
 #undef _REFLECT_PP_CALL_
 #undef _REFLECT_PP_CALL
 #undef _REFLECT_PP_FOREACH
+#undef _REFLECT_CONSTRUCTOR_TO_JSON
+#undef _REFLECT_CONSTRUCTOR_ARG
+#undef _REFLECT_CONSTRUCTOR_ARG_END
+#undef _REFLECT_CONSTRUCTOR_SET_ARG
+#undef _REFLECT_CONSTRUCTOR_SET_ARG_END
+
+#undef _GET_LAST_ARG
+#undef _DEL_LAST_ARG
+#undef _REFLECT_PP_FOREACH_FINALLY_SPECIAL
+
 #undef REFLECT
+#undef REFLECT_CONSTRUCTOR
+#undef REFLECT_CONSTRUCTOR_ALL
 
 #endif // !_HX_UN_REFLECT_JSON_H_
