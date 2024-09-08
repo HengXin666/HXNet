@@ -251,7 +251,6 @@ for i in range(1, n+1):
 
 #undef _GET_LAST_ARG
 #undef _DEL_LAST_ARG
-#undef _REFLECT_PP_FOREACH_FINALLY_SPECIAL
 
 #undef REFLECT
 #undef REFLECT_CONSTRUCTOR
