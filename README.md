@@ -147,28 +147,35 @@ int main() {
 
 ## 性能测试
 > [!TIP]
-> - 协程版本: (基准: 别人22w/s的并发的程序在我这里一样的参数也就3w+/s..)
+> - Arth Linux
+> - 13th Gen Intel(R) Core(TM) i9-13980HX
+> - RAM: 64GB
+> - cmake -> Release
 
 ```sh
-# 读写 index.html
-╰─ wrk -c1000 -d15s http://localhost:28205/
-Running 15s test @ http://localhost:28205/
-  2 threads and 1000 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    10.91ms    5.76ms  73.87ms   77.52%
-    Req/Sec    38.43k     8.84k   67.78k    69.86%
-  1137056 requests in 15.06s, 3.53GB read
-Requests/sec:  75521.83
-Transfer/sec:    239.91MB
+# build: add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 
-# 没有文件读写
-╰─ wrk -c1000 -d15s http://localhost:28205/home/123/123
-Running 15s test @ http://localhost:28205/home/123/123
-  2 threads and 1000 connections
+# No File Read
+➜ wrk -t32 -c1100 http://127.0.0.1:28205/home/123/123
+Running 10s test @ http://127.0.0.1:28205/home/123/123
+  32 threads and 1100 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     5.30ms    3.60ms  40.93ms   76.85%
-    Req/Sec    71.23k    22.11k  132.67k    68.15%
-  2097727 requests in 15.09s, 412.11MB read
-Requests/sec: 139024.19
-Transfer/sec:     27.31MB
+    Latency     1.48ms    2.52ms  36.60ms   86.18%
+    Req/Sec    77.98k    16.30k  241.91k    74.07%
+  23512408 requests in 10.10s, 4.51GB read
+  Socket errors: connect 99, read 0, write 0, timeout 0
+Requests/sec: 2327117.67
+Transfer/sec:    457.18MB
+
+# Read static/WebSocketIndex.html
+➜ wrk -t32 -c1100 http://127.0.0.1:28205/            
+Running 10s test @ http://127.0.0.1:28205/
+  32 threads and 1100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.18ms    1.63ms  23.96ms   86.39%
+    Req/Sec    45.53k    13.36k  263.46k    89.82%
+  14176629 requests in 10.09s, 43.81GB read
+  Socket errors: connect 99, read 0, write 0, timeout 0
+Requests/sec: 1405535.24
+Transfer/sec:      4.34GB
 ```

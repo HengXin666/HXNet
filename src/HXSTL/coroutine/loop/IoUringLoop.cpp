@@ -53,12 +53,12 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     // 手动前进完成队列的头部 (相当于批量io_uring_cqe_seen)
     ::io_uring_cq_advance(&_ring, numGot);
     _numSqesPending -= static_cast<std::size_t>(numGot);
-    for (const auto& it : tasks) {
-        it.resume();
-    }
-    // for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
-    //     it->resume();
+    // for (const auto& it : tasks) {
+    //     it.resume();
     // }
+    for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
+        it->resume();
+    }
     return true;
 }
 
