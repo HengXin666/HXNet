@@ -24,7 +24,7 @@
 #include <HXJson/Json.h>
 
 // 辅助宏: 展开调用 f
-#define _REFLECT_PP_FOREACH_0(f)
+#define _REFLECT_PP_FOREACH_0(f, _0)
 #define _REFLECT_PP_FOREACH_1(f, _1) f(_1)
 #define _REFLECT_PP_FOREACH_2(f, _1, _2) f(_1) f(_2)
 #define _REFLECT_PP_FOREACH_3(f, _1, _2, _3) f(_1) f(_2) f(_3)
@@ -227,7 +227,9 @@
 
 // 计算 size(...)
 #define _REFLECT_PP_FOREACH_SIZEOF(...) \
-_REFLECT_PP_FOREACH_SIZEOF_IMPL(__VA_ARGS__, 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+_REFLECT_PP_FOREACH_SIZEOF_IMPL(__VA_OPT__(, __VA_ARGS__) 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+// 注意此处使用 `__VA_OPT__(, __VA_ARGS__)`, 来动态处理 单独的`,`的情况
+// 即, 如果没有参数的情况下, 它会: (__VA_ARGS__, x, x) --> (, x, x) # 会存在逗号~
 
 /**
  * @brief 目前只支持64个参数内的反射, 更多可以通过以下生成:
@@ -241,7 +243,7 @@ for i in range(1, n+1):
     print(" ".join(["f(_{0})".format(j) for j in range(1, i+1)]))
 
 print("#define _REFLECT_PP_FOREACH_SIZEOF_IMPL({0}, N, ...) N".format(", ".join(["_"+str(j) for j in range(1, n+1)])))
-print("#define _REFLECT_PP_FOREACH_SIZEOF(...) _REFLECT_PP_FOREACH_SIZEOF_IMPL(__VA_ARGS__, {0})".format(", ".join([str(j) for j in range(n, 0, -1)])))
+print("#define _REFLECT_PP_FOREACH_SIZEOF(...) _REFLECT_PP_FOREACH_SIZEOF_IMPL(__VA_OPT__(, __VA_ARGS__) {0})".format(", ".join([str(j) for j in range(n, -1, -1)])))
 
 # 获取最后一个参数
 for i in range(1, n+1):

@@ -27,13 +27,13 @@ endif()
 ########       ######
 # 部件测试
 # add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
-add_definitions(-DJSON_TEST_MAIN)  # json测试
+# add_definitions(-DJSON_TEST_MAIN)  # json示例
 
 # 客户端
 # add_definitions(-DCLIENT_MAIN)  # 客户端
 
 # 服务端
-# add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
+add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
 # add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 # add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
 # add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
