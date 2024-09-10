@@ -8,6 +8,8 @@
 #include <HXSTL/coroutine/loop/TriggerWaitLoop.h>
 #include <HXWeb/server/Server.h>
 
+#ifdef COMPILE_CHAT_SERVER_MAIN
+
 using namespace std::chrono;
 
 /**
@@ -168,7 +170,6 @@ public: // 控制器成员函数 (请写成`static`方法)
 
 };
 
-#ifdef COMPILE_CHAT_SERVER_MAIN
 int main() {
     chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
