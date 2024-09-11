@@ -67,13 +67,26 @@ struct JsonObject {
      */
     std::string toString() const;
 
+    /**
+     * @brief 安全的获取值
+     * @tparam T 需要获取的值的类型
+     * @return T, 如果当前共用体不是该类型则会返回该类型的`默认构造空对象`
+     */
     template <class T>
-    const T& get() const {
-        return std::get<T>(_inner);
+    T get() const {
+        if (std::holds_alternative<T>(_inner)) {
+            return std::get<T>(_inner);
+        }
+        return T {};
     }
 
+    /**
+     * @brief 获取值
+     * @warning 必须保证其存在, 否则请使用`const`属性的, 它会返回其拷贝, 非当前类型则会返回该类型的`默认构造空对象`
+     * @tparam T 需要获取的类型
+     */
     template <class T>
-        requires (std::is_same_v<T, double> || 
+        requires (std::is_same_v<T, double> || // 不能是非double的数字类型
                  (!std::is_integral_v<T> && !std::is_floating_point_v<T>))
     T &get() {
         return std::get<T>(_inner);
@@ -82,13 +95,19 @@ struct JsonObject {
     template <class T>
         requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
     T get() {
-        return static_cast<T>(std::get<double>(_inner));
+        if (std::holds_alternative<double>(_inner)) {
+            return static_cast<T>(std::get<double>(_inner));
+        }
+        return 0;
     }
 
     template <class T>
         requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
     T get() const {
-        return static_cast<T>(std::get<double>(_inner));
+        if (std::holds_alternative<double>(_inner)) {
+            return static_cast<T>(std::get<double>(_inner));
+        }
+        return 0;
     }
 
     /**
@@ -101,7 +120,7 @@ struct JsonObject {
     /**
      * @warning 请保证当前是`JsonList`
      */
-    auto& operator [](std::size_t index) const {
+    const auto& operator [](std::size_t index) const {
         return std::get<JsonList>(_inner)[index];
     }
 
@@ -111,7 +130,7 @@ struct JsonObject {
      * @throw `key`不存在
      */
     auto& operator [](const std::string& key) {
-        return std::get<JsonDict>(_inner).at(key);
+        return std::get<JsonDict>(_inner)[key];
     }
 
     /**
@@ -119,7 +138,20 @@ struct JsonObject {
      * @throw 当前不是`JsonDict`
      * @throw `key`不存在
      */
-    const auto& operator [](const std::string& key) const {
+    auto operator [](const std::string& key) const {
+        auto&& dict = std::get<JsonDict>(_inner);
+        if (auto it = dict.find(key); it != dict.end()) {
+            return it->second;
+        }
+        return JsonObject {};
+    }
+
+    /**
+     * @warning 请保证当前是`JsonDict`
+     * @throw 当前不是`JsonDict`
+     * @throw `key`不存在
+     */
+    const auto& at(const std::string& key) const {
         return std::get<JsonDict>(_inner).at(key);
     }
 };

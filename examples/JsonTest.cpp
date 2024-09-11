@@ -144,8 +144,15 @@ void test_02() {
     printf("\n\n");
 
     // 示例: 从json对象 / json字符串转为 结构体
+
+    json["age"] = HX::Json::JsonObject {}; // 如果我们修改了它的类型 / 解析不到对应类型
+
+
     Student x(json);
     HX::Json::parse(x.toString()).first.print();
+
+    printf("\n\n"); // 即便是空的也无所谓~ (不过至少保证它是一个json! 即 HX::Json::parse 可以正确解析)
+    HX::Json::parse(Student("{}").toString()).first.print();
 }
 
 int main () {
