@@ -112,7 +112,7 @@ class WhenAny {
 
     template <class T>
     static ReturnPreviousTask whenAnyHelper(
-        auto const &t, 
+        const auto &t, 
         WhenAnyCtlBlock &control,
         HX::STL::container::Uninitialized<T> &res, std::size_t index
     ) {

@@ -25,6 +25,8 @@
 #include <chrono>
 
 #include <HXSTL/coroutine/task/Task.hpp>
+#include <HXSTL/coroutine/loop/TimerLoop.h>
+#include <HXSTL/coroutine/task/WhenAny.hpp>
 
 #ifdef __GNUC__
 #define HOT_FUNCTION [[gnu::hot]]
@@ -83,7 +85,7 @@ public:
     }
 
     ~IoUringLoop() {
-        io_uring_queue_exit(&_ring);
+        ::io_uring_queue_exit(&_ring);
     }
 
 private:
@@ -105,7 +107,7 @@ struct [[nodiscard]] IoUringTask {
             return false;
         }
 
-        void await_suspend(std::coroutine_handle<> coroutine) {
+        void await_suspend(std::coroutine_handle<> coroutine) const {
             _task->_previous = coroutine;
             _task->_res = -ENOSYS;
         }
@@ -127,15 +129,15 @@ struct [[nodiscard]] IoUringTask {
 
     /**
      * @brief 链接超时操作
-     * @param lhs 操作
-     * @param rhs 空连接的超时操作 (prepLinkTimeout)
+     * @param lhs 空连接的超时操作 (prepLinkTimeout)
+     * @param rhs 操作
      * @return IoUringTask&& 
      */
-    // static IoUringTask&& linkOps(IoUringTask&& lhs, IoUringTask&& rhs) {
-    //     lhs._sqe->flags |= IOSQE_IO_LINK;
-    //     rhs._previous = std::noop_coroutine();
-    //     return std::move(lhs);
-    // }
+    static HX::STL::coroutine::task::Task<int> linkOps(IoUringTask& lhs, IoUringTask& rhs) {
+        rhs._sqe->flags |= IOSQE_IO_LINK;
+        lhs._previous = std::noop_coroutine();
+        co_return co_await rhs;
+    }
 private:
     std::coroutine_handle<> _previous;
     friend IoUringLoop;
@@ -145,32 +147,6 @@ private:
         struct ::io_uring_sqe *_sqe;
     };
 public:
-    /**
-     * @brief 取消task相关的某些 io_uring 操作
-     * @param task 
-     * @param flags 需要取消的操作类型
-     * @return IoUringTask&& 
-     */
-    IoUringTask&& prepCancel(
-        IoUringTask *task, 
-        int flags
-    ) && {
-        io_uring_prep_cancel(_sqe, task, flags);
-        return std::move(*this);
-    }
-
-    /**
-     * @brief 取消task的某些 io_uring 操作
-     * @param flags 需要取消的操作的 flags
-     * @return IoUringTask&& 
-     */
-    IoUringTask&& prepCancel(
-        int flags
-    ) && {
-        io_uring_prep_cancel(_sqe, this, flags);
-        return std::move(*this);
-    }
-
     /**
      * @brief 异步打开文件
      * @param dirfd 目录文件描述符, 它表示相对路径的基目录; `AT_FDCWD`, 则表示相对于当前工作目录
@@ -329,6 +305,20 @@ public:
         return std::move(*this);
     }
 
+    /**
+     * @brief 取消 fd 的某些操作
+     * @param fd 需要取消的fd
+     * @param flags 如`IORING_ASYNC_CANCEL_ALL`取消所有的相关的fd
+     * @return IoUringTask&& 
+     */
+    IoUringTask&& prepCancelFd(
+        int fd, 
+        unsigned int flags
+    ) && {
+        ::io_uring_prep_cancel_fd(_sqe, fd, flags);
+        return std::move(*this);
+    }
+
     // 不懂参数, 先不搞这个~
     // IoUringTask&& prepPollUpdate(int fd, unsigned int poll_mask, int flags) && {
     //     ::io_uring_prep_poll_update(_sqe, fd, poll_mask, flags);
@@ -346,23 +336,33 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    // IoUringTask&& prepLinkTimeout(
-    //     struct __kernel_timespec *ts,
-    //     unsigned int flags
-    // ) && {
-    //     ::io_uring_prep_link_timeout(_sqe, ts, flags);
-    //     return std::move(*this);
-    // }
+    IoUringTask&& prepLinkTimeout(
+        struct __kernel_timespec *ts,
+        unsigned int flags
+    ) && {
+        ::io_uring_prep_link_timeout(_sqe, ts, flags);
+        return std::move(*this);
+    }
+
+    /**
+     * @brief 取消`op`任务
+     * @param op 需要取消的任务
+     * @param flags 标准位
+     * @return IoUringTask&& 
+     */
+    IoUringTask&& prepCancel(
+        IoUringTask *op, 
+        int flags
+    ) && {
+        ::io_uring_prep_cancel(_sqe, op, flags);
+        return std::move(*this);
+    }
 
     /**
      * @brief 取消所有操作 (一般是取消`prepLinkTimeout`的)
      * @return int
      */
-    // HX::STL::coroutine::task::Task<int> cancelGuard() && {
-    //     int res = co_await *this;
-    //     co_await IoUringTask().prepCancel(this, IORING_ASYNC_CANCEL_ALL);
-    //     co_return res;
-    // }
+    HX::STL::coroutine::task::Task<int> cancelGuard() &&;
 };
 
 }}}} // namespace HX::STL::coroutine::loop

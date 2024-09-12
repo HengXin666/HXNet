@@ -16,7 +16,7 @@ IO::IO(int fd)
     , _recvBuf(HX::STL::utils::FileUtils::kBufMaxSize)
 {}
 
-inline static HX::STL::coroutine::task::TimerTask close(int fd) {
+inline static HX::STL::coroutine::task::TimerTask _close(int fd) {
     // 如果这个fd被关闭, 那么会自动取消(无效化)等待队列的任务
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
 }
@@ -25,7 +25,7 @@ IO::~IO() noexcept {
     // 添加到事件循环, 虽然略微延迟释放fd, 但是RAII呀~
     HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
         std::make_shared<HX::STL::coroutine::task::TimerTask>(
-            close(_fd)
+            _close(_fd)
         )
     );
 }
@@ -54,11 +54,37 @@ HX::STL::coroutine::task::Task<std::size_t> IO::recvN(
     ));
 }
 
+HX::STL::coroutine::task::Task<std::size_t> IO::recvN(
+    std::span<char> buf,
+    std::size_t n,
+    __kernel_timespec* timeout
+) const {
+    co_return static_cast<std::size_t>(std::max(
+        co_await _recvSpan(std::span{buf.data(), n}, timeout), 0
+    ));
+}
+
 HX::STL::coroutine::task::Task<int> IO::_recvSpan(
     std::span<char> buf
 ) const {
     co_return co_await HX::STL::coroutine::loop::IoUringTask().prepRecv(
         _fd, buf, 0
+    );
+}
+
+HX::STL::coroutine::task::Task<int> IO::_recvSpan(
+    std::span<char> buf,
+    __kernel_timespec* timeout
+) const {
+    HX::STL::coroutine::loop::IoUringTask timer;
+    HX::STL::coroutine::loop::IoUringTask recvOP;
+    
+    std::move(timer).prepLinkTimeout(timeout, IORING_TIMEOUT_BOOTTIME);
+    std::move(recvOP).prepRecv(_fd, buf, 0);
+
+    co_return co_await HX::STL::coroutine::loop::IoUringTask::linkOps(
+        timer,
+        recvOP
     );
 }
 

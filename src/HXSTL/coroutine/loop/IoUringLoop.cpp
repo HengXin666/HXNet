@@ -4,8 +4,6 @@
 #include <HXSTL/coroutine/task/TimerTask.h>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 
-#include <HXSTL/utils/FileUtils.h>
-
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
 IoUringLoop::IoUringLoop(unsigned int entries) : _ring() {
@@ -47,18 +45,18 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
         task->_res = cqe->res;
         tasks.push_back(task->_previous);
-        ++numGot;
+        ++numGot; 
     }
 
     // 手动前进完成队列的头部 (相当于批量io_uring_cqe_seen)
     ::io_uring_cq_advance(&_ring, numGot);
     _numSqesPending -= static_cast<std::size_t>(numGot);
-    // for (const auto& it : tasks) {
-    //     it.resume();
-    // }
-    for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
-        it->resume();
+    for (const auto& it : tasks) {
+        it.resume();
     }
+    // for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
+    //     it->resume();
+    // }
     return true;
 }
 
@@ -76,5 +74,19 @@ IoUringTask::IoUringTask() {
 //     // );
 //     co_return;
 // }
+
+static HX::STL::coroutine::task::TimerTask cancel(IoUringTask* ptr) {
+    co_await IoUringTask().prepCancel(ptr, IORING_ASYNC_CANCEL_ALL);
+}
+
+HX::STL::coroutine::task::Task<int> IoUringTask::cancelGuard() && {
+    int res = co_await std::move(*this);
+    HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
+        std::make_shared<HX::STL::coroutine::task::TimerTask>(
+            cancel(this)
+        )
+    );
+    co_return res;
+}
 
 }}}} // namespace HX::STL::coroutine::loop

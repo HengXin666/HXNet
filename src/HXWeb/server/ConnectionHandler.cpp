@@ -23,21 +23,13 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler<HX::web::protocol::http::H
     std::chrono::seconds timeout
 ) {
     HX::web::server::IO<HX::web::protocol::http::Http> io {fd};
+    auto _timeout = HX::STL::coroutine::loop::durationToKernelTimespec(timeout);
     bool endpointRes = 0; // 是否复用连接
-
     while (true) {
         // === 读取 ===
         // LOG_INFO("读取中...");
         {
-            auto&& res = co_await HX::STL::coroutine::task::WhenAny::whenAny(
-                HX::STL::coroutine::loop::TimerLoop::sleepFor(timeout),
-                io._recvRequest()
-            );
-
-            if (!res.index())
-                goto END;
-
-            if (std::get<1>(res)) {
+            if (co_await io._recvRequest(&_timeout)) {
                 LOG_INFO("客户端 %d 已断开连接!", fd);
                 co_return;
             }
@@ -83,8 +75,8 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler<HX::web::protocol::https::
     std::chrono::seconds timeout
 ) {
     HX::web::server::IO<HX::web::protocol::https::Https> io {fd};
+    auto _timeout = HX::STL::coroutine::loop::durationToKernelTimespec(timeout);
     bool endpointRes = 0; // 是否复用连接
-
     {    
         // SSL 握手
         auto&& res = co_await HX::STL::coroutine::task::WhenAny::whenAny(
@@ -102,7 +94,7 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler<HX::web::protocol::https::
         {
             auto&& res = co_await HX::STL::coroutine::task::WhenAny::whenAny(
                 HX::STL::coroutine::loop::TimerLoop::sleepFor(timeout),
-                io._recvRequest()
+                io._recvRequest(&_timeout)
             );
 
             if (!res.index())
