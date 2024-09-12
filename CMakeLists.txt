@@ -12,7 +12,7 @@ project(HXNet LANGUAGES CXX)
 set(HX_NET_FIND_OPENSSL ON)
 
 # 是否启用 Address Sanitizer
-# set(HX_DEBUG_BY_ADDRESS_SANITIZER ON)
+set(HX_DEBUG_BY_ADDRESS_SANITIZER ON)
 
 # 使用 Address Sanitizer
 if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -27,14 +27,14 @@ endif()
 ########       ######
 # 部件测试
 # add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
-add_definitions(-DJSON_TEST_MAIN)  # json示例
+# add_definitions(-DJSON_TEST_MAIN)  # json示例
 
 # 客户端
 # add_definitions(-DCLIENT_MAIN)  # 客户端
 
 # 服务端
 # add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
-# add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
+add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
 # add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 # add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
 # add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器

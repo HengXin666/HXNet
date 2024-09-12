@@ -258,59 +258,59 @@ for i in range(1, n+1):
     print(" ".join(["_{0}{1}".format(j, " " if j == i - 1 else ",") for j in range(1, i)]))
  */
 
-namespace HX { namespace Json {
+namespace HX { namespace json {
 
-/// @brief 判断是否存在`const HX::Json::JsonObject&`作为参数的构造函数
+/// @brief 判断是否存在`const HX::json::JsonObject&`作为参数的构造函数
 /// @tparam T 
 template <typename T>
 constexpr bool isConstructibleFromJsonObject 
-    = std::is_constructible_v<T, const HX::Json::JsonObject&>;
+    = std::is_constructible_v<T, const HX::json::JsonObject&>;
 
 template <class T>
-void setVal(T& val, const HX::Json::JsonObject& json) {
+void setVal(T& val, const HX::json::JsonObject& json) {
     val = json.get<T>();
 }
 
 template <HX::STL::concepts::SingleElementContainer Container>
-void setVal(Container& val, const HX::Json::JsonObject& json) {
-    for (const auto& it : json.get<HX::Json::JsonList>()) {
+void setVal(Container& val, const HX::json::JsonObject& json) {
+    for (const auto& it : json.get<HX::json::JsonList>()) {
         val.emplace_back(it.get<typename Container::value_type>());
     }
 }
 
 template <HX::STL::concepts::SingleElementContainer Container>
     requires (isConstructibleFromJsonObject<typename Container::value_type>)
-void setVal(Container& val, const HX::Json::JsonObject& json) {
-    for (const auto& it : json.get<HX::Json::JsonList>()) {
+void setVal(Container& val, const HX::json::JsonObject& json) {
+    for (const auto& it : json.get<HX::json::JsonList>()) {
         val.emplace_back(it);
     }
 }
 
 template <HX::STL::concepts::KeyValueContainer Container>
     requires (isConstructibleFromJsonObject<typename Container::mapped_type>)
-void setVal(Container& val, const HX::Json::JsonObject& json) {
-    for (const auto& [k, v] : json.get<HX::Json::JsonDict>()) {
+void setVal(Container& val, const HX::json::JsonObject& json) {
+    for (const auto& [k, v] : json.get<HX::json::JsonDict>()) {
         val.emplace(k, v);
     }
 }
 
 template <HX::STL::concepts::KeyValueContainer Container>
-void setVal(Container& val, const HX::Json::JsonObject& json) {
-    for (const auto& [k, v] : json.get<HX::Json::JsonDict>()) {
+void setVal(Container& val, const HX::json::JsonObject& json) {
+    for (const auto& [k, v] : json.get<HX::json::JsonDict>()) {
         val.emplace(k, v.get<typename Container::mapped_type>());
     }
 }
 
-}} // namespace HX::Json
+}} // namespace HX::json
 
 // 实际上的JSON序列化实现
 #define _REFLECT_TO_JSON(name) \
-        res += #name":"; \
+        res += "\""#name"\":"; \
         res += HX::STL::utils::toString(name); \
         res += ',';
 
 #define _REFLECT_CONSTRUCTOR_TO_JSON(name) \
-        HX::Json::setVal(name, json[#name]);
+        HX::json::setVal(name, json[#name]);
 
 #define _REFLECT_CONSTRUCTOR_ARG(name) \
         decltype(name) name##_,
@@ -368,9 +368,9 @@ std::string toString() const { \
  */
 #define REFLECT_CONSTRUCTOR(TYPE, ...) \
 TYPE(const std::string& json) \
-    : TYPE(HX::Json::parse(json).first) \
+    : TYPE(HX::json::parse(json).first) \
 {} \
-TYPE(const HX::Json::JsonObject& json) { \
+TYPE(const HX::json::JsonObject& json) { \
     _REFLECT_PP_FOREACH(_REFLECT_CONSTRUCTOR_TO_JSON, __VA_ARGS__) \
 } \
 REFLECT(__VA_ARGS__)

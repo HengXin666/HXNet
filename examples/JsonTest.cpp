@@ -47,7 +47,7 @@ int main() { // 使用类型擦除, 从而输出 variant 的实时的值
 
 // JSON解析示例
 void test_01() {
-    auto json = HX::Json::parse(R"(
+    auto json = HX::json::parse(R"(
 [
   {
     "name": "Molecule Man",
@@ -67,12 +67,12 @@ void test_01() {
     sb: null
   }
 ]
-)").first;
+)").first; // .first 是解析的jsonObj, 而 .second 是解析的字符数(如果为 0, 则是解析失败)
 
     json.print();
     std::cout << '\n';
     
-    json.get<HX::Json::JsonList>()[1].get<HX::Json::JsonDict>()["sb"].print();
+    json.get<HX::json::JsonList>()[1].get<HX::json::JsonDict>()["sb"].print();
     std::cout << '\n';
 
     json[1]["sb"].print();
@@ -139,26 +139,26 @@ void test_02() {
     };
     // 示例: 转化为json字符串(紧凑的)
     HX::print::print(stu.toString());
-    auto json = HX::Json::parse(stu.toString()).first;
+    auto json = HX::json::parse(stu.toString()).first;
     json.print();
     printf("\n\n");
 
     // 示例: 从json对象 / json字符串转为 结构体
 
-    json["age"] = HX::Json::JsonObject {}; // 如果我们修改了它的类型 / 解析不到对应类型
-
+    json["age"] = HX::json::JsonObject {}; // 如果我们修改了它的类型 / 解析不到对应类型
 
     Student x(json);
-    HX::Json::parse(x.toString()).first.print();
+    HX::json::parse(x.toString()).first.print();
 
-    printf("\n\n"); // 即便是空的也无所谓~ (不过至少保证它是一个json! 即 HX::Json::parse 可以正确解析)
-    HX::Json::parse(Student("{}").toString()).first.print();
+    printf("\n\n");
+    // 即便是空的也无所谓, 不是json也无所谓, 只是解析到的是空josn对象
+    HX::json::parse(Student("Heng_Xin is nb!").toString()).first.print();
 }
 
 int main () {
     HX::print::print("示例1: json解析\n");
     test_01();
-    HX::print::print("\n\n示例2: json合成string || jsonString合成到结构体\n");
+    HX::print::print("\n\n示例2: json合成string || jsonString合成到结构体 || 其他鲁棒性测试示例\n");
     test_02();
     return 0;
 }

@@ -31,7 +31,7 @@
 
 // 下期目标: 实现一个将Json数据转存为Json文件的Code
 
-namespace HX { namespace Json {
+namespace HX { namespace json {
 
 struct JsonObject;
 
@@ -118,13 +118,6 @@ struct JsonObject {
     }
 
     /**
-     * @warning 请保证当前是`JsonList`
-     */
-    const auto& operator [](std::size_t index) const {
-        return std::get<JsonList>(_inner)[index];
-    }
-
-    /**
      * @warning 请保证当前是`JsonDict`
      * @throw 当前不是`JsonDict`
      * @throw `key`不存在
@@ -134,12 +127,20 @@ struct JsonObject {
     }
 
     /**
-     * @warning 请保证当前是`JsonDict`
-     * @throw 当前不是`JsonDict`
-     * @throw `key`不存在
+     * @brief 如果非此类型或者索引越界, 则会返回空
+     */
+    auto operator [](std::size_t index) const {
+        auto&& res = get<JsonList>();
+        if (res.size() >= index)
+            return JsonObject {};
+        return res[index];
+    }
+
+    /**
+     * @brief 如果非此类型或者键不存在, 则会返回空
      */
     auto operator [](const std::string& key) const {
-        auto&& dict = std::get<JsonDict>(_inner);
+        auto&& dict = get<JsonDict>();
         if (auto it = dict.find(key); it != dict.end()) {
             return it->second;
         }
@@ -152,7 +153,7 @@ struct JsonObject {
      * @throw `key`不存在
      */
     const auto& at(const std::string& key) const {
-        return std::get<JsonDict>(_inner).at(key);
+        return get<JsonDict>().at(key);
     }
 };
 
@@ -316,6 +317,6 @@ std::pair<JsonObject, std::size_t> parse(std::string_view json) {
     return {JsonObject{std::nullptr_t{}}, 0};
 }
 
-}} // namespace HX::Json
+}} // namespace HX::json
 
 #endif // _HX_JSON_H_

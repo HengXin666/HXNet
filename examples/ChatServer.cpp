@@ -110,11 +110,11 @@ class ChatController {
 
     ENDPOINT_BEGIN(API_POST, "/send", send) { // 客户端发送消息过来
         auto body = io.getRequest().getRequesBody();
-        auto jsonPair = HX::Json::parse(body);
+        auto jsonPair = HX::json::parse(body);
         if (jsonPair.second) {
             messageArr.emplace_back(
-                jsonPair.first.get<HX::Json::JsonDict>()["user"].get<std::string>(),
-                jsonPair.first.get<HX::Json::JsonDict>()["content"].get<std::string>()
+                jsonPair.first.get<HX::json::JsonDict>()["user"].get<std::string>(),
+                jsonPair.first.get<HX::json::JsonDict>()["content"].get<std::string>()
             );
             // printf("%s\n", Message::toJson(messageArr.begin(), messageArr.end()).c_str());
             waitLoop.runAllTask();
@@ -131,10 +131,10 @@ class ChatController {
 
         auto body = io.getRequest().getRequesBody();
         // printf("recv (%s)\n", body.c_str());
-        auto jsonPair = HX::Json::parse(body);
+        auto jsonPair = HX::json::parse(body);
 
         if (jsonPair.second) {
-            int len = jsonPair.first.get<HX::Json::JsonDict>()["first"].get<int>();
+            int len = jsonPair.first.get<HX::json::JsonDict>()["first"].get<int>();
             // printf("内容是: %d\n", len);
             if (len < (int)messageArr.size()) {
                 // printf("立马回复, 是新消息~\n");

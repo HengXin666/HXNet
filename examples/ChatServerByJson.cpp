@@ -48,7 +48,7 @@ class ChatController {
     ENDPOINT_BEGIN(API_GET, "/", root) {
         RESPONSE_DATA(
             200,
-            co_await HX::STL::utils::FileUtils::asyncGetFileContent("index.html"),
+            co_await HX::STL::utils::FileUtils::asyncGetFileContent("indexByJson.html"),
             "text/html", "UTF-8"
         );
         co_return true;
@@ -65,7 +65,7 @@ class ChatController {
 
     ENDPOINT_BEGIN(API_POST, "/send", send) { // 客户端发送消息过来
         auto body = io.getRequest().getRequesBody();
-        auto jsonPair = HX::Json::parse(body);
+        auto jsonPair = HX::json::parse(body);
         if (jsonPair.second) {
             msgArr.arr.emplace_back(jsonPair.first);
             // printf("%s\n", Message::toJson(messageArr.begin(), messageArr.end()).c_str());
@@ -83,10 +83,10 @@ class ChatController {
 
         auto body = io.getRequest().getRequesBody();
         // printf("recv (%s)\n", body.c_str());
-        auto jsonPair = HX::Json::parse(body);
+        auto jsonPair = HX::json::parse(body);
 
         if (jsonPair.second) {
-            int len = jsonPair.first.get<HX::Json::JsonDict>()["first"].get<int>();
+            int len = jsonPair.first["first"].get<int>();
             // printf("内容是: %d\n", len);
             if (len < (int)msgArr.arr.size()) {
                 // printf("立马回复, 是新消息~\n");
@@ -103,11 +103,14 @@ class ChatController {
                     HX::STL::coroutine::loop::TriggerWaitLoop::triggerWait(waitLoop),
                     HX::STL::coroutine::loop::TimerLoop::sleepFor(3s)
                 );
-                std::vector<Message> submessages;
+
                 // printf("3秒之期已到, 马上回复~\n");
                 RESPONSE_DATA(
                     200,
-                    Message::toJson(messageArr.begin() + len, messageArr.end()),
+                    MsgArr(std::vector<MsgArr::Message> {
+                        msgArr.arr.begin() + len, 
+                        msgArr.arr.end()
+                    }).toString(),
                     "text/plain", "UTF-8"
                 );
                 co_return true;

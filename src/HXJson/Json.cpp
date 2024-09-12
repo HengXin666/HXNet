@@ -3,7 +3,7 @@
 #include <HXprint/print.h>
 #include <HXSTL/utils/ToString.h>
 
-namespace HX { namespace  Json {
+namespace HX { namespace  json {
 
 void JsonObject::print() const {
     HX::print::printnl(_inner);
@@ -39,4 +39,4 @@ std::size_t skipTail(std::string_view json, std::size_t i, char ch) {
     return 0;
 }
 
-}} // namespace HX::Json
+}} // namespace HX::json
