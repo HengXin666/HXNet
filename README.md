@@ -1,5 +1,11 @@
 <h1 align="center" style="color:yellow">HXNet</h1>
 
+## v7.0-big-bug-io_uring-tmp 分支说明
+
+这个尝试修改为 iuo_uring的定时器, 然而我还是太菜了, 越改越乱, 放弃了, 这是一个垃圾分支, 千万不要使用, 除非您想接下这个烂摊子(修复这个bug绝对是本项目最有含金量的东西了qwq)
+
+---
+
 > [!NOTE]
 > *Heng_Xin学习现代Cpp的代码存放库,* 包含以下内容:
 
