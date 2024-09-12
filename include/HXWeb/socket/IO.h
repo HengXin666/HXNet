@@ -91,19 +91,6 @@ protected:
     ) const;
 
     /**
-     * @brief 尝试读取 n 个字符
-     * @param buf 存储读取字符的字符数组视图
-     * @param n 读取字符个数 (buf.size() >= n)
-     * @param timeout 超时时间
-     * @return 读取的字节数
-     */
-    HX::STL::coroutine::task::Task<std::size_t> recvN(
-        std::span<char> buf,
-        std::size_t n,
-        __kernel_timespec* timeout
-    ) const;
-
-    /**
      * @brief 读取一个大小为`sizeof(T)`字节的内容, 并且构造为T类型的数据
      * @tparam T 读取的类型
      * @param res [in, out] 原地在`res`的内存上重新构造对象
@@ -134,11 +121,6 @@ protected:
     }
 
     HX::STL::coroutine::task::Task<int> _recvSpan(std::span<char> buf) const;
-
-    HX::STL::coroutine::task::Task<int> _recvSpan(
-        std::span<char> buf,
-        __kernel_timespec* timeout
-    ) const;
     // === end === 读取相关的函数 === end ===
 
     // === start === 写入相关的函数 === start ===
@@ -156,17 +138,6 @@ protected:
      */
     HX::STL::coroutine::task::Task<int> _pollAdd(
         unsigned int pollMask
-    ) const;
-
-    /**
-     * @brief 监测fd的事件
-     * @param pollMask 事件
-     * @param timeout 超时时间
-     * @return int 什么事件
-     */
-    HX::STL::coroutine::task::Task<int> _pollAdd(
-        unsigned int pollMask,
-        __kernel_timespec* timeout
     ) const;
 
     int _fd = -1;

@@ -65,10 +65,8 @@ HX::STL::coroutine::task::Task<> IO<>::sendResponseWithChunkedEncoding(
     _response->clear();
 }
 
-HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::http::Http>::_recvRequest(
-    __kernel_timespec* timeout
-) {
-    std::size_t n = co_await recvN(_recvBuf, _recvBuf.size(), timeout); // 读取到的字节数
+HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::http::Http>::_recvRequest() {
+    std::size_t n = co_await recvN(_recvBuf, _recvBuf.size()); // 读取到的字节数
     while (true) {
         if (n == 0) {
             // 断开连接
@@ -80,7 +78,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::http::Http>::_recvReq
             std::string_view {_recvBuf.data(), n}
         )) {
             // LOG_INFO("二次读取中..., 还需要读取 size = %llu", size);
-            n = co_await recvN(_recvBuf, std::min(size, _recvBuf.size()), timeout);
+            n = co_await recvN(_recvBuf, std::min(size, _recvBuf.size()));
             continue;
         }
         break;
@@ -167,9 +165,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
     }
 }
 
-HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvRequest(
-    __kernel_timespec* timeout
-) {
+HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvRequest() {
     // 读取
     std::size_t n = _recvBuf.size();
     while (true) {
