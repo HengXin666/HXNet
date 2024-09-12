@@ -96,6 +96,8 @@ struct [[nodiscard]] IoUringTask {
 
     IoUringTask();
 
+    ~IoUringTask() noexcept;
+
     struct Awaiter {
         explicit Awaiter(IoUringTask *task)
             : _task(task)
@@ -111,6 +113,7 @@ struct [[nodiscard]] IoUringTask {
         }
 
         int await_resume() const noexcept {
+            _task->_cancel = false;
             return _task->_res;
         }
 
@@ -144,6 +147,8 @@ private:
         int _res;
         struct ::io_uring_sqe *_sqe;
     };
+
+    bool _cancel = true;
 public:
     /**
      * @brief 取消task相关的某些 io_uring 操作
@@ -164,12 +169,12 @@ public:
      * @param flags 需要取消的操作的 flags
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepCancel(
-        int flags
-    ) && {
-        io_uring_prep_cancel(_sqe, this, flags);
-        return std::move(*this);
-    }
+    // IoUringTask&& prepCancel(
+    //     int flags
+    // ) && {
+    //     io_uring_prep_cancel(_sqe, this, flags);
+    //     return std::move(*this);
+    // }
 
     /**
      * @brief 异步打开文件
@@ -286,6 +291,7 @@ public:
         int flags
     ) && {
         ::io_uring_prep_recv(_sqe, fd, buf.data(), buf.size(), flags);
+        // printf("recv %p\n", (void *)this);
         return std::move(*this);
     }
 

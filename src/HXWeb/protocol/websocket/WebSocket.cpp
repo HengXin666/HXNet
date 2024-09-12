@@ -7,9 +7,7 @@
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
 #include <HXSTL/coroutine/task/WhenAny.hpp>
-#include <HXSTL/coroutine/loop/TimerLoop.h>
-#include <HXSTL/coroutine/task/WhenAny.hpp>
-#include <HXSTL/coroutine/loop/IoUringLoop.h>
+#include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXSTL/utils/ByteUtils.hpp>
 #include <HXSTL/tools/ErrorHandlingTools.h>
 
@@ -216,6 +214,7 @@ HX::STL::coroutine::task::Task<> WebSocket::start(
             if (_waitingPong) { // 上次ping还没有回复我呢! 对面已经嘎啦!
                 break;
             }
+            HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().startHostingTasks();
             co_await sendPing();
             _waitingPong = true;
             _lastPingTime = std::chrono::steady_clock::now();

@@ -20,7 +20,7 @@ std::optional<std::chrono::system_clock::duration> TimerLoop::run() {
     while (_timerRBTree.size()) {
         auto nowTime = std::chrono::system_clock::now();
         auto it = _timerRBTree.begin();
-        if (it->first < nowTime) {
+        if (it->first <= nowTime) {
             it->second.resume();
             _timerRBTree.erase(it);
         } else {
@@ -44,6 +44,12 @@ HX::STL::coroutine::task::Task<
     std::chrono::system_clock::duration duration
 ) {
     co_await SleepAwaiter(AsyncLoop::getLoop(), std::chrono::system_clock::now() + duration);
+}
+
+HX::STL::coroutine::task::Task<
+    HX::STL::container::NonVoidHelper<>
+> TimerLoop::yield() {
+    co_await SleepAwaiter(AsyncLoop::getLoop(), std::chrono::system_clock::now());
 }
 
 }}}} // namespace HX::STL::coroutine::loop

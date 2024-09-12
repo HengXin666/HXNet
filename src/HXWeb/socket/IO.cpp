@@ -18,7 +18,9 @@ IO::IO(int fd)
 
 inline static HX::STL::coroutine::task::TimerTask close(int fd) {
     // 如果这个fd被关闭, 那么会自动取消(无效化)等待队列的任务
+    printf("删除 %d {\n", fd);
     co_await HX::STL::coroutine::loop::IoUringTask().prepClose(fd);
+    printf("} // 删除 %d\n", fd);
 }
 
 IO::~IO() noexcept {

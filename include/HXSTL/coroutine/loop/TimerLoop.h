@@ -89,6 +89,22 @@ public:
      * @return std::optional<std::chrono::system_clock::duration> 如果有计数器任务, 则会返回执行时间
      */
     std::optional<std::chrono::system_clock::duration> run();
+
+    /**
+     * @brief 启动托管任务
+     */
+    void startHostingTasks() {
+        while (_initiationQueue.size()) {
+            auto&& task = _initiationQueue.front();
+            task->_coroutine.resume();
+            task->_coroutine.promise()._ptr = task;
+            _initiationQueue.pop();
+        }
+
+        while (_destructionQueue.size()) {
+            _destructionQueue.pop();
+        }
+    }
 private:
     /**
      * @brief 暂停者
@@ -145,6 +161,13 @@ public:
     > static sleepFor(
         std::chrono::system_clock::duration duration
     );
+
+    /**
+     * @brief 主动让出执行权
+     */
+    HX::STL::coroutine::task::Task<
+        HX::STL::container::NonVoidHelper<>
+    > static yield();
 
     explicit TimerLoop() : _timerRBTree()
                          , _initiationQueue()

@@ -34,10 +34,10 @@ endif()
 
 # 服务端
 # add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
-add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
+# add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
 # add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 # add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
-# add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
+add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
 
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定

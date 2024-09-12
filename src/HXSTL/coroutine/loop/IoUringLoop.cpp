@@ -44,27 +44,53 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     unsigned head, numGot = 0;
     std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&_ring, head, cqe) {
+        ++numGot;
+        if (cqe->res < 0) {
+            // printf("任务已取消 (%p)\n", (void *)cqe->user_data);
+            continue;
+        }
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
+        // printf("任务 (%p) | res = %d | !: (%p)\n", (void *)cqe->user_data, cqe->res, &task->_res);
         task->_res = cqe->res;
         tasks.push_back(task->_previous);
-        ++numGot;
     }
 
     // 手动前进完成队列的头部 (相当于批量io_uring_cqe_seen)
     ::io_uring_cq_advance(&_ring, numGot);
     _numSqesPending -= static_cast<std::size_t>(numGot);
-    // for (const auto& it : tasks) {
-    //     it.resume();
-    // }
-    for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
-        it->resume();
+    for (const auto& it : tasks) {
+        it.resume();
     }
+    // for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
+    //     it->resume();
+    // }
     return true;
 }
 
 IoUringTask::IoUringTask() {
     _sqe = HX::STL::coroutine::loop::AsyncLoop::getLoop().getIoUringLoop().getSqe();
     ::io_uring_sqe_set_data(_sqe, this);
+}
+
+inline static HX::STL::coroutine::task::TimerTask cancel(IoUringTask* op) {
+    // 如果这个fd被关闭, 那么会自动取消(无效化)等待队列的任务
+    // printf("正在取消 %p\n", (void *)op);
+    co_await HX::STL::coroutine::loop::IoUringTask().prepCancel(op, IORING_ASYNC_CANCEL_ALL);
+    // printf("正在取消了 %p\n", (void *)op);
+    co_return;
+}
+
+IoUringTask::~IoUringTask() {
+    if (_cancel) {
+        // printf("营长! 快取消!\n");
+        HX::STL::coroutine::loop::AsyncLoop::getLoop().getTimerLoop().addInitiationTask(
+            std::make_shared<HX::STL::coroutine::task::TimerTask>(
+                cancel(this)
+            )
+        );
+    } 
+    // else
+    // printf("~ %p\n", (void *)this);
 }
 
 // inline static HX::STL::coroutine::task::TimerTask log(long tis) {
