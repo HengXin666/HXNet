@@ -1,5 +1,6 @@
 # 开发日志
 
+- [2024-9-13 10:34:46] : 新增toString/print对`std::span`的支持! 此外json可以反射到`const auto&`类型(只能使用`REFLECT`宏来反射)
 - [2024-9-12 23:25:05] : 修复如果超时在某些情况下, 并没有断开客户端连接; 以及没有取消`读取任务`而导致的内存泄漏/段错误等问题 (已经在`examples`的`ChatServerByJson.cpp`、`WsServer.cpp`、`HttpsServer.cpp`以及`HttpsFileServer.cpp`分别进行`5min`的压力测试和浏览器随机访问(比如等到其超时后, 再操作xxx等..), 目前没有发现任何问题!)
     - 唯一算是问题的是`HttpsFileServer.cpp`在高并发情况下, 如果在浏览器刷新页面, 似乎会打断压力测试的客户端的连接? 目前还不知道是怎么回事qwq...
 

@@ -27,6 +27,7 @@
 #include <map>
 #include <unordered_map>
 #include <optional>
+#include <span>
 #include <variant>
 #include <concepts>
 
@@ -108,6 +109,10 @@ static void _HXprint(bool t);
 template <typename T>
 static void _HXprint(const T& t);
 
+// span 视图
+template <typename T>
+static void _HXprint(std::span<T> t);
+
 // std::optional
 template <typename... Ts>
 static void _HXprint(const std::optional<Ts...>& t);
@@ -131,6 +136,9 @@ static void _HXprint(const Container& map);
 // std::variant 现代共用体
 template <typename... Ts>
 static void _HXprint(const std::variant<Ts...>& t);
+
+template <PrintClassType T>
+static void _HXprint(const T& t);
 
 /////////////////////////////////////////////////////////
 
@@ -161,6 +169,20 @@ static void _HXprint(const T& t) {
 template <HX::STL::concepts::StringType ST>
 static void _HXprint(const ST& t) {
     std::cout << std::quoted(t);
+}
+
+template <typename T>
+static void _HXprint(std::span<T> t) {
+    _HXprint('[');
+    bool once = false;
+    for (const auto& it : t) {
+        if (once)
+            _HXprint(", ");
+        else
+            once = true;
+        _HXprint(it);
+    }
+    _HXprint(']');
 }
 
 template <typename... Ts>

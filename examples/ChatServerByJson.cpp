@@ -40,6 +40,12 @@ struct MsgArr {
     REFLECT_CONSTRUCTOR_ALL(MsgArr, arr)
 } msgArr {std::vector<MsgArr::Message> {MsgArr::Message{"系统", "欢迎来到聊天室!"}}};
 
+struct MsgArrConst {
+    std::span<const MsgArr::Message> arr;
+
+    REFLECT(arr)
+};
+
 #include <HXJson/UnReflectJson.hpp>
 
 HX::STL::coroutine::loop::TriggerWaitLoop waitLoop {};
@@ -78,7 +84,7 @@ class ChatController {
             printf("解析客户端出错\n");
         }
         
-        RESPONSE_STATUS(200).setContentType("text/plain", "UTF-8");
+        RESPONSE_STATUS(200).setContentType("text/plain", "UTF-8").setBodyData("OK");
         co_return true;
     } ENDPOINT_END;
 
@@ -96,7 +102,10 @@ class ChatController {
                 // printf("立马回复, 是新消息~\n");
                 RESPONSE_DATA(
                     200,
-                    msgArr.toString(),
+                    MsgArrConst(std::span<const MsgArr::Message> {
+                        msgArr.arr.begin() + len, 
+                        msgArr.arr.end()
+                    }).toString(),
                     "text/plain", "UTF-8"
                 );
                 co_return true;
@@ -108,11 +117,10 @@ class ChatController {
                     HX::STL::coroutine::loop::TimerLoop::sleepFor(3s)
                 );
 
-                // printf("3秒之期已到, 马上回复~\n");
                 RESPONSE_DATA(
                     200,
-                    MsgArr(std::vector<MsgArr::Message> {
-                        msgArr.arr.begin() + len, 
+                    MsgArrConst(std::span<const MsgArr::Message> {
+                        msgArr.arr.begin() + std::min<std::size_t>(len, msgArr.arr.size()), 
                         msgArr.arr.end()
                     }).toString(),
                     "text/plain", "UTF-8"

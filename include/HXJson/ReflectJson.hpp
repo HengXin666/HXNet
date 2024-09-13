@@ -313,10 +313,10 @@ void setVal(Container& val, const HX::json::JsonObject& json) {
         HX::json::setVal(name, json[#name]);
 
 #define _REFLECT_CONSTRUCTOR_ARG(name) \
-        decltype(name) name##_,
+        const decltype(name)& name##_,
 
 #define _REFLECT_CONSTRUCTOR_ARG_END(name) \
-        decltype(name) name##_
+        const decltype(name)& name##_
 
 #define _REFLECT_CONSTRUCTOR_SET_ARG(name) \
         name(name##_),
@@ -352,7 +352,7 @@ _REFLECT_PP_CALL(_REFLECT_PP_FOREACH_, _REFLECT_PP_FOREACH_SIZEOF(__VA_ARGS__)) 
 _REFLECT_PP_FOREACH(Fun, _DEL_LAST_ARG(__VA_ARGS__)) \
 _REFLECT_PP_FOREACH(EndFun, _GET_LAST_ARG(__VA_ARGS__))
 
-// 反射: 将成员反射以序列化成JSON字符串
+// 反射: 将成员反射以序列化成JSON字符串, 支持`const auto&`成员
 #define REFLECT(...) \
 std::string toString() const { \
     std::string res; \
@@ -365,6 +365,7 @@ std::string toString() const { \
 /**
  * @brief 反射: 将成员反射以序列化成JSON字符串, 并且提供构造函数(从json字符串和json构造)
  * @warning 请保证 ... 至少存在一个参数! 否则毫无意义
+ * @warning 不支持`const auto&`成员
  */
 #define REFLECT_CONSTRUCTOR(TYPE, ...) \
 TYPE(const std::string& json) \
@@ -378,6 +379,7 @@ REFLECT(__VA_ARGS__)
 /**
  * @brief 反射: 将成员反射以序列化成JSON字符串, 并且提供构造函数(从json字符串和json构造, 以及所有成员的默认构造函数)
  * @warning 请保证 ... 至少存在一个参数! 否则毫无意义
+ * @warning 不支持`const auto&`成员
  */
 #define REFLECT_CONSTRUCTOR_ALL(TYPE, ...) \
 TYPE(_REFLECT_PP_FOREACH_FINALLY_SPECIAL(_REFLECT_CONSTRUCTOR_ARG, _REFLECT_CONSTRUCTOR_ARG_END, __VA_ARGS__)) \

@@ -26,6 +26,7 @@
 #include <map>
 #include <unordered_map>
 #include <variant>
+#include <span>
 #include <format>
 #include <cmath>
 
@@ -81,6 +82,10 @@ template <class T>
     requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
 static std::string _toString(const T& t);
 
+// span视图
+template <class T>
+static std::string _toString(std::span<T> t);
+
 // std::optional
 template <typename... Ts>
 static std::string _toString(const std::optional<Ts...>& t);
@@ -104,6 +109,9 @@ static std::string _toString(const Container& map);
 // std::variant 现代共用体
 template <typename... Ts>
 static std::string _toString(const std::variant<Ts...>& t);
+
+template <ToStringClassType T>
+static std::string _toString(const T& t);
 
 /////////////////////////////////////////////////////////
 
@@ -152,6 +160,22 @@ static std::string _toString(const ST& t) {
     res += '"';
     res += t;
     res += '"';
+    return res;
+}
+
+template <class T>
+static std::string _toString(std::span<T> t) {
+    std::string res;
+    res += '[';
+    bool once = false;
+    for (const auto& it : t) {
+        if (once)
+            res += ',';
+        else
+            once = true;
+        res += _toString(it);
+    }
+    res += ']';
     return res;
 }
 

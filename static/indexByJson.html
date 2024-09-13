@@ -88,7 +88,7 @@
                 }
             });
             function poll() {
-                console.log("请求了啊!");
+                console.log("请求了啊!: ", messages_first);
                 $.post("recv", JSON.stringify({first: messages_first}), function(data) {
                     console.log("/recv 返回了:", data);
                     var submessages = JSON.parse(data).arr;

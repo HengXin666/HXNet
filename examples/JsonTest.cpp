@@ -109,6 +109,16 @@ struct Student {
     REFLECT_CONSTRUCTOR_ALL(Student, name, age, lolis, woc, awa)
 };
 
+/// @brief 一个只读的 Json 反射
+struct StudentConst {
+    const Student stuConts;
+    const int& abc;
+
+    // 这个只反射到toString函数(即序列化为json), 而不能从`jsonStr/jsonObj`构造
+    // 你 const auto& 还怎么想从一个临时的jsonObj引用过来? 它本身就不安全, jsonStr就更不用说了!
+    REFLECT(stuConts, abc)
+};
+
 #include <HXJson/UnReflectJson.hpp> // <-- undef 相关的所有宏的头文件, 因为宏会污染全局命名空间
 
 // JSON 序列化(结构体 toJsonString)示例
@@ -155,11 +165,49 @@ void test_02() {
     HX::json::parse(Student("Heng_Xin is nb!").toString()).first.print();
 }
 
+void test_03() {
+    Student stu { // 此处使用了 宏生成的 [所有成员的默认构造函数] (方便我调试awa)
+        "Heng_Xin",
+        20,
+        {{
+            "ラストオーダー",
+            13,
+            100
+        }, {
+            "みりむ",
+            14,
+            100
+        }},
+        {
+            {"hello", "word"},
+            {"op", "ed"}
+        },
+        {
+            {"hello", {
+                "みりむ",
+                14,
+                100
+            }}
+        }
+    };
+
+    int abc = 123;
+    StudentConst stdConst(stu, abc);
+
+    HX::json::parse(stdConst.toString()).first.print();
+
+    abc = 567; // 修改了它
+    printf("\n修改了abc...\n");
+    HX::json::parse(stdConst.toString()).first.print();
+}
+
 int main () {
     HX::print::print("示例1: json解析\n");
     test_01();
     HX::print::print("\n\n示例2: json合成string || jsonString合成到结构体 || 其他鲁棒性测试示例\n");
     test_02();
+    HX::print::print("\n\n示例3: 对于 const auto& 类型的 toJsonString 的支持\n");
+    test_03();
     return 0;
 }
 #endif // JSON_TEST_MAIN
