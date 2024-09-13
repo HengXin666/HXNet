@@ -100,7 +100,7 @@ public: // 控制器成员函数 (请写成`static`方法)
 ROUTER_BIND(MyWebController); // 这个类在上面声明过了
 ```
 
-- 启动服务器, 并且监听 0.0.0.0:28205, 并且设置路由失败时候返回的界面
+- 启动服务器, 并且监听 127.0.0.1:28205, 并且设置路由失败时候返回的界面
     - 可选: 可以设置线程数和超时时间 | 每个线程独享一个`uring`, 但是绑定同一个端口, 由操作系统进行负载均衡
 ```cpp
 #include <HXWeb/HXApiHelper.h> // 宏所在头文件
@@ -120,10 +120,10 @@ int main() {
     } ERROR_ENDPOINT_END;
 
     // 启动Http服务 [阻塞于此]
-    HX::web::server::Server::startHttp("0.0.0.0", "28205", 16 /*可选 线程数(互不相关)*/, 10s /*可选 超时时间*/);
+    HX::web::server::Server::startHttp("127.0.0.1", "28205", 16 /*可选 线程数(互不相关)*/, 10s /*可选 超时时间*/);
 
     // 或者, 启动Https服务 [阻塞于此], 需要提供证书和密钥
-    HX::web::server::Server::startHttps("0.0.0.0", "28205", "certs/cert.pem", "certs/key.pem");
+    HX::web::server::Server::startHttps("127.0.0.1", "28205", "certs/cert.pem", "certs/key.pem");
     return 0;
 }
 ```

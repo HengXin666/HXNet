@@ -46,8 +46,9 @@ void Server::startHttp(
         port.c_str()
     );
 
-    for (auto&& it : threadArr)
+    for (auto&& it : threadArr) {
         it.join();
+    }
 }
 
 void Server::startHttps(

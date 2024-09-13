@@ -35,9 +35,7 @@ class WSChatController {
             printf("%x %d\n", k, v);
         printf("\033[0m");
 #endif
-
         std::cout << std::this_thread::get_id() << '\n';
-
         co_return false;
     } ENDPOINT_END;
 
@@ -62,6 +60,16 @@ class WSChatController {
             + io.getRequest().getRequesPath() 
             + " 的解析</h2>",
             "text/html", "UTF-8"
+        );
+        co_return true;
+    } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/files/**", files) { // http 模式
+        // 使用分块编码
+        RESPONSE_FILE(
+            200,                 // 状态码
+            "test/github.html",  // 分块读写的文件
+            "text/html", "UTF-8" // 文件类型, 编码
         );
         co_return true;
     } ENDPOINT_END;
@@ -113,7 +121,7 @@ int main() {
     } ERROR_ENDPOINT_END;
 
     // 启动服务
-    HX::web::server::Server::startHttp("0.0.0.0", "28205", 16, 3s); 
+    HX::web::server::Server::startHttp("127.0.0.1", "28205", 16, 5s); 
     return 0;
 }
 #endif
