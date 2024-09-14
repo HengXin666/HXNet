@@ -3,6 +3,40 @@
 #include <HXSTL/utils/FileUtils.h>
 #include <HXWeb/server/Server.h>
 
+class ExitController {
+    ENDPOINT_BEGIN(API_GET, "/exit", serExit) {
+        GET_PARSE_QUERY_PARAMETERS(map);
+
+        if (map.count("loli") && map["loli"] == "end") {
+            RESPONSE_DATA(
+                200,
+                "<h1>已关机!</h1>",
+                "text/html", "UTF-8"
+            );
+            co_await io.sendResponse();
+            exit(0);
+        } else {
+            RESPONSE_DATA(
+                200,
+                "<h1>已关机... (请等待)</h1>",
+                "text/html", "UTF-8"
+            );
+        }
+        co_return true;
+    } ENDPOINT_END;
+public:
+};
+
+// 为了方便调试是否出现内存泄漏, 这里全局注册了一个关机控制器 只需要访问 /exit?loli=end 即可
+// 测试结果如下:
+// 如果没有正在处理的连接的情况下关机, 不会出现内存泄漏
+// 当且仅当正在处理连接的写入/写出的时候突然关闭, 才会触发内存泄漏(实际上是根本没有来得及处理)
+// 解决方案: 在空闲的时候才关闭! 比如关闭后, 不处理请求, 并且所有请求断开
+int __init__ = []() -> int {
+    ROUTER_BIND(ExitController);
+    return 0;
+}();
+
 #ifdef HTTPS_SERVER_MAIN
 
 class HttpsController {
