@@ -1,8 +1,5 @@
 <h1 align="center" style="color:yellow">HXNet</h1>
 
-> [!NOTE]
-> *Heng_Xin学习现代Cpp的代码存放库,* 包含以下内容:
-
 - 基于`io_uring`+协程的`http/https`服务器, 基于压缩前缀树的路由, 支持`http/https`解析, `WebSocket`协议, 支持`Transfer-Encoding`分块编码传输文件.
 
 - 客户端提供了简单的协程的`request`方法(API), 并且支持使用`socks5`代理. 支持`http/https`, 以及解析`Transfer-Encoding`分块编码的响应体
@@ -134,7 +131,7 @@ int main() {
 |---|---|---|
 |liburing|io_uring的封装|https://github.com/axboe/liburing|
 |hashlib|用于`WebSocket`构造`SHA-1`信息摘要; 以及进行`Base64`编码|https://create.stephan-brumme.com/hash-library/|
-|OpenSSL 3.3.1|用于https的证书/握手|https://github.com/openssl/openssl|
+|OpenSSL 3.3.1+|用于https的证书/握手|https://github.com/openssl/openssl|
 
 ## 代码规范
 > --> [C++ 编码规范](documents/CodingStandards/CppStyle.md)
@@ -151,11 +148,13 @@ int main() {
 > - 13th Gen Intel(R) Core(TM) i9-13980HX
 > - RAM: 64GB
 > - cmake -> Release
+>
+>> 不知道为什么, 我安装了win/linux双系统后, 为看cpu监控, 即便全部核心都100%的使用率, cpu温度也不超过70摄氏度 | 我在win上待机就已经有60度+了... | 拜托, 这还是笔记本诶!
 
 ```sh
 # build: add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 
-# No File Read
+# http 没有文件读写的情况下:
 ➜ wrk -t32 -c1100 http://127.0.0.1:28205/home/123/123
 Running 10s test @ http://127.0.0.1:28205/home/123/123
   32 threads and 1100 connections
@@ -167,7 +166,7 @@ Running 10s test @ http://127.0.0.1:28205/home/123/123
 Requests/sec: 2327117.67
 Transfer/sec:    457.18MB
 
-# Read static/WebSocketIndex.html
+# http 读写 static/WebSocketIndex.html
 ➜ wrk -t32 -c1100 http://127.0.0.1:28205/            
 Running 10s test @ http://127.0.0.1:28205/
   32 threads and 1100 connections
@@ -178,4 +177,55 @@ Running 10s test @ http://127.0.0.1:28205/
   Socket errors: connect 99, read 0, write 0, timeout 0
 Requests/sec: 1405535.24
 Transfer/sec:      4.34GB
+
+---
+
+# build: add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
+# 无文件读写, 仅仅https连接和通过会话密钥加解密通信
+➜ wrk -d10s -t32 -c1000 --timeout 5s https://127.0.0.1:28205
+Running 10s test @ https://127.0.0.1:28205
+  32 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.04ms    3.21ms  70.65ms   86.96%
+    Req/Sec    35.71k     6.56k   77.68k    70.85%
+  11447330 requests in 10.10s, 1.97GB read
+Requests/sec: 1133384.87
+Transfer/sec:    199.96MB
+
+# (100s) 小文件读写 (static/test/github.html) 563.9kb 采用分块编码, 但是需要https加密
+➜ wrk -d100s -t32 -c1000 --timeout 5s https://127.0.0.1:28205/files/a
+Running 2m test @ https://127.0.0.1:28205/files/a
+  32 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    62.20ms   35.25ms 529.39ms   72.92%
+    Req/Sec     1.01k   358.38     3.09k    65.19%
+  3203315 requests in 1.67m, 843.28GB read
+Requests/sec:  32001.06
+Transfer/sec:      8.42GB
+
+# (10s) 小文件读写 (static/test/github.html) 563.9kb 采用分块编码, 但是需要https加密
+# 并且修改了 include/HXSTL/utils/FileUtils.h 定义的:
+    /// @brief 读取文件buf数组的缓冲区大小
+    static constexpr std::size_t kBufMaxSize = 4096U * 2; # 进行了 * 2
+# 注: 这个是后来加上的测试, 也就是说其他的测试都是在`kBufMaxSize = 4096U`时候测试的, 因此这个只能和上面的形成对比
+➜ wrk -d10s -t32 -c1000 https://127.0.0.1:28205/files/a
+Running 10s test @ https://127.0.0.1:28205/files/a
+  32 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    39.14ms   23.01ms 155.74ms   67.09%
+    Req/Sec     1.60k   374.46     3.74k    69.51%
+  516854 requests in 10.10s, 136.26GB read
+Requests/sec:  51182.79
+Transfer/sec:     13.49GB
+
+# 对比 小文件读写 (static/test/github.html) 563.9kb `没有`采用分块编码, 但是需要https加密
+➜ wrk -d10s -t32 -c1000 https://127.0.0.1:28205/test
+Running 10s test @ https://127.0.0.1:28205/test
+  32 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   105.38ms   41.80ms 427.97ms   69.93%
+    Req/Sec   294.52     43.68   425.00     74.12%
+  94528 requests in 10.10s, 49.77GB read
+Requests/sec:   9360.72
+Transfer/sec:      4.93GB
 ```

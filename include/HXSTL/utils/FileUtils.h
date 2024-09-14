@@ -43,8 +43,8 @@ private:
     static constexpr int kOpenModeDefaultFlags = O_LARGEFILE | O_CLOEXEC;
 #endif
 public:
-    /// @brief 读取文件buf数组的客户端缓冲区大小
-    static constexpr std::size_t kBufMaxSize = 4096U;
+    /// @brief 读取文件buf数组的缓冲区大小
+    static constexpr std::size_t kBufMaxSize = 4096U * 2;
 
     enum class OpenMode : int {
         Read = O_RDONLY | kOpenModeDefaultFlags,                        // 只读模式 (r)

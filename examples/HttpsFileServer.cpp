@@ -42,6 +42,15 @@ class HttpsController {
         );
         co_return true;
     } ENDPOINT_END;
+
+    ENDPOINT_BEGIN(API_GET, "/brack", break) { // 断开连接
+        RESPONSE_DATA(
+            200, 
+            "ok",
+            "text/html", "UTF-8"
+        );
+        co_return false;
+    } ENDPOINT_END;
 };
 
 #if 0 // 测试代码, 下面发现了一个潜在的问题
