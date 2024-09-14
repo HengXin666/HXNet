@@ -148,8 +148,13 @@ int main() {
 > - 13th Gen Intel(R) Core(TM) i9-13980HX
 > - RAM: 64GB
 > - cmake -> Release
+
+> [!NOTE]
+> 不知道为什么, 我安装了win/linux双系统后, 我看cpu监控, 即便全部核心都100%的使用率, cpu温度也不超过70摄氏度
 >
->> 不知道为什么, 我安装了win/linux双系统后, 为看cpu监控, 即便全部核心都100%的使用率, cpu温度也不超过70摄氏度 | 我在win上待机就已经有60度+了... | 拜托, 这还是笔记本诶!
+> 可是, 我在win上待机就已经有60度+了...
+>
+> 拜托, 这还是笔记本诶! (题外话, 只是我有点怀疑性能没有完全被利用...)
 
 ```sh
 # build: add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
