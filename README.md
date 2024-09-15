@@ -26,7 +26,8 @@
 >   - [自实现のJson解析、结构体静态反射到Json和Json赋值到反射注册的结构体的示例](examples/JsonTest.cpp) (只需要一个`宏`即可实现!)
 
 - 编写端点 (提供了简化使用的 API 宏)
-```cpp
+
+```C
 #include <HXWeb/HXApiHelper.h> // 使用简化的api
 
 // 用户定义的控制器
@@ -91,7 +92,8 @@ public: // 控制器成员函数 (请写成`static`方法)
 ```
 
 - 绑定控制器到全局路由
-```cpp
+
+```C
 #include <HXWeb/HXApiHelper.h> // 宏所在头文件
 
 ROUTER_BIND(MyWebController); // 这个类在上面声明过了
@@ -99,7 +101,7 @@ ROUTER_BIND(MyWebController); // 这个类在上面声明过了
 
 - 启动服务器, 并且监听 127.0.0.1:28205, 并且设置路由失败时候返回的界面
     - 可选: 可以设置线程数和超时时间 | 每个线程独享一个`uring`, 但是绑定同一个端口, 由操作系统进行负载均衡
-```cpp
+```C
 #include <HXWeb/HXApiHelper.h> // 宏所在头文件
 #include <HXWeb/server/Server.h>
 
@@ -133,15 +135,6 @@ int main() {
 |hashlib|用于`WebSocket`构造`SHA-1`信息摘要; 以及进行`Base64`编码|https://create.stephan-brumme.com/hash-library/|
 |OpenSSL 3.3.1+|用于https的证书/握手|https://github.com/openssl/openssl|
 
-## 代码规范
-> --> [C++ 编码规范](documents/CodingStandards/CppStyle.md)
-
-## 开发计划
-> --> [开发计划](documents/DevelopmentPlan.md)
-
-## 开发日志
-> --> [开发日志](documents/DevelopmentLog.md)
-
 ## 性能测试
 > [!TIP]
 > - Arth Linux
@@ -149,13 +142,7 @@ int main() {
 > - RAM: 64GB
 > - cmake -> Release
 
-> [!NOTE]
-> 不知道为什么, 我安装了win/linux双系统后, 我看cpu监控, 即便全部核心都100%的使用率, cpu温度也不超过70摄氏度
->
-> 可是, 我在win上待机就已经有60度+了...
->
-> 拜托, 这还是笔记本诶! (题外话, 只是我有点怀疑性能没有完全被利用...)
-
+- http
 ```sh
 # build: add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 
@@ -182,9 +169,10 @@ Running 10s test @ http://127.0.0.1:28205/
   Socket errors: connect 99, read 0, write 0, timeout 0
 Requests/sec: 1405535.24
 Transfer/sec:      4.34GB
+```
 
----
-
+- https
+```sh
 # build: add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
 # 无文件读写, 仅仅https连接和通过会话密钥加解密通信
 ➜ wrk -d10s -t32 -c1000 --timeout 5s https://127.0.0.1:28205
@@ -234,3 +222,12 @@ Running 10s test @ https://127.0.0.1:28205/test
 Requests/sec:   9360.72
 Transfer/sec:      4.93GB
 ```
+
+## 代码规范
+> --> [C++ 编码规范](documents/CodingStandards/CppStyle.md)
+
+## 开发计划
+> --> [开发计划](documents/DevelopmentPlan.md)
+
+## 开发日志
+> --> [开发日志](documents/DevelopmentLog.md)
