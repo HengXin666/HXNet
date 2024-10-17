@@ -96,7 +96,7 @@ public:
                 _cacheMap.erase(_cacheList.rbegin()->first);
                 _cacheList.pop_back();
             }
-            _cacheMap.emplace(key, _cacheList.emplace_front(key, value));
+            _cacheMap.emplace(key, _cacheList.emplace(_cacheList.begin(), key, value));
         }
     }
 

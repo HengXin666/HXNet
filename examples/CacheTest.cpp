@@ -16,22 +16,21 @@ struct Node {
         HX::print::print("new: ", a, ", ", b);
     }
 
-    // Node(const Node& node)
-    //     : Node(node.abc, node.cba)
-    // {
-    //     HX::print::print("copy!! (", abc, ", ", cba, ")");
-    // }
+    Node(const Node& node)
+        : Node(node.abc, node.cba)
+    {
+        HX::print::print("copy!! (", abc, ", ", cba, ")");
+    }
 
-    // Node& operator=(const Node& other) {
-    //     if (this != &other) {
-    //         // 拷贝成员变量
-    //         this->abc = std::move(other.abc);
-    //         this->cba = std::move(other.cba);
-    //     }
-    //     HX::print::print("awa");
-    //     return *this;
-    // }
-
+    Node& operator=(const Node& other) {
+        if (this != &other) {
+            // 拷贝成员变量
+            this->abc = std::move(other.abc);
+            this->cba = std::move(other.cba);
+        }
+        HX::print::print("awa");
+        return *this;
+    }
 
     Node& operator=(Node&&) = delete;
     // Node& operator=(const Node&) = delete;
@@ -57,9 +56,9 @@ auto wdf() {
     item._ptr = std::make_shared<int>();;
     HX::print::print(item);
     lruCache.emplace(1, 4, 5);
-    lruCache.emplace(1, 8, 9);
+    lruCache.insert(2, {8, 9});
     HX::print::print("size = ", lruCache.size());
-    HX::print::print(item);
+    // HX::print::print(item);
 
     // std::list<Node> sb;
     // sb.emplace(sb.end(), 22, 33);
