@@ -69,7 +69,7 @@ public:
      * @param key 
      * @return V 
      * @throw std::range_error(键: 不存在)
-     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点)
+     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
      */
     const V& get(const K& key) const {
         if (auto it = _cacheMap.find(key); it != _cacheMap.end()) {
@@ -96,26 +96,38 @@ public:
                 _cacheMap.erase(_cacheList.rbegin()->first);
                 _cacheList.pop_back();
             }
-            _cacheMap.emplace(key, _cacheList.emplace(_cacheList.begin(), key, value));
+            _cacheMap.emplace(key, _cacheList.emplace_front(key, value));
         }
     }
 
-    // TODO 是否有实现 emplace 的必要?
+    /**
+     * @brief 插入一个键值对(以原地构造的方式), 如果有相同的则会覆盖旧的
+     * @tparam Args 
+     * @param key 
+     * @param args 
+     */
     template <class... Args>
     void emplace(const K& key, Args&&... args) {
         if (auto it = _cacheMap.find(key); it != _cacheMap.end()) {
-            // 修改现有元素
+            // 修改
             _cacheList.splice(_cacheList.begin(), _cacheList, it->second);
             // 原地构造
             auto& value = _cacheList.begin()->second;
-            value.~V(); // 显式调用析构函数
+            value.~V(); // 显式调用析构函数, 以析构如智能指针成员等
             new (&value) V(std::forward<Args>(args)...); // 原地构造
         } else {
+            // 添加
             if (_cacheMap.size() == _capacity) {
                 _cacheMap.erase(_cacheList.rbegin()->first);
                 _cacheList.pop_back();
             }
-            _cacheMap.emplace(key, _cacheList.emplace(_cacheList.begin(), key, V(std::forward<Args>(args)...)));
+
+            _cacheMap.emplace(key, _cacheList.emplace(
+                _cacheList.begin(),
+                std::piecewise_construct, 
+                std::forward_as_tuple(key), 
+                std::forward_as_tuple(std::forward<Args>(args)...)
+            ));
         }
     }
 
