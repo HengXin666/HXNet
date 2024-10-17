@@ -6,7 +6,7 @@ project(HXNet LANGUAGES CXX)
 # set(IO_URING_DIRECT ON) # 有BUG 先不要用
 
 # 启用 搜集客户端地址信息 宏
-# add_definitions(-DCLIENT_ADDRESS_LOGGING)
+add_definitions(-DCLIENT_ADDRESS_LOGGING)
 
 # 是否系统已经安装了OpenSSL
 set(HX_NET_FIND_OPENSSL ON)
@@ -28,6 +28,7 @@ endif()
 # 部件测试
 # add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
 # add_definitions(-DJSON_TEST_MAIN)  # json示例
+add_definitions(-DCACHE_TEST_MAIN) # 测试LRU缓存
 
 # 客户端
 # add_definitions(-DCLIENT_MAIN)  # 客户端
@@ -37,7 +38,7 @@ endif()
 # add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
 # add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 # add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
-add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
+# add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
 
 # 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
