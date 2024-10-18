@@ -40,7 +40,7 @@ public:
     using KeyValuePairType = std::pair<K, V>;
     using ListIterator = std::list<KeyValuePairType>::iterator;
 
-    LRUCache(std::size_t capacity) noexcept
+    explicit LRUCache(std::size_t capacity) noexcept
         : _cacheList()
         , _cacheMap()
         , _capacity(capacity)
@@ -135,10 +135,19 @@ public:
         }
     }
 
+    /**
+     * @brief 获取LUR中缓存的数据个数
+     * @return std::size_t 
+     */
     std::size_t size() const noexcept {
         return _cacheMap.size();
     }
 
+    /**
+     * @brief LUR是否为空
+     * @return true 为空
+     * @return false 非空
+     */
     bool empty() const noexcept {
         return _cacheMap.empty();
     }
@@ -157,7 +166,7 @@ protected:
 template <class K, class V>
 class ThreadSafeLRUCache : protected LRUCache<K, V> {
 public:
-    ThreadSafeLRUCache(std::size_t capacity) noexcept
+    explicit ThreadSafeLRUCache(std::size_t capacity) noexcept
         : LRUCache<K, V>(capacity)
         , _mtx()
     {}
@@ -186,27 +195,54 @@ public:
     ThreadSafeLRUCache(ThreadSafeLRUCache&&) = delete;
     ThreadSafeLRUCache& operator=(ThreadSafeLRUCache&&) = delete;
 
+    /**
+     * @brief 获取键`key`对应的值, 如果不存在则`抛出异常`
+     * @param key 
+     * @return V 
+     * @throw std::range_error(键: 不存在)
+     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
+     */
     const V& get(const K& key) const {
         std::shared_lock _{_mtx};
         return LRUCache<K, V>::get(key);
     }
 
+    /**
+     * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
+     * @param key 
+     * @param value 
+     */
     void insert(const K& key, const V& value) {
         std::unique_lock _{_mtx};
         LRUCache<K, V>::insert(key, value);
     }
 
+    /**
+     * @brief 插入一个键值对(以原地构造的方式), 如果有相同的则会覆盖旧的
+     * @tparam Args 
+     * @param key 
+     * @param args 
+     */
     template <class... Args>
     void emplace(const K& key, Args&&... args) {
         std::unique_lock _{_mtx};
         LRUCache<K, V>::emplace(key, std::forward<Args>(args)...);
     }
 
+    /**
+     * @brief 获取LUR中缓存的数据个数
+     * @return std::size_t 
+     */
     std::size_t size() const noexcept {
         std::shared_lock _{_mtx};
         return LRUCache<K, V>::_cacheMap.size();
     }
 
+    /**
+     * @brief LUR是否为空
+     * @return true 为空
+     * @return false 非空
+     */
     bool empty() const noexcept {
         std::shared_lock _{_mtx};
         return LRUCache<K, V>::_cacheMap.empty();
@@ -216,6 +252,6 @@ protected:
     mutable std::shared_mutex _mtx;
 };
 
-}}} // namespace HX::STL::container
+}}} // namespace HX::STL::cache
 
 #endif // !_HX_LRU_CACHE_H_

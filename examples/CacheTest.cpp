@@ -2,6 +2,7 @@
 #include <memory>
 
 #include <HXSTL/cache/LRUCache.hpp>
+#include <HXSTL/cache/LFUCache.hpp>
 #include <HXprint/print.h>
 
 struct Node {
@@ -61,11 +62,22 @@ auto wdf() {
     HX::print::print("size = ", lruCache.size());
     // HX::print::print(item);
     // std::list<Node> sb;
+    // sb.erase(sb.begin());
     // sb.emplace(sb.end(), 22, 33);
 
     // std::unordered_map<int, Node> dsb;
     // dsb.emplace_hint(dsb.end(), 22, Node{22, 33});
     // return item;
+}
+
+auto lfuTest() {
+    HX::STL::cache::LFUCache<int, std::string> cache(1);
+    cache.insert(2, "nb 666");
+    HX::print::print(cache.get(2));
+    cache.insert(2, "nb 777");
+    HX::print::print(cache.get(2));
+    cache.insert(2233, "nb Heng_Xin!!");
+    HX::print::print(cache.get(2233));
 }
 
 class TestBase {
@@ -87,6 +99,7 @@ int main() {
     // TestBase* tb = new TestImpl;
     // auto&& op = (void)wdf(), 1;
     wdf();
+    lfuTest();
     // HX::print::print(op);
 
     HX::STL::cache::ThreadSafeLRUCache<int, std::string> ts(3);
