@@ -23,6 +23,8 @@
 #include <list>
 #include <unordered_map>
 #include <stdexcept>
+#include <mutex>
+#include <shared_mutex>
 
 namespace HX { namespace STL { namespace cache {
 
@@ -36,6 +38,7 @@ namespace HX { namespace STL { namespace cache {
 template <class K, class V, class _CntType = std::size_t>
 class LFUCache {
 public:
+    /// @brief 计数类型: 用于记录访问次数
     using CntType = _CntType;
     using KeyValuePairType = std::pair<K, std::pair<V, CntType>>;
     using ListIterator = std::list<KeyValuePairType>::iterator;
@@ -79,6 +82,31 @@ public:
         , _freqMap()
         , _capacity(capacity)
     {}
+
+    LFUCache(LFUCache&& that) noexcept
+        : _keyMap(std::move(that._keyMap))
+        , _freqMap(std::move(that._freqMap))
+        , _capacity(that._capacity)
+        , _minCnt(that._minCnt)
+    {
+        that._capacity = 0;
+        that._minCnt = 1;
+    }
+
+    LFUCache(LFUCache&) = delete;
+    LFUCache& operator=(LFUCache&) = delete;
+
+    LFUCache& operator=(LFUCache&& that) noexcept {
+        if (this != &that) [[likely]] {  // 防止自赋值
+            _keyMap = std::move(that._keyMap);
+            _freqMap = std::move(that._freqMap);
+            _capacity = that._capacity;
+            _minCnt = that._minCnt;
+            that._capacity = 0;
+            that._minCnt = 1;
+        }
+        return *this;
+    }
 
     /**
      * @brief 获取键`key`对应的值, 如果不存在则`抛出异常`
@@ -206,6 +234,139 @@ protected:
     mutable std::unordered_map<CntType, std::list<KeyValuePairType>> _freqMap;
     std::size_t _capacity;
     mutable CntType _minCnt;
+};
+
+/**
+ * @brief 一个满足LRU(最近最少使用)缓存约束的线程安全数据结构
+ * @tparam K 键类型
+ * @tparam V 值类型
+ */
+template <class K, class V>
+class ThreadSafeLFUCache : public LFUCache<K, V> {
+public:
+    explicit ThreadSafeLFUCache(std::size_t capacity) noexcept
+        : LFUCache<K, V>(capacity)
+        , _mtx()
+    {}
+
+    /**
+     * @brief 从线程不安全的LFUCache进行移动构造
+     * @param that LFUCache<K, V>
+     */
+    ThreadSafeLFUCache(LFUCache<K, V>&& that) noexcept
+        : LFUCache<K, V>(std::move(that))
+        , _mtx()
+    {}
+
+    /**
+     * @brief 因为关联了锁, 锁的赋值运算符是被删除的, 因此不支持(赋值/移动)(构造/拷贝)
+     */
+
+    // 删除拷贝构造函数和拷贝赋值操作符
+    ThreadSafeLFUCache(const ThreadSafeLFUCache&) = delete;
+    ThreadSafeLFUCache& operator=(const ThreadSafeLFUCache&) = delete;
+
+    // 删除移动构造函数和移动赋值操作符
+    ThreadSafeLFUCache(ThreadSafeLFUCache&&) = delete;
+    ThreadSafeLFUCache& operator=(ThreadSafeLFUCache&&) = delete;
+
+    /**
+     * @brief 获取键`key`对应的值, 如果不存在则`抛出异常`
+     * @param key 
+     * @return V 
+     * @throw std::range_error(键: 不存在)
+     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
+     */
+    const V& get(const K& key) const {
+        std::shared_lock _{_mtx};
+        return LFUCache<K, V>::get(key);
+    }
+
+    /**
+     * @brief 检查缓存中是否包含某个键
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    bool contains(const K& key) const {
+        std::shared_lock _{_mtx};
+        return LFUCache<K, V>::contains(key);
+    }
+
+#if __cplusplus >= 201402L
+    /**
+     * @brief 检查缓存中是否包含某个键 (透明比较)
+     * @tparam X 需要支持`Compare::is_transparent`
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    template <class X>
+    bool contains(const X& x) const {
+        std::shared_lock _{_mtx};
+        return LFUCache<K, V>::contains(x);
+    }
+#endif // __cplusplus >= 201402L
+
+    /**
+     * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
+     * @param key 
+     * @param value 
+     */
+    void insert(const K& key, const V& value) {
+        std::unique_lock _{_mtx};
+        LFUCache<K, V>::insert(key, value);
+    }
+
+    /**
+     * @brief 插入一个键值对(以原地构造的方式), 如果有相同的则会覆盖旧的
+     * @tparam Args 
+     * @param key 
+     * @param args 
+     */
+    template <class... Args>
+    void emplace(const K& key, Args&&... args) {
+        std::unique_lock _{_mtx};
+        LFUCache<K, V>::emplace(key, std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief 获取当前LUR中缓存的数据个数
+     * @return std::size_t 
+     */
+    std::size_t size() const noexcept {
+        std::shared_lock _{_mtx};
+        return LFUCache<K, V>::_keyMap.size();
+    }
+
+    /**
+     * @brief 判断LUR是否为空
+     * @return true 为空
+     * @return false 非空
+     */
+    bool empty() const noexcept {
+        std::shared_lock _{_mtx};
+        return LFUCache<K, V>::_keyMap.empty();
+    }
+
+    /**
+     * @brief 返回缓存的最大容量
+     * @return std::size_t 
+     */
+    std::size_t capacity() const noexcept {
+        return LFUCache<K, V>::_capacity;
+    }
+
+    /**
+     * @brief 清空缓存中的所有元素
+     */
+    void clear() noexcept {
+        std::unique_lock _{_mtx};
+        LFUCache<K, V>::clear();
+    }
+protected:
+    /// @brief 读写锁
+    mutable std::shared_mutex _mtx;
 };
 
 }}} // namespace HX::STL::cache

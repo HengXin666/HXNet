@@ -203,7 +203,7 @@ protected:
  * @tparam V 值类型
  */
 template <class K, class V>
-class ThreadSafeLRUCache : protected LRUCache<K, V> {
+class ThreadSafeLRUCache : public LRUCache<K, V> {
 public:
     explicit ThreadSafeLRUCache(std::size_t capacity) noexcept
         : LRUCache<K, V>(capacity)

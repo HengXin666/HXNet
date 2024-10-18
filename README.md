@@ -4,6 +4,8 @@
 
 - 客户端提供了简单的协程的`request`方法(API), 并且支持使用`socks5`代理. 支持`http/https`, 以及解析`Transfer-Encoding`分块编码的响应体
 
+- 封装了[LFUCache](include/HXSTL/cache/LFUCache.hpp)和[LRUCache](include/HXSTL/cache/LRUCache.hpp), 并且提供有线程安全的版本, 支持透明查找(C++14), 支持原地构造`emplace`.
+
 - `Json`解析: 支持静态反射注册到结构体, 实现`toString`生成json字符串和自动生成的构造函数实现`jsonString`/`jsonObj`赋值到结构体, 只需要一个宏即可实现!
 
 - 万能`print`/`toString`等工具类; 
@@ -24,6 +26,7 @@
 >   - [使用`Transfer-Encoding`分块编码传输文件的服务端](examples/HttpsFileServer.cpp)
 >   - [支持`socks5`代理的`Http/Https`客户端](examples/Client.cpp)
 >   - [自实现のJson解析、结构体静态反射到Json和Json赋值到反射注册的结构体的示例](examples/JsonTest.cpp) (只需要一个`宏`即可实现!)
+>   - [LRUCache/LFUCache的示例](examples/CacheTest.cpp)
 
 - 编写端点 (提供了简化使用的 API 宏)
 

@@ -29,7 +29,7 @@ struct Node {
             this->abc = std::move(other.abc);
             this->cba = std::move(other.cba);
         }
-        HX::print::print("awa");
+        HX::print::print("operator=(const Node&)");
         return *this;
     }
 
@@ -45,72 +45,57 @@ struct Node {
     }
 };
 
-HX::STL::cache::LRUCache<int, Node> testGetURLCache() {
-    HX::STL::cache::LRUCache<int, Node> tmp(1);
-    tmp.emplace(2233, 114514, 0721);
-    return tmp;
-}
-
-auto wdf() {
-    HX::STL::cache::LRUCache<int, Node> lruCache = testGetURLCache();
-    lruCache.emplace(1, 1, 2);
-    auto&& item = lruCache.get(1);
-    item._ptr = std::make_shared<int>();;
+void LRUCacheTest() {
+    HX::STL::cache::LRUCache<int, Node> cache = []() -> HX::STL::cache::LRUCache<int, Node> {
+        HX::STL::cache::LRUCache<int, Node> tmp(1);
+        tmp.emplace(2233, 114514, 0721);
+        return tmp; // 可以作为返回值 (编译器自动实现 && 转化)
+    }();
+    cache.emplace(1, 1, 2);
+    auto&& item = cache.get(1);
+    item._ptr = std::make_shared<int>(); // 使用智能指针
     HX::print::print(item);
-    lruCache.emplace(1, 4, 5);
-    lruCache.insert(2, {8, 9});
-    HX::print::print("size = ", lruCache.size());
-    // HX::print::print(item);
-    // std::list<Node> sb;
-    // sb.erase(sb.begin());
-    // sb.emplace(sb.end(), 22, 33);
+    cache.emplace(1, 4, 5); // 原地构造会释放指针
+    cache.insert(2, {8, 9});
+    HX::print::print("size = ", cache.size());
 
-    // std::unordered_map<int, Node> dsb;
-    // dsb.emplace_hint(dsb.end(), 22, Node{22, 33});
-    // return item;
+    // 线程安全的LRUCache
+    HX::STL::cache::ThreadSafeLRUCache<std::string, std::string> ts(3);
+    ts.emplace("abc", "char * -> string");
+    HX::print::print(ts.get("abc"));
+
+    // 透明查找的示例: 比如允许通过 const char* 查找 std::string 的键
+    // 这使得用户可以在调用 contains 时, 不必显式地转换键的类型
+    HX::print::print("ts中是否存在 [abc]: ", ts.contains("abc"));
+
+    // HX::STL::cache::ThreadSafeLRUCache<int, Node> tts(std::move(cache));
+    // tts.get(2);
 }
 
-auto lfuTest() {
+void LFUCacheTest() {
     HX::STL::cache::LFUCache<int, std::string> cache(1);
-    cache.emplace(2, "nb 666");
+    cache.insert(2, "nb 666");
     HX::print::print(cache.get(2));
     cache.emplace(2, "nb 777");
     HX::print::print(cache.get(2));
     cache.emplace(2233, "nb Heng_Xin!!");
     HX::print::print(cache.get(2233));
+
+    // 支持从普通线程不安全的LFUCache移动构造出线程安全的ThreadSafeLFUCache
+    HX::STL::cache::ThreadSafeLFUCache<int, std::string> ts(std::move(cache));
+    HX::print::print("size = ", ts.size());
+    HX::print::print(ts.get(2233));
+    ts.emplace(114514, "oh my god!");
+    HX::print::print(ts.get(114514));
+    HX::print::print(ts.get(114514));
+    ts.clear();
+    HX::print::print("ts.clear() => size = ", ts.size());
 }
 
-class TestBase {
-public:
-    // virtual 
-    void test() 
-    // = 0;
-    { printf("test base\n"); }
-};
-
-class TestImpl : public TestBase {
-public:
-    void test() {
-        printf("test impl\n");
-    }
-};
-
 int main() {
-    // TestBase* tb = new TestImpl;
-    // auto&& op = (void)wdf(), 1;
-    wdf();
-    lfuTest();
-    // HX::print::print(op);
-
-    HX::STL::cache::ThreadSafeLRUCache<std::string, std::string> ts(3);
-    ts.emplace("abc", "char * -> string");
-    HX::print::print(ts.get("abc"));
-
-    // HX::STL::cache::ThreadSafeLRUCache<int, std::string> tts(std::move(ts));
-    // HX::print::print(tts.get(1));
-
-    HX::print::print("ts中是否存在 [abc]: ", ts.contains("abc"));
-    
+    LRUCacheTest();
+    HX::print::print("\n===============\n");
+    LFUCacheTest();
     return 0;
 }
 
