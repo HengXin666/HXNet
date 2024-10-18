@@ -23,19 +23,22 @@
 #include <list>
 #include <unordered_map>
 #include <stdexcept>
+#include <mutex>
+#include <shared_mutex>
 
-namespace HX { namespace STL { namespace container {
+namespace HX { namespace STL { namespace cache {
 
 /**
  * @brief 一个满足LRU(最近最少使用)缓存约束的数据结构
  * @tparam K 键类型
  * @tparam V 值类型
+ * @warning 这个是一个线程不安全的数据结构
  */
 template <class K, class V>
 class LRUCache {
 public:
-    using ListType = std::pair<K, V>;
-    using ListIterator = std::list<ListType>::iterator;
+    using KeyValuePairType = std::pair<K, V>;
+    using ListIterator = std::list<KeyValuePairType>::iterator;
 
     LRUCache(std::size_t capacity) noexcept
         : _cacheList()
@@ -114,7 +117,8 @@ public:
             // 原地构造
             auto& value = _cacheList.begin()->second;
             value.~V(); // 显式调用析构函数, 以析构如智能指针成员等
-            new (&value) V(std::forward<Args>(args)...); // 原地构造
+            // 使用 std::addressof 可以防止 & 运算符被重载
+            new (std::addressof(value)) V(std::forward<Args>(args)...); // 原地构造
         } else {
             // 添加
             if (_cacheMap.size() == _capacity) {
@@ -139,10 +143,77 @@ public:
         return _cacheMap.empty();
     }
 
-private:
-    mutable std::list<ListType> _cacheList;
+protected:
+    mutable std::list<KeyValuePairType> _cacheList;
     std::unordered_map<K, ListIterator> _cacheMap;
     std::size_t _capacity;
+};
+
+/**
+ * @brief 一个满足LRU(最近最少使用)缓存约束的线程安全数据结构
+ * @tparam K 键类型
+ * @tparam V 值类型
+ */
+template <class K, class V>
+class ThreadSafeLRUCache : protected LRUCache<K, V> {
+public:
+    ThreadSafeLRUCache(std::size_t capacity) noexcept
+        : LRUCache<K, V>(capacity)
+        , _mtx()
+    {}
+
+    /**
+     * @brief 从线程不安全的LRUCache进行移动构造
+     * @param that LRUCache<K, V>
+     */
+    ThreadSafeLRUCache(LRUCache<K, V>&& that) noexcept
+        : LRUCache<K, V>(std::move(that))
+        , _mtx()
+    {}
+
+    /**
+     * @brief 因为关联了锁, 锁的赋值运算符是被删除的, 因此不支持(赋值/移动)(构造/拷贝)
+     * 考虑到实际开发中LRU一般作为单例类成员, 并不太需要移动构造, 因此我认为这样设计是合理的
+     * 你也不想我套一个智能指针, 
+     * 或者在移动的语义下, 构造了一个新的锁成员吧...
+     */
+
+    // 删除拷贝构造函数和拷贝赋值操作符
+    ThreadSafeLRUCache(const ThreadSafeLRUCache&) = delete;
+    ThreadSafeLRUCache& operator=(const ThreadSafeLRUCache&) = delete;
+
+    // 删除移动构造函数和移动赋值操作符
+    ThreadSafeLRUCache(ThreadSafeLRUCache&&) = delete;
+    ThreadSafeLRUCache& operator=(ThreadSafeLRUCache&&) = delete;
+
+    const V& get(const K& key) const {
+        std::shared_lock _{_mtx};
+        return LRUCache<K, V>::get(key);
+    }
+
+    void insert(const K& key, const V& value) {
+        std::unique_lock _{_mtx};
+        LRUCache<K, V>::insert(key, value);
+    }
+
+    template <class... Args>
+    void emplace(const K& key, Args&&... args) {
+        std::unique_lock _{_mtx};
+        LRUCache<K, V>::emplace(key, std::forward<Args>(args)...);
+    }
+
+    std::size_t size() const noexcept {
+        std::shared_lock _{_mtx};
+        return LRUCache<K, V>::_cacheMap.size();
+    }
+
+    bool empty() const noexcept {
+        std::shared_lock _{_mtx};
+        return LRUCache<K, V>::_cacheMap.empty();
+    }
+protected:
+    /// @brief 读写锁
+    mutable std::shared_mutex _mtx;
 };
 
 }}} // namespace HX::STL::container

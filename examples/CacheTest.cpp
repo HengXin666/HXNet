@@ -1,7 +1,7 @@
 #ifdef CACHE_TEST_MAIN
 #include <memory>
 
-#include <HXSTL/container/LRUCache.hpp>
+#include <HXSTL/cache/LRUCache.hpp>
 #include <HXprint/print.h>
 
 struct Node {
@@ -44,13 +44,14 @@ struct Node {
     }
 };
 
-HX::STL::container::LRUCache<int, Node> testGetURLCache() {
-    HX::STL::container::LRUCache<int, Node> tmp(1);
+HX::STL::cache::LRUCache<int, Node> testGetURLCache() {
+    HX::STL::cache::LRUCache<int, Node> tmp(1);
+    tmp.emplace(2233, 114514, 0721);
     return tmp;
 }
 
 auto wdf() {
-    HX::STL::container::LRUCache<int, Node> lruCache = testGetURLCache();
+    HX::STL::cache::LRUCache<int, Node> lruCache = testGetURLCache();
     lruCache.emplace(1, 1, 2);
     auto&& item = lruCache.get(1);
     item._ptr = std::make_shared<int>();;
@@ -59,7 +60,6 @@ auto wdf() {
     lruCache.insert(2, {8, 9});
     HX::print::print("size = ", lruCache.size());
     // HX::print::print(item);
-
     // std::list<Node> sb;
     // sb.emplace(sb.end(), 22, 33);
 
@@ -68,10 +68,36 @@ auto wdf() {
     // return item;
 }
 
+class TestBase {
+public:
+    // virtual 
+    void test() 
+    // = 0;
+    { printf("test base\n"); }
+};
+
+class TestImpl : public TestBase {
+public:
+    void test() {
+        printf("test impl\n");
+    }
+};
+
 int main() {
+    // TestBase* tb = new TestImpl;
     // auto&& op = (void)wdf(), 1;
     wdf();
     // HX::print::print(op);
+
+    HX::STL::cache::ThreadSafeLRUCache<int, std::string> ts(3);
+    ts.emplace(1, "abc");
+    HX::print::print(ts.get(1));
+
+    // HX::STL::cache::ThreadSafeLRUCache<int, std::string> tts(std::move(ts));
+    // HX::print::print(tts.get(1));
+    HX::STL::cache::ThreadSafeLRUCache<int, Node> tts(testGetURLCache());
+    HX::print::print(tts.get(2233));
+    
     return 0;
 }
 
