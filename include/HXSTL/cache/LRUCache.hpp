@@ -81,7 +81,31 @@ public:
         }
         throw std::range_error("There is no such key in cache");
     }
-    
+
+    /**
+     * @brief 检查缓存中是否包含某个键
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    bool contains(const K& key) const {
+        return _cacheMap.find(key) != _cacheMap.end();
+    }
+
+#if __cplusplus >= 201402L
+    /**
+     * @brief 检查缓存中是否包含某个键 (透明比较)
+     * @tparam X 需要支持`Compare::is_transparent`
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    template <class X>
+    bool contains(const X& x) const {
+        return _cacheMap.find(x) != _cacheMap.end();
+    }
+#endif // __cplusplus >= 201402L
+
     /**
      * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
      * @param key 
@@ -136,7 +160,7 @@ public:
     }
 
     /**
-     * @brief 获取LUR中缓存的数据个数
+     * @brief 获取当前LUR中缓存的数据个数
      * @return std::size_t 
      */
     std::size_t size() const noexcept {
@@ -144,7 +168,7 @@ public:
     }
 
     /**
-     * @brief LUR是否为空
+     * @brief 判断LUR是否为空
      * @return true 为空
      * @return false 非空
      */
@@ -152,6 +176,21 @@ public:
         return _cacheMap.empty();
     }
 
+    /**
+     * @brief 返回缓存的最大容量
+     * @return std::size_t 
+     */
+    std::size_t capacity() const noexcept {
+        return _capacity;
+    }
+
+    /**
+     * @brief 清空缓存中的所有元素
+     */
+    void clear() noexcept {
+        _cacheList.clear();
+        _cacheMap.clear();
+    }
 protected:
     mutable std::list<KeyValuePairType> _cacheList;
     std::unordered_map<K, ListIterator> _cacheMap;
@@ -208,6 +247,32 @@ public:
     }
 
     /**
+     * @brief 检查缓存中是否包含某个键
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    bool contains(const K& key) const {
+        std::shared_lock _{_mtx};
+        return LRUCache<K, V>::contains(key);
+    }
+
+#if __cplusplus >= 201402L
+    /**
+     * @brief 检查缓存中是否包含某个键 (透明比较)
+     * @tparam X 需要支持`Compare::is_transparent`
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    template <class X>
+    bool contains(const X& x) const {
+        std::shared_lock _{_mtx};
+        return LRUCache<K, V>::contains(x);
+    }
+#endif // __cplusplus >= 201402L
+
+    /**
      * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
      * @param key 
      * @param value 
@@ -230,7 +295,7 @@ public:
     }
 
     /**
-     * @brief 获取LUR中缓存的数据个数
+     * @brief 获取当前LUR中缓存的数据个数
      * @return std::size_t 
      */
     std::size_t size() const noexcept {
@@ -239,13 +304,29 @@ public:
     }
 
     /**
-     * @brief LUR是否为空
+     * @brief 判断LUR是否为空
      * @return true 为空
      * @return false 非空
      */
     bool empty() const noexcept {
         std::shared_lock _{_mtx};
         return LRUCache<K, V>::_cacheMap.empty();
+    }
+
+    /**
+     * @brief 返回缓存的最大容量
+     * @return std::size_t 
+     */
+    std::size_t capacity() const noexcept {
+        return LRUCache<K, V>::_capacity;
+    }
+
+    /**
+     * @brief 清空缓存中的所有元素
+     */
+    void clear() noexcept {
+        std::unique_lock _{_mtx};
+        LRUCache<K, V>::clear();
     }
 protected:
     /// @brief 读写锁

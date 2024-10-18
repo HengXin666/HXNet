@@ -72,11 +72,11 @@ auto wdf() {
 
 auto lfuTest() {
     HX::STL::cache::LFUCache<int, std::string> cache(1);
-    cache.insert(2, "nb 666");
+    cache.emplace(2, "nb 666");
     HX::print::print(cache.get(2));
-    cache.insert(2, "nb 777");
+    cache.emplace(2, "nb 777");
     HX::print::print(cache.get(2));
-    cache.insert(2233, "nb Heng_Xin!!");
+    cache.emplace(2233, "nb Heng_Xin!!");
     HX::print::print(cache.get(2233));
 }
 
@@ -102,14 +102,14 @@ int main() {
     lfuTest();
     // HX::print::print(op);
 
-    HX::STL::cache::ThreadSafeLRUCache<int, std::string> ts(3);
-    ts.emplace(1, "abc");
-    HX::print::print(ts.get(1));
+    HX::STL::cache::ThreadSafeLRUCache<std::string, std::string> ts(3);
+    ts.emplace("abc", "char * -> string");
+    HX::print::print(ts.get("abc"));
 
     // HX::STL::cache::ThreadSafeLRUCache<int, std::string> tts(std::move(ts));
     // HX::print::print(tts.get(1));
-    HX::STL::cache::ThreadSafeLRUCache<int, Node> tts(testGetURLCache());
-    HX::print::print(tts.get(2233));
+
+    HX::print::print("ts中是否存在 [abc]: ", ts.contains("abc"));
     
     return 0;
 }
