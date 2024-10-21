@@ -4,7 +4,7 @@
 
 - 客户端提供了简单的协程的`request`方法(API), 并且支持使用`socks5`代理. 支持`http/https`, 以及解析`Transfer-Encoding`分块编码的响应体
 
-- 封装了[LFUCache](include/HXSTL/cache/LFUCache.hpp)和[LRUCache](include/HXSTL/cache/LRUCache.hpp), 并且提供有线程安全的版本, 支持透明查找(C++14), 支持原地构造`emplace`.
+- 封装了[LFUCache](include/HXSTL/cache/LFUCache.hpp)和[LRUCache](include/HXSTL/cache/LRUCache.hpp), 并且提供有线程安全的版本, 支持透明查找(C++14), 支持原地构造`emplace`. (支持C++11的版本: [HXCache](https://github.com/HengXin666/HXCache))
 
 - `Json`解析: 支持静态反射注册到结构体, 实现`toString`生成json字符串和自动生成的构造函数实现`jsonString`/`jsonObj`赋值到结构体, 只需要一个宏即可实现!
 

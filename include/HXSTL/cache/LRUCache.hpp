@@ -94,6 +94,23 @@ public:
 
 #if __cplusplus >= 201402L
     /**
+     * @brief 获取键`key`对应的值 (透明查找), 如果不存在则`抛出异常`
+     * @tparam X 需要支持`Compare::is_transparent`
+     * @param key 
+     * @return V 
+     * @throw std::range_error(键: 不存在)
+     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
+     */
+    template <class X>
+    const V& get(const X& key) const {
+        if (auto it = _cacheMap.find(key); it != _cacheMap.end()) {
+            _cacheList.splice(_cacheList.begin(), _cacheList, it->second);
+            return _cacheList.begin()->second;
+        }
+        throw std::range_error("There is no such key in cache");
+    }
+
+    /**
      * @brief 检查缓存中是否包含某个键 (透明比较)
      * @tparam X 需要支持`Compare::is_transparent`
      * @param key 需要检查的键
@@ -112,7 +129,8 @@ public:
      * @param value 
      */
     void insert(const K& key, const V& value) {
-        if (auto it = _cacheMap.find(key); it != _cacheMap.end()) {
+        auto it = _cacheMap.find(key);
+        if (it != _cacheMap.end()) {
             // 修改
             _cacheList.splice(_cacheList.begin(), _cacheList, it->second);
             _cacheList.begin()->second = value;
@@ -124,6 +142,30 @@ public:
                 _cacheList.pop_back();
             }
             _cacheMap.emplace(key, _cacheList.emplace(_cacheList.begin(), key, value));
+        }
+    }
+
+    /**
+     * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
+     * @param key 
+     * @param value 
+     */
+    void insert(const K& key, V&& value) {
+        if (auto it = _cacheMap.find(key); it != _cacheMap.end()) {
+            // 修改
+            _cacheList.splice(_cacheList.begin(), _cacheList, it->second);
+            // 原地构造
+            auto& value = _cacheList.begin()->second;
+            value.~V();
+            new (std::addressof(value)) V(std::move(value));
+        } else {
+            // 添加
+            if (_cacheMap.size() == _capacity) {
+                // 满了, 需要删除最久没有使用的
+                _cacheMap.erase(_cacheList.rbegin()->first);
+                _cacheList.pop_back();
+            }
+            _cacheMap.emplace(key, _cacheList.emplace(_cacheList.begin(), key, std::move(value)));
         }
     }
 
@@ -259,6 +301,20 @@ public:
 
 #if __cplusplus >= 201402L
     /**
+     * @brief 获取键`key`对应的值 (透明查找), 如果不存在则`抛出异常`
+     * @tparam X 需要支持`Compare::is_transparent`
+     * @param key 
+     * @return V 
+     * @throw std::range_error(键: 不存在)
+     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
+     */
+    template <class X>
+    const V& get(const X& key) const {
+        std::shared_lock _{_mtx};
+        return LRUCache<K, V>::get(key);
+    }
+
+    /**
      * @brief 检查缓存中是否包含某个键 (透明比较)
      * @tparam X 需要支持`Compare::is_transparent`
      * @param key 需要检查的键
@@ -280,6 +336,16 @@ public:
     void insert(const K& key, const V& value) {
         std::unique_lock _{_mtx};
         LRUCache<K, V>::insert(key, value);
+    }
+
+    /**
+     * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
+     * @param key 
+     * @param value 
+     */
+    void insert(const K& key, V&& value) {
+        std::unique_lock _{_mtx};
+        LRUCache<K, V>::insert(key, std::move(value));
     }
 
     /**
