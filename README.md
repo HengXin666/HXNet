@@ -234,3 +234,10 @@ Transfer/sec:      4.93GB
 
 ## 开发日志
 > --> [开发日志](documents/DevelopmentLog.md)
+
+## 特别感谢
+### Stargazers
+[![Stargazers repo roster for @HengXin666/HXNet](https://reporoster.com/stars/dark/HengXin666/HXNet)](https://github.com/HengXin666/HXNet/stargazers)
+
+### Forkers
+[![Forkers repo roster for @HengXin666/HXNet](https://reporoster.com/forks/dark/HengXin666/HXNet)](https://github.com/HengXin666/HXNet/network/members)
