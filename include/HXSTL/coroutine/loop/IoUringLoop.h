@@ -98,7 +98,7 @@ struct [[nodiscard]] IoUringTask {
 
     ~IoUringTask() noexcept;
 
-    struct Awaiter {
+    struct [[nodiscard]] Awaiter {
         explicit Awaiter(IoUringTask *task)
             : _task(task)
         {}
@@ -156,7 +156,7 @@ public:
      * @param flags 需要取消的操作类型
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepCancel(
+    [[nodiscard]] IoUringTask&& prepCancel(
         IoUringTask *task, 
         int flags
     ) && {
@@ -184,7 +184,7 @@ public:
      * @param mode 文件权限模式, 仅在文件创建时有效 (一般写`0644`)
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepOpenat(
+    [[nodiscard]] IoUringTask&& prepOpenat(
         int dirfd, 
         char const *path, 
         int flags,
@@ -202,7 +202,7 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepSocket(
+    [[nodiscard]] IoUringTask&& prepSocket(
         int domain, 
         int type, 
         int protocol,
@@ -220,7 +220,7 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepAccept(
+    [[nodiscard]] IoUringTask&& prepAccept(
         int fd, 
         struct ::sockaddr *addr, 
         ::socklen_t *addrlen,
@@ -237,7 +237,7 @@ public:
      * @param addrlen 服务端信息长度指针
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepConnect(
+    [[nodiscard]] IoUringTask&& prepConnect(
         int fd, 
         const struct sockaddr *addr,
         socklen_t addrlen
@@ -253,7 +253,7 @@ public:
      * @param offset 文件偏移量
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepRead(
+    [[nodiscard]] IoUringTask&& prepRead(
         int fd,
         std::span<char> buf,
         std::uint64_t offset
@@ -269,7 +269,7 @@ public:
      * @param offset 文件偏移量
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepWrite(
+    [[nodiscard]] IoUringTask&& prepWrite(
         int fd, 
         std::span<char const> buf,
         std::uint64_t offset
@@ -285,7 +285,7 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepRecv(
+    [[nodiscard]] IoUringTask&& prepRecv(
         int fd,
         std::span<char> buf,
         int flags
@@ -302,7 +302,7 @@ public:
      * @param flags 
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepSend(
+    [[nodiscard]] IoUringTask&& prepSend(
         int fd, 
         std::span<char const> buf, 
         int flags
@@ -316,7 +316,7 @@ public:
      * @param fd 文件描述符
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepClose(int fd) && {
+    [[nodiscard]] IoUringTask&& prepClose(int fd) && {
         ::io_uring_prep_close(_sqe, fd);
         return std::move(*this);
     }
@@ -327,7 +327,7 @@ public:
      * @param pollMask 需要监测的poll事件 (如:`POLLIN`)
      * @return IoUringTask&& 
      */
-    IoUringTask&& prepPollAdd(
+    [[nodiscard]] IoUringTask&& prepPollAdd(
         int fd, 
         unsigned int pollMask
     ) && {

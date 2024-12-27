@@ -25,17 +25,18 @@ endif()
 #####        ########
 # 请选择编译的示例代码#
 ########       ######
-# 部件测试
+# 部件测试 
 # add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
 # add_definitions(-DJSON_TEST_MAIN)  # json示例
-add_definitions(-DCACHE_TEST_MAIN) # 测试LRU缓存
+# add_definitions(-DIO_URING_OSTREAM_MAIN)  # 测试自己实现的输出流, 使用协程!
+# add_definitions(-DCACHE_TEST_MAIN) # 测试LRU缓存
 
 # 客户端
 # add_definitions(-DCLIENT_MAIN)  # 客户端
 
 # 服务端
 # add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
-# add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
+add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
 # add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
 # add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
 # add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
@@ -60,7 +61,13 @@ set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
 # 设置CMake模块路径, 包含当前目录下的cmake文件夹以及之前的路径
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
-add_compile_options(-Wall -Wextra -Werror=return-type)
+add_compile_options(
+    -Wall                     # 启用所有警告
+    -Wextra                   # 启用额外的警告
+    -Werror=return-type       # 将函数返回类型的警告视为错误, 确保所有函数都有返回值
+    -Wnon-virtual-dtor        # 当类有虚函数但没有虚析构函数时发出警告
+    -Wdelete-non-virtual-dtor # 当试图删除有虚函数但没有虚析构函数的对象时发出警告
+)
 
 # 定义生成的库的存放目录
 set(LIB_PATH ${PROJECT_SOURCE_DIR}/lib)
@@ -78,7 +85,8 @@ set (appName HXNet)
 # 递归查找
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS 
     src/*.cpp 
-    include/*.h 
+    include/*.h
+    include/*.hpp
     examples/*.cpp
 )
 
