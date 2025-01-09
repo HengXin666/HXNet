@@ -163,6 +163,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
             co_return false;
         }
     }
+    co_return false;
 }
 
 HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvRequest() {

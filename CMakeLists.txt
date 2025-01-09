@@ -21,6 +21,9 @@ if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   message("=-=-=-=-=-=-= 启用 Address Sanitizer [-fsanitize=address] =-=-=-=-=-=-=")
 endif()
 
+# 改用 clang 编译器
+# set(CMAKE_C_COMPILER clang)
+# set(CMAKE_CXX_COMPILER clang++)
 
 #####        ########
 # 请选择编译的示例代码#

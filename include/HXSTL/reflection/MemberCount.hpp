@@ -17,12 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _HX_MEMBER_NAME_H_
-#define _HX_MEMBER_NAME_H_
+#ifndef _HX_MEMBER_COUNT_H_
+#define _HX_MEMBER_COUNT_H_
 
-#include <string_view>
-#include <array>
-#include <utility>
+#include <type_traits>
 
 namespace HX { namespace STL { namespace reflection {
 
@@ -51,7 +49,7 @@ namespace internal {
             return sizeof...(Args);
         }
     }
-}
+} // namespace internal
 
 /**
  * @brief 获取`聚合类`的成员变量个数
@@ -70,6 +68,6 @@ inline consteval std::size_t membersCount() {
 template <typename T>
 constexpr std::size_t membersCountVal = membersCount<T>();
 
-}}} // HX::STL::reflection
+}}} // namespace HX::STL::reflection
 
-#endif // !_HX_MEMBER_NAME_H_
+#endif // !_HX_MEMBER_COUNT_H_
