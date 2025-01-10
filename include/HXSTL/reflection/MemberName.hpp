@@ -30,9 +30,6 @@ namespace HX { namespace STL { namespace reflection {
 
 namespace internal {
 
-// 包裹一层`wrap`的原因：non-type template parameters of scalar type是在clang18才开始的，
-// 而Class types as non-type template parameters是在clang12就支持了
-
 /**
  * @brief 获取编译期成员变量指针的符号, 并且提取其成员名称
  * @tparam ptr 编译期成员变量指针
@@ -46,7 +43,9 @@ inline constexpr std::string_view getMemberName() {
     constexpr std::string_view func_name = __PRETTY_FUNCTION__;
 #endif
 
-#if defined(__clang__)
+// 包裹一层`wrap`的原因: non-type template parameters of scalar type是在clang18才开始的,
+// 而Class types as non-type template parameters是在clang12就支持了
+#if defined(__clang__) && __clang_major__ >= 18
     auto split = func_name.substr(0, func_name.size() - 1);
     return split.substr(split.find_last_of(":.") + 1);
 #elif defined(__GNUC__)
@@ -57,29 +56,57 @@ inline constexpr std::string_view getMemberName() {
     return split.substr(split.rfind("->") + 2);
 #else
     static_assert(
-        false, "You are using an unsupported compiler. Please use GCC, Clang "
-               "or MSVC or switch to the rfl::Field-syntax.");
+        false, 
+        "You are using an unsupported compiler. Please use GCC, Clang "
+        "or MSVC or switch to the rfl::Field-syntax."
+    );
 #endif
 }
 
+/**
+ * @brief 对于类型 T, 提供类静态成员
+ * @tparam T 
+ */
 template <typename T>
 struct StaticObj {
     inline static std::decay_t<T> obj;
 };
 
+/**
+ * @brief 获取类静态成员T
+ * @tparam T 
+ * @return constexpr std::decay_t<T>& 
+ */
 template <typename T>
 inline constexpr std::decay_t<T>& getStaticObj() {
     return StaticObj<T>::obj;
 }
 
+/**
+ * @brief 访问者类 主模版 (不可使用)
+ * @tparam T `聚合类`类型
+ * @tparam N 成员个数
+ * @warning 如果匹配到此模版, 那么有两种可能:
+ * @warning 1) 你的类有255+个成员
+ * @warning 2) 你的类不是聚合类
+ */
 template <typename T, std::size_t N>
 struct ReflectionVisitor {
     static constexpr auto visit() {
         static_assert(
-            false, ""); // 不支持实例化主模版
+            sizeof(T) < 0,
+            "\n\nThis error occurs for one of two reasons:\n\n"
+            "1) You have created a struct with more than 255 fields, which is "
+            "unsupported. \n\n"
+            "2) Your struct is not an aggregate type.\n\n"
+        );
     }
 };
 
+/**
+ * @brief 偏特化模版
+ * @tparam T `聚合类`类型
+ */
 template <typename T> 
 struct ReflectionVisitor<T, 0> {
     static constexpr auto visit() {
@@ -87,37 +114,69 @@ struct ReflectionVisitor<T, 0> {
     }
 };
 
+/**
+ * @brief 偏特化模版生成 工具宏
+ */
 #define _HX_GENERATE_TEMPLATES_WITH_SPECIALIZATION_(N, ...) \
 template <typename T>                                       \
 struct ReflectionVisitor<T, N> {                            \
     static constexpr auto visit() {                         \
-        auto&& obj = internal::getStaticObj<T>();           \
-        auto&& [__VA_ARGS__] = obj;                         \
-        auto&& t = std::tie(__VA_ARGS__);                   \
-        auto&& f = [](auto&... fs) {                        \
-            return std::make_tuple(&(fs)...);               \
+        auto& [__VA_ARGS__] = internal::getStaticObj<T>();  \
+        constexpr auto t = std::tie(__VA_ARGS__);           \
+        constexpr auto f = [](auto&... fs) {                \
+            return std::make_tuple((&fs)...);               \
         };                                                  \
         return std::apply(f, t);                            \
     }                                                       \
 };
 
+/**
+ * @brief 展开工具宏, 然后 #undef 掉
+ */
 #include <HXSTL/reflection/MemberMacro.hpp>
 
+/**
+ * @brief 获取聚合类T的`tuple<成员指针...>`
+ * @tparam T `聚合类`类型
+ * @return constexpr tuple<成员指针...> 
+ */
 template <typename T>
 inline constexpr auto getStaticObjPtrTuple() {
     return ReflectionVisitor<std::decay_t<T>, membersCountVal<T>>::visit();
 }
 
+/**
+ * @brief 编译期静态for循环, 利用逗号表达式展开以将`tuple<成员指针...>`std::get<i>赋值到arr[i]
+ * @tparam T `聚合类`类型
+ * @tparam Arr std::array<>
+ * @tparam Is std::array<>.size()
+ * @param arr 需要赋值的`std::array`
+ */
+template <typename T, typename Arr, std::size_t... Is>
+inline constexpr void staticForTupleSetArr(Arr& arr, std::index_sequence<Is...>) {
+    constexpr auto tp = internal::getStaticObjPtrTuple<T>();
+    ((arr[Is] = getMemberName<std::get<Is>(tp)>()), ...);
+}
+
 } // namespace internal
 
+/**
+ * @brief 获取`聚合类`所有成员变量的名称`array`
+ * @tparam T `聚合类`类型
+ * @return 所有成员变量的名称`array`
+ */
 template <typename T>
 inline constexpr std::array<std::string_view, membersCountVal<T>> getMembersNames() {
     constexpr auto Cnt = membersCountVal<T>;
     std::array<std::string_view, Cnt> arr;
+#if __cplusplus >= 202002L && (!defined(_MSC_VER) || _MSC_VER >= 1930)
     constexpr auto tp = internal::getStaticObjPtrTuple<T>(); // 获取 tuple<成员指针...>
-    [&] <std::size_t... Ts> (std::index_sequence<Ts...>) {
-        ((arr[Ts] = internal::getMemberName<std::get<Ts>(tp)>()), ...);
-    } (std::make_index_sequence<Cnt>());
+    [&] <std::size_t... Is> (std::index_sequence<Is...>) {
+        ((arr[Is] = internal::getMemberName<std::get<Is>(tp)>()), ...);
+    } (std::make_index_sequence<Cnt>{});
+#else
+    internal::staticForTupleSetArr<T>(arr, std::make_index_sequence<membersCountVal<T>>{});
+#endif
     return arr;
 }
 
