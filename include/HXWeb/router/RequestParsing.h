@@ -52,13 +52,21 @@ struct RequestTemplateParsing {
     static std::size_t getUniversalWildcardPathBeginIndex(std::string_view path);
 };
 
+/**
+ * @brief  将通配符元素(字符串)转为指定类型, 转换失败返回`std::nullopt`
+ * @tparam T 需要转换的类型
+ * @warning 主模版不使用, 请使用偏特化.
+ */
 template <class T>
 struct TypeInterpretation {
     /**
      * @brief 将通配符元素(字符串)转为指定类型, 转换失败返回`std::nullopt`
      */
-    static std::optional<T> wildcardElementTypeConversion(std::string_view we) {
-        throw "Please select the correct type";
+    static std::optional<T> wildcardElementTypeConversion(std::string_view) {
+        static_assert(
+            false,
+            "Please select the correct type"
+        );
     }
 };
 

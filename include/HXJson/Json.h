@@ -30,6 +30,7 @@
 #include <charconv>
 
 // 下期目标: 实现一个将Json数据转存为Json文件的Code
+// 目前的转化感觉有点不优雅...
 
 namespace HX { namespace json {
 
@@ -153,6 +154,7 @@ struct JsonObject {
      * @throw `key`不存在
      */
     const auto& at(const std::string& key) const {
+        // returning reference to local temporary object [-Wreturn-stack-address] GCC (Clang)
         return get<JsonDict>().at(key);
     }
 };

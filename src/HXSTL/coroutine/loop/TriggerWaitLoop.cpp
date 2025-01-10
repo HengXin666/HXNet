@@ -21,6 +21,7 @@ HX::STL::coroutine::task::Task<
     HX::STL::container::NonVoidHelper<>
 > TriggerWaitLoop::triggerWait(TriggerWaitLoop& TWaitLoop) {
     co_await TriggerWaitTask(TWaitLoop);
+    co_return HX::STL::container::NonVoidHelper<> {};
 }
 
 }}}} // namespace HX::STL::coroutine::loop

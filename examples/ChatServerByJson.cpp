@@ -52,11 +52,13 @@ HX::STL::coroutine::loop::TriggerWaitLoop waitLoop {};
 
 class ChatController {
     ENDPOINT_BEGIN(API_GET, "/", root) {
+        printf("收到了来着 / 的请求 {\n");
         RESPONSE_DATA(
             200,
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("indexByJson.html"),
             "text/html", "UTF-8"
         );
+        printf("} // 收到了来着 / 的请求\n");
         co_return true;
     } ENDPOINT_END;
 
@@ -65,11 +67,13 @@ class ChatController {
     } ENDPOINT_END;
 
     ENDPOINT_BEGIN(API_GET, "/favicon.ico", faviconIco) {
+        printf("收到了来着 /favicon.ico 的请求 {\n");
         RESPONSE_DATA(
             200, 
             co_await HX::STL::utils::FileUtils::asyncGetFileContent("favicon.ico"),
             "image/x-icon"
         );
+        printf("} // 收到了来着 /favicon.ico 的请求\n");
         co_return false;
     } ENDPOINT_END;
 
