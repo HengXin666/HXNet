@@ -163,7 +163,7 @@ HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::handsh
             co_return false;
         }
     }
-    co_return false;
+    co_return true;
 }
 
 HX::STL::coroutine::task::Task<bool> IO<HX::web::protocol::https::Https>::_recvRequest() {
@@ -225,6 +225,7 @@ HX::STL::coroutine::task::Task<> IO<HX::web::protocol::https::Https>::_sendRespo
             throw "SSL_write: Err: " + std::to_string(err) + " is " + strerror(errno);
         }
     }
+    co_return;
 }
 
 }}} // namespace HX::web::server

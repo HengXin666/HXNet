@@ -15,7 +15,6 @@ int main() {
     constexpr auto arr = HX::STL::reflection::getMembersNames<Cat>();
     for (auto it : arr)
         std::cout << it << '\n';
-    // constexpr auto x = HX::STL::reflection::internal::ReflectionVisitor<Cat, 2>::visit();
     std::cout << HX::STL::reflection::membersCountVal<Cat> << '\n';
     return 0;
 }
