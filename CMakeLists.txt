@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.20.0)
 # 定义工程名称, 并指定语言为C++
-project(HXNet LANGUAGES CXX)
+project(HXNet
+    VERSION 0.0.1
+    DESCRIPTION "HXNet"
+    HOMEPAGE_URL "https://github.com/HengXin666/HXNet"
+    LANGUAGES CXX
+)
 
 # 是否开启 绕过操作系统的缓存, 直接将数据从用户空间读写到磁盘
 # set(IO_URING_DIRECT ON) # 有BUG 先不要用
@@ -10,16 +15,6 @@ add_definitions(-DCLIENT_ADDRESS_LOGGING)
 
 # 是否系统已经安装了OpenSSL
 set(HX_NET_FIND_OPENSSL ON)
-
-# 是否启用 Address Sanitizer
-set(HX_DEBUG_BY_ADDRESS_SANITIZER ON)
-
-# 使用 Address Sanitizer
-if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-  message("=-=-=-=-=-=-= 启用 Address Sanitizer [-fsanitize=address] =-=-=-=-=-=-=")
-endif()
 
 # 改用 clang 编译器
 # set(CMAKE_C_COMPILER clang)
@@ -45,7 +40,7 @@ add_definitions(-D_HX_REFLECTION_TEST_H_) # 测试反射
 # add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
 # add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
 
-# 如果没有定义CMAKE_BUILD_TYPE，则设置为Release
+# 如果没有定义CMAKE_BUILD_TYPE, 则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -63,15 +58,7 @@ set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines") # 显式启动C++协程
 
 # 设置CMake模块路径, 包含当前目录下的cmake文件夹以及之前的路径
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
-
-add_compile_options(
-    -Wall                     # 启用所有警告
-    -Wextra                   # 启用额外的警告
-    -Werror=return-type       # 将函数返回类型的警告视为错误, 确保所有函数都有返回值
-    -Wnon-virtual-dtor        # 当类有虚函数但没有虚析构函数时发出警告
-    -Wdelete-non-virtual-dtor # 当试图删除有虚函数但没有虚析构函数的对象时发出警告
-)
+# set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
 # 定义生成的库的存放目录
 set(LIB_PATH ${PROJECT_SOURCE_DIR}/lib)
@@ -97,52 +84,18 @@ file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
 # 编译可执行文件
 add_executable (${appName} ${srcs})
 
-if (IO_URING_DIRECT)
-    target_compile_definitions(HXNet PUBLIC IO_URING_DIRECT)
-endif()
-
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-if (HX_NET_FIND_LIBURING)
-    include(FindPkgConfig)
-    pkg_check_modules(LIBURING liburing)
-        if (NOT LIBURING_FOUND)
-            find_path(LIBURING_INCLUDE_DIR NAMES liburing.h)
-            find_library(LIBURING_LIBRARY NAMES liburing.a)
-            if (NOT LIBURING_INCLUDE_DIR OR NOT LIBURING_LIBRARY)
-                message(FATAL_ERROR "liburing not found")
-            endif()
-            set(LIBURING_LIBRARIES ${LIBURING_LIBRARY})
-            set(LIBURING_INCLUDE_DIRS ${LIBURING_INCLUDE_DIR})
-        endif()
-        target_link_libraries(HXNet PUBLIC ${LIBURING_LIBRARIES})
-        target_include_directories(HXNet PUBLIC ${LIBURING_INCLUDE_DIRS})
-    else()
-        target_sources(HXNet PRIVATE lib/liburing/liburing.cpp)
-        target_include_directories(HXNet PUBLIC lib/liburing/include)
-    endif()
-endif()
-
-if (HX_NET_FIND_OPENSSL)
-    # 查找 OpenSSL 库
-    find_package(OpenSSL REQUIRED)
-
-    # 链接 OpenSSL 库
-    target_link_libraries(HXNet OpenSSL::SSL OpenSSL::Crypto)
-else()
-    # target_include_directories(HXNet PUBLIC lib/openssl/include)
-    message(FATAL_ERROR "OpenSSL not found")
-endif()
-
-# 添加WebSocket需要的Hash库, 以解析数据
-target_include_directories(HXNet PUBLIC lib/hashlib/include)
-
 # 设置头文件路径
 include_directories(${ROOT_PATH}/include)
 
 # 将include目录添加到HXHttp库的公共包含目录中
 target_include_directories(HXNet PUBLIC include)
 
-# 使用 Address Sanitizer
-if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(HXNet PRIVATE -fsanitize=address)
+# 导入第三方库
+include(cmake/includeLib/FindUring.cmake)
+include(cmake/includeLib/FindOpenSSL.cmake)
+include(cmake/includeLib/FindHashLib.cmake)
+
+if(CMAKE_PROJECT_NAME STREQUAL "HXNet")
+    include(cmake/config.cmake)
+    include(cmake/develop.cmake)
 endif()
