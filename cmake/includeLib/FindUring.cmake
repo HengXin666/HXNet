@@ -3,20 +3,27 @@ if (IO_URING_DIRECT)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-if (HX_NET_FIND_LIBURING)
-    pkg_check_modules(LIBURING liburing)
+    find_package(PkgConfig REQUIRED) # 确保 pkg-config 可用
+
+    if (HX_NET_FIND_LIBURING)
+        # 使用 pkg-config 检测 liburing
+        pkg_check_modules(LIBURING liburing)
         if (NOT LIBURING_FOUND)
+            # 如果 pkg-config 失败，手动查找
             find_path(LIBURING_INCLUDE_DIR NAMES liburing.h)
-            find_library(LIBURING_LIBRARY NAMES liburing.a)
+            find_library(LIBURING_LIBRARY NAMES liburing liburing.a)
             if (NOT LIBURING_INCLUDE_DIR OR NOT LIBURING_LIBRARY)
                 message(FATAL_ERROR "liburing not found")
             endif()
-            set(LIBURING_LIBRARIES ${LIBURING_LIBRARY})
-            set(LIBURING_INCLUDE_DIRS ${LIBURING_INCLUDE_DIR})
+            set(LIBURING_LIBRARIES "${LIBURING_LIBRARY}")
+            set(LIBURING_INCLUDE_DIRS "${LIBURING_INCLUDE_DIR}")
         endif()
-        target_link_libraries(HXLibs PUBLIC ${LIBURING_LIBRARIES})
-        target_include_directories(HXLibs PUBLIC ${LIBURING_INCLUDE_DIRS})
+        
+        # 链接系统 liburing
+        target_link_libraries(HXLibs PUBLIC "${LIBURING_LIBRARIES}")
+        target_include_directories(HXLibs PUBLIC "${LIBURING_INCLUDE_DIRS}")
     else()
+        # 使用项目内置的 liburing
         target_sources(HXLibs PRIVATE lib/liburing/liburing.cpp)
         target_include_directories(HXLibs PUBLIC lib/liburing/include)
     endif()

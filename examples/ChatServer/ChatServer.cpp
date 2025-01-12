@@ -8,8 +8,6 @@
 #include <HXSTL/coroutine/loop/TriggerWaitLoop.h>
 #include <HXWeb/server/Server.h>
 
-#ifdef COMPILE_CHAT_SERVER_MAIN
-
 using namespace std::chrono;
 
 /**
@@ -179,4 +177,3 @@ int main() {
     HX::web::server::Server::startHttp("127.0.0.1", "28205", 1, 10s);
     return 0;
 }
-#endif

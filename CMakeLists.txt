@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project(HXLibs
     VERSION 0.0.1
     DESCRIPTION "HXLibs"
-    HOMEPAGE_URL "https://github.com/HengXin666/HXNet"
+    HOMEPAGE_URL "https://github.com/HengXin666/HXLibs"
     LANGUAGES CXX
 )
 
@@ -21,7 +21,7 @@ add_definitions(-DCLIENT_ADDRESS_LOGGING)
 # add_definitions(-DJSON_TEST_MAIN)  # json示例
 # add_definitions(-DIO_URING_OSTREAM_MAIN)  # 测试自己实现的输出流, 使用协程!
 # add_definitions(-DCACHE_TEST_MAIN) # 测试LRU缓存
-add_definitions(-D_HX_REFLECTION_TEST_H_) # 测试反射
+# add_definitions(-D_HX_REFLECTION_TEST_H_) # 测试反射
 
 # 客户端
 # add_definitions(-DCLIENT_MAIN)  # 客户端
