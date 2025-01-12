@@ -1,11 +1,21 @@
+# 改用 clang 编译器
+# set(CMAKE_C_COMPILER clang)
+# set(CMAKE_CXX_COMPILER clang++)
+
 # 启用地址清理程序
 option(ENABLE_SANITIZER "Enable sanitizer(Debug+Gcc/Clang/AppleClang)" ON)
 
 # 这个到时候, 写在具体的地方...
 # 使用 Address Sanitizer
-# if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     target_compile_options(HXNet PRIVATE -fsanitize=address)
-# endif()
+if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(HXLibs PRIVATE -fsanitize=address)
+endif()
+
+set(CMAKE_CXX_STANDARD 20) # 设置C++标准为C++20
+set(CMAKE_C_STANDARD 11)   # 设置C语言标准为C11
+set(CMAKE_CXX_STANDARD_REQUIRED ON) # 指定C++标准是必需的
+set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines") # 显式启动C++协程
 
 # 警告
 option(ENABLE_WARNING "Enable warning for all project" ON)

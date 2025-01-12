@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.15)
 # 定义工程名称, 并指定语言为C++
-project(HXNet
+project(HXLibs
     VERSION 0.0.1
-    DESCRIPTION "HXNet"
+    DESCRIPTION "HXLibs"
     HOMEPAGE_URL "https://github.com/HengXin666/HXNet"
     LANGUAGES CXX
 )
@@ -12,13 +12,6 @@ project(HXNet
 
 # 启用 搜集客户端地址信息 宏
 add_definitions(-DCLIENT_ADDRESS_LOGGING)
-
-# 是否系统已经安装了OpenSSL
-set(HX_NET_FIND_OPENSSL ON)
-
-# 改用 clang 编译器
-# set(CMAKE_C_COMPILER clang)
-# set(CMAKE_CXX_COMPILER clang++)
 
 #####        ########
 # 请选择编译的示例代码#
@@ -51,51 +44,13 @@ else()
     message("已添加宏: _HX_DEBUG_")
 endif()
 
-set(CMAKE_CXX_STANDARD 20) # 设置C++标准为C++20
-set(CMAKE_C_STANDARD 11)   # 设置C语言标准为C11
-set(CMAKE_CXX_STANDARD_REQUIRED ON) # 指定C++标准是必需的
-set(CMAKE_CXX_EXTENSIONS OFF) # 禁用编译器的扩展
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines") # 显式启动C++协程
-
-# 设置CMake模块路径, 包含当前目录下的cmake文件夹以及之前的路径
-# set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
-
-# 定义生成的库的存放目录
-set(LIB_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-set(ROOT_PATH "${PROJECT_SOURCE_DIR}") # 设置根项目的根目录
-# 在camke .. 的时候会输出提示目录路径 (可选)
-message (STATUS "Prefix dir is ${CMAKE_INSTALL_PREFIX}")
-message (STATUS "Binary dir is ${PROJECT_BINARY_DIR}")
-message (STATUS "Source dir is ${PROJECT_SOURCE_DIR}")
-message (STATUS "ROOT_PATH dir is ${ROOT_PATH}")
-
-# 设置文件名称
-set (appName HXNet)
-
-# 递归查找
-file(GLOB_RECURSE srcs CONFIGURE_DEPENDS 
-    src/*.cpp 
-    include/*.h
-    include/*.hpp
-    examples/*.cpp
-)
-
-# 编译可执行文件
-add_executable (${appName} ${srcs})
-
-# 设置头文件路径
-include_directories(${ROOT_PATH}/include)
-
-# 将include目录添加到HXHttp库的公共包含目录中
-target_include_directories(HXNet PUBLIC include)
-
-# 导入第三方库
-include(cmake/includeLib/FindUring.cmake)
-include(cmake/includeLib/FindOpenSSL.cmake)
-include(cmake/includeLib/FindHashLib.cmake)
+include(cmake/install.cmake)
 
 if(CMAKE_PROJECT_NAME STREQUAL "HXNet")
     include(cmake/config.cmake)
     include(cmake/develop.cmake)
+
+    add_subdirectory(examples/ChatServer)
+else()
+    include(cmake/config.cmake)
 endif()

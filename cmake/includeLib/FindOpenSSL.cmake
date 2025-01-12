@@ -1,11 +1,9 @@
-if (HX_NET_FIND_OPENSSL)
-    # 查找 OpenSSL 库
-    find_package(OpenSSL REQUIRED)
+# 查找 OpenSSL 库 (如果找不到, CMake 会自动报错)
+find_package(OpenSSL REQUIRED)
 
-    # 链接 OpenSSL 库
-    # 下面这个链接, 需要额外搞?
-    target_link_libraries(HXNet OpenSSL::SSL OpenSSL::Crypto)
-    # target_include_directories(HXNet PUBLIC lib/openssl/include)
-else()
-    message(FATAL_ERROR "OpenSSL not found")
-endif()
+# 链接 OpenSSL 库
+target_link_libraries(HXLibs OpenSSL::SSL OpenSSL::Crypto)
+
+# 可选: 如果需要明确添加 OpenSSL 的头文件路径
+# 一般情况下, find_package 已经会自动添加头文件路径到目标中
+# target_include_directories(HXLibs PUBLIC ${OPENSSL_INCLUDE_DIR})
