@@ -9,7 +9,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         # 使用 pkg-config 检测 liburing
         pkg_check_modules(LIBURING liburing)
         if (NOT LIBURING_FOUND)
-            # 如果 pkg-config 失败，手动查找
+            # 如果 pkg-config 失败, 手动查找
             find_path(LIBURING_INCLUDE_DIR NAMES liburing.h)
             find_library(LIBURING_LIBRARY NAMES liburing liburing.a)
             if (NOT LIBURING_INCLUDE_DIR OR NOT LIBURING_LIBRARY)

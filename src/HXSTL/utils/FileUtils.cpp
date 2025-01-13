@@ -5,6 +5,7 @@
 
 #include <HXSTL/tools/ErrorHandlingTools.h>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
+#include <cassert>
 
 using namespace std::chrono;
 

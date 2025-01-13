@@ -50,7 +50,9 @@ if(CMAKE_PROJECT_NAME STREQUAL "HXNet")
     include(cmake/config.cmake)
     include(cmake/develop.cmake)
 
-    add_subdirectory(examples/ChatServer)
+    
 else()
     include(cmake/config.cmake)
 endif()
+
+add_subdirectory(examples/ChatServer)

@@ -5,6 +5,7 @@
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 
 #include <HXSTL/utils/FileUtils.h>
+#include <string.h>
 
 namespace HX { namespace STL { namespace coroutine { namespace loop {
 
@@ -32,10 +33,13 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
 
     // 阻塞等待内核, 返回是错误码; cqe是完成队列, 为传出参数
     int res = ::io_uring_submit_and_wait_timeout(&_ring, &cqe, 1, timespecPtr, nullptr);
+
+    // 超时
     if (res == -ETIME) {
+        ::io_uring_cq_advance(&_ring, 0); // 确保完成队列状态同步
         return false;
-    } else if (res < 0) [[unlikely]] {
-        if (res == -EINTR) {
+    } else if (res < 0) [[unlikely]] { // 其他错误
+        if (res == -EINTR) { // 被信号中断
             return false;
         }
         throw std::system_error(-res, std::system_category());
@@ -45,8 +49,10 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&_ring, head, cqe) {
         ++numGot;
-        if (cqe->res < 0) {
+        if (cqe->res < 0 && !(cqe->res == -ENOENT || cqe->res == -EACCES || cqe->res == -EAGAIN)) {
             // printf("任务已取消 (%p)\n", (void *)cqe->user_data);
+            printf("Critical error:: %s\n", strerror(-cqe->res));
+
             continue;
         }
         auto* task = reinterpret_cast<IoUringTask *>(cqe->user_data);
@@ -61,9 +67,6 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     for (const auto& it : tasks) {
         it.resume();
     }
-    // for (auto it = tasks.rbegin(); it != tasks.rend(); ++it) {
-    //     it->resume();
-    // }
     return true;
 }
 

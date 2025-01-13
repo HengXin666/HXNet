@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <HXWeb/HXApiHelper.h>
 #include <HXSTL/utils/FileUtils.h>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
@@ -169,11 +170,18 @@ public: // 控制器成员函数 (请写成`static`方法)
 };
 
 int main() {
-    chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
+    try {
+        auto cwd = std::filesystem::current_path();
+        std::cout << "当前工作路径是: " << cwd << '\n';
+        std::filesystem::current_path("../../../static");
+        std::cout << "切换到路径: " << std::filesystem::current_path() << '\n';
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Error: " << e.what() << '\n';
+    }
     ROUTER_BIND(ChatController);
     
     // 启动服务 (指定使用一个线程 (因为messageArr得同步, 多线程就需要上锁(我懒得写了qwq)))
-    HX::web::server::Server::startHttp("127.0.0.1", "28205", 1, 10s);
+    HX::web::server::Server::startHttp("127.0.0.1", "28205", 1, 3s);
     return 0;
 }
