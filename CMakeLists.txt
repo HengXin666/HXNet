@@ -46,13 +46,13 @@ endif()
 
 include(cmake/install.cmake)
 
-if(CMAKE_PROJECT_NAME STREQUAL "HXNet")
+if(CMAKE_PROJECT_NAME STREQUAL "HXLibs")
     include(cmake/config.cmake)
     include(cmake/develop.cmake)
-
-    
+    add_subdirectory(examples/ChatServer)
+    add_subdirectory(examples/FileServer)
+    add_subdirectory(examples/WsServer)
+    add_subdirectory(examples/Client)
 else()
     include(cmake/config.cmake)
 endif()
-
-add_subdirectory(examples/ChatServer)

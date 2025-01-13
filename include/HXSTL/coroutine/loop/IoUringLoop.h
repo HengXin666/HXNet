@@ -20,7 +20,13 @@
 #ifndef _HX_IO_URING_LOOP_H_
 #define _HX_IO_URING_LOOP_H_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+
 #include <liburing.h>
+
+#pragma GCC diagnostic pop
+
 #include <coroutine>
 #include <chrono>
 

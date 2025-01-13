@@ -20,7 +20,13 @@
 #ifndef _HX_SOCKET_IO_H_
 #define _HX_SOCKET_IO_H_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+
 #include <liburing.h>
+
+#pragma GCC diagnostic pop
+
 #include <memory>
 #include <optional>
 #include <span>

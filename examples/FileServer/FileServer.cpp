@@ -1,9 +1,9 @@
+#include <iostream>
+#include <filesystem>
 #include <HXWeb/HXApiHelper.h>
 #include <HXSTL/coroutine/loop/AsyncLoop.h>
 #include <HXSTL/utils/FileUtils.h>
 #include <HXWeb/server/Server.h>
-
-#ifdef HTTPS_FILE_SERVER_MAIN
 
 class HttpsController {
     ENDPOINT_BEGIN(API_GET, "/", root) {
@@ -53,9 +53,7 @@ class HttpsController {
     } ENDPOINT_END;
 };
 
-#endif // HTTPS_FILE_SERVER_MAIN
-
-#if 0 // 测试代码, 下面发现了一个潜在的问题
+// 测试代码, 下面发现了一个潜在的问题
 #include <HXSTL/coroutine/task/WhenAny.hpp>
 #include <chrono>
 
@@ -75,18 +73,21 @@ HX::STL::coroutine::task::Task<> test() {
     );
 }
 
-#endif
-
-#ifdef HTTPS_FILE_SERVER_MAIN
-
 int main() {
-    chdir("..");
+    // return (void)test()._coroutine.resume(), 0;
+
     setlocale(LC_ALL, "zh_CN.UTF-8");
+    try {
+        auto cwd = std::filesystem::current_path();
+        std::cout << "当前工作路径是: " << cwd << '\n';
+        std::filesystem::current_path("../../../");
+        std::cout << "切换到路径: " << std::filesystem::current_path() << '\n';
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Error: " << e.what() << '\n';
+    }
     ROUTER_BIND(HttpsController);
     // HX::STL::coroutine::task::runTask(HX::STL::coroutine::loop::AsyncLoop::getLoop(), test());
     // 启动服务
     HX::web::server::Server::startHttps("127.0.0.1", "28205", "certs/cert.pem", "certs/key.pem");
     return 0;
 }
-
-#endif // HTTPS_FILE_SERVER_MAIN

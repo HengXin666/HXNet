@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <HXWeb/HXApiHelper.h>
 #include <HXSTL/utils/FileUtils.h>
 #include <HXWeb/protocol/websocket/WebSocket.h>
@@ -106,10 +107,16 @@ class WSChatController {
     } ENDPOINT_END;
 };
 
-#ifdef COMPILE_WEB_SOCKET_SERVER_MAIN
 int main() {
-    chdir("../static");
     setlocale(LC_ALL, "zh_CN.UTF-8");
+    try {
+        auto cwd = std::filesystem::current_path();
+        std::cout << "当前工作路径是: " << cwd << '\n';
+        std::filesystem::current_path("../../../static");
+        std::cout << "切换到路径: " << std::filesystem::current_path() << '\n';
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Error: " << e.what() << '\n';
+    }
     ROUTER_BIND(WSChatController);
     ERROR_ENDPOINT_BEGIN { // 自定义 404 界面 (找不到url对应的端点函数时候展示的界面)
         RESPONSE_DATA(
@@ -124,4 +131,3 @@ int main() {
     HX::web::server::Server::startHttp("127.0.0.1", "28205", 16, 5s); 
     return 0;
 }
-#endif

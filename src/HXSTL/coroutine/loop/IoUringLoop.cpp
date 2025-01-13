@@ -51,7 +51,7 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
         ++numGot;
         if (cqe->res < 0 && !(cqe->res == -ENOENT || cqe->res == -EACCES || cqe->res == -EAGAIN)) {
             // printf("任务已取消 (%p)\n", (void *)cqe->user_data);
-            printf("Critical error:: %s\n", strerror(-cqe->res));
+            printf("Critical error: %s\n", strerror(-cqe->res));
 
             continue;
         }

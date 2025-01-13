@@ -170,10 +170,10 @@ public:
 
     /**
      * @brief 获取请求头键值对的引用
-     * @return std::unordered_map<std::string, std::string>& 
+     * @return const std::unordered_map<std::string, std::string>& 
      */
-    std::unordered_map<std::string, std::string>& getRequestHeaders() const {
-        return const_cast<std::unordered_map<std::string, std::string>&>(_requestHeaders);
+    const std::unordered_map<std::string, std::string>& getRequestHeaders() const noexcept {
+        return _requestHeaders;
     }
 
     /**

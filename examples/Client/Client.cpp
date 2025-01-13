@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <HXWeb/client/Client.h>
 #include <HXWeb/protocol/http/Request.h>
 #include <HXWeb/protocol/http/Response.h>
@@ -15,7 +16,7 @@ using namespace std::chrono;
 HX::STL::coroutine::task::Task<> startClient() {
     try {
         auto ptr = co_await HX::web::client::Client::request({
-            .url = "https://github.com/HengXin666/HXNet",
+            .url = "https://github.com/HengXin666/HXLibs",
             .head = { // Host 内部已经自动填写~
                 {"User-Agent", "curl/8.8.0"},
                 {"Accept", "*/*"}
@@ -36,6 +37,11 @@ HX::STL::coroutine::task::Task<> startClient() {
             HX::STL::utils::FileUtils::OpenMode::Append
         );
         printf("写入完毕~\n");
+        try {
+            std::cout << "结果存放在: " << std::filesystem::current_path() << '\n';
+        } catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Error: " << e.what() << '\n';
+        }
     } catch (const std::system_error& e) {
         std::cerr << e.what() << '\n';
     } catch (const char* e) {
@@ -44,12 +50,11 @@ HX::STL::coroutine::task::Task<> startClient() {
     co_return;
 }
 
-#ifdef CLIENT_MAIN
 int main() {
+    setlocale(LC_ALL, "zh_CN.UTF-8");
     HX::STL::coroutine::task::runTask(
         HX::STL::coroutine::loop::AsyncLoop::getLoop(),
         startClient()
     );
     return 0;
 }
-#endif
