@@ -2,13 +2,25 @@
 # set(CMAKE_C_COMPILER clang)
 # set(CMAKE_CXX_COMPILER clang++)
 
+# 是否开启单元测试
+option(BUILD_UNIT_TESTS "Build unit tests" ON)
+message(STATUS "BUILD_UNIT_TESTS: ${BUILD_UNIT_TESTS}")
+if(BUILD_UNIT_TESTS)
+    enable_testing()
+endif()
+
 # 启用地址清理程序
 option(ENABLE_SANITIZER "Enable sanitizer(Debug+Gcc/Clang/AppleClang)" ON)
 
-# 这个到时候, 写在具体的地方...
-# 使用 Address Sanitizer
-if(HX_DEBUG_BY_ADDRESS_SANITIZER AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(HXLibs PRIVATE -fsanitize=address)
+if(ENABLE_SANITIZER AND NOT MSVC)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        check_asan(HAS_ASAN)
+        if(HAS_ASAN)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+        else()
+            message(WARNING "sanitizer is no supported with current tool-chains")
+        endif()
+    endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 20) # 设置C++标准为C++20

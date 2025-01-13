@@ -109,7 +109,6 @@ HX::STL::coroutine::task::Task<> taskMain() {
     co_return;
 }
 
-#ifdef TEXT_MAIN_MAIN
 int main() {
     chdir("../static");
     HX::STL::coroutine::task::runTask(
@@ -118,4 +117,3 @@ int main() {
     );
     return 0;
 }
-#endif

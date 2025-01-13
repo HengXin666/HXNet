@@ -43,7 +43,6 @@ int main() { // 使用类型擦除, 从而输出 variant 的实时的值
 }
 #endif
 
-#ifdef JSON_TEST_MAIN
 
 // JSON解析示例
 void test_01() {
@@ -210,4 +209,3 @@ int main () {
     test_03();
     return 0;
 }
-#endif // JSON_TEST_MAIN

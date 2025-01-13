@@ -1,4 +1,3 @@
-#ifdef CACHE_TEST_MAIN
 #include <memory>
 
 #include <HXSTL/cache/LRUCache.hpp>
@@ -98,5 +97,3 @@ int main() {
     LFUCacheTest();
     return 0;
 }
-
-#endif // CACHE_TEST_MAIN

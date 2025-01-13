@@ -127,10 +127,13 @@ class WhenAny {
     }
 
     template <std::size_t... Is, class... Ts>
-    static HX::STL::coroutine::task::Task<std::variant<
-        typename HX::STL::coroutine::awaiter::AwaitableTraits<Ts>::NonVoidRetType...>
+    static HX::STL::coroutine::task::Task<
+        std::variant<
+            typename HX::STL::coroutine::awaiter::AwaitableTraits<Ts>::NonVoidRetType...
+        >
     > whenAnyImpl(
-        std::index_sequence<Is...>, Ts &&...ts
+        std::index_sequence<Is...>, 
+        Ts&&... ts
     ) {
         WhenAnyCtlBlock control{}; // 创建控制块
         
@@ -167,7 +170,7 @@ public:
      */
     template <HX::STL::coroutine::awaiter::Awaitable... Ts>
         requires(sizeof...(Ts) != 0)
-    static auto whenAny(Ts &&...ts) {
+    static auto whenAny(Ts&&... ts) {
         return whenAnyImpl(
             std::make_index_sequence<sizeof...(Ts)>{},
             std::forward<Ts>(ts)...

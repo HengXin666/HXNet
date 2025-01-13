@@ -1,4 +1,3 @@
-#ifdef IO_URING_OSTREAM_MAIN
 #include <thread>
 #include <iostream>
 
@@ -37,5 +36,3 @@ int main() {
     
     return 0;
 }
-
-#endif // IO_URING_OSTREAM_MAIN

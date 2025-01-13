@@ -13,26 +13,6 @@ project(HXLibs
 # 启用 搜集客户端地址信息 宏
 add_definitions(-DCLIENT_ADDRESS_LOGGING)
 
-#####        ########
-# 请选择编译的示例代码#
-########       ######
-# 部件测试 
-# add_definitions(-DTEXT_MAIN_MAIN)  # 文件: TestMain.cpp
-# add_definitions(-DJSON_TEST_MAIN)  # json示例
-# add_definitions(-DIO_URING_OSTREAM_MAIN)  # 测试自己实现的输出流, 使用协程!
-# add_definitions(-DCACHE_TEST_MAIN) # 测试LRU缓存
-# add_definitions(-D_HX_REFLECTION_TEST_H_) # 测试反射
-
-# 客户端
-# add_definitions(-DCLIENT_MAIN)  # 客户端
-
-# 服务端
-# add_definitions(-DCOMPILE_CHAT_SERVER_MAIN)  # 聊天室服务端
-# add_definitions(-DCOMPILE_CHAT_SERVER_BY_JSON_MAIN)  # 聊天室服务端(使用HX/Json反射实现)
-# add_definitions(-DCOMPILE_WEB_SOCKET_SERVER_MAIN)  # websocket服务端
-# add_definitions(-DHTTPS_SERVER_MAIN)  # https服务端
-# add_definitions(-DHTTPS_FILE_SERVER_MAIN)  # https简单的文件服务器
-
 # 如果没有定义CMAKE_BUILD_TYPE, 则设置为Release
 # 可以使用 cmake -DCMAKE_BUILD_TYPE=Debug .. 来指定
 if (NOT CMAKE_BUILD_TYPE)
@@ -47,12 +27,11 @@ endif()
 include(cmake/install.cmake)
 
 if(CMAKE_PROJECT_NAME STREQUAL "HXLibs")
+    include(cmake/utils.cmake)
     include(cmake/config.cmake)
     include(cmake/develop.cmake)
-    add_subdirectory(examples/ChatServer)
-    add_subdirectory(examples/FileServer)
-    add_subdirectory(examples/WsServer)
-    add_subdirectory(examples/Client)
+    include(cmake/examples.cmake)
+    include(cmake/tests.cmake)
 else()
     include(cmake/config.cmake)
 endif()
