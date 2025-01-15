@@ -6,7 +6,7 @@
 namespace HX { namespace  json {
 
 void JsonObject::print() const {
-    HX::print::printnl(_inner);
+    HX::print::println(_inner);
 }
 
 std::string JsonObject::toString() const {

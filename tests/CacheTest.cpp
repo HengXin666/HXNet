@@ -13,13 +13,13 @@ struct Node {
         : abc(a)
         , cba(b)
     {
-        HX::print::print("new: ", a, ", ", b);
+        HX::print::println("new: ", a, ", ", b);
     }
 
     Node(const Node& node)
         : Node(node.abc, node.cba)
     {
-        HX::print::print("copy!! (", abc, ", ", cba, ")");
+        HX::print::println("copy!! (", abc, ", ", cba, ")");
     }
 
     Node& operator=(const Node& other) {
@@ -28,7 +28,7 @@ struct Node {
             this->abc = std::move(other.abc);
             this->cba = std::move(other.cba);
         }
-        HX::print::print("operator=(const Node&)");
+        HX::print::println("operator=(const Node&)");
         return *this;
     }
 
@@ -36,11 +36,11 @@ struct Node {
     // Node& operator=(const Node&) = delete;
 
     void print() const {
-        HX::print::print(abc, cba);
+        HX::print::println(abc, cba);
     }
 
     ~Node() {
-        HX::print::print(">>>> End: ", abc, ", ", cba);
+        HX::print::println(">>>> End: ", abc, ", ", cba);
     }
 };
 
@@ -61,11 +61,11 @@ void LRUCacheTest() {
     // 线程安全的LRUCache
     HX::STL::cache::ThreadSafeLRUCache<std::string, std::string> ts(3);
     ts.emplace("abc", "char * -> string");
-    HX::print::print(ts.get("abc"));
+    HX::print::println(ts.get("abc"));
 
     // 透明查找的示例: 比如允许通过 const char* 查找 std::string 的键
     // 这使得用户可以在调用 contains 时, 不必显式地转换键的类型
-    HX::print::print("ts中是否存在 [abc]: ", ts.contains("abc"));
+    HX::print::println("ts中是否存在 [abc]: ", ts.contains("abc"));
 
     // HX::STL::cache::ThreadSafeLRUCache<int, Node> tts(std::move(cache));
     // tts.get(2);
@@ -74,26 +74,26 @@ void LRUCacheTest() {
 void LFUCacheTest() {
     HX::STL::cache::LFUCache<int, std::string> cache(1);
     cache.insert(2, "nb 666");
-    HX::print::print(cache.get(2));
+    HX::print::println(cache.get(2));
     cache.emplace(2, "nb 777");
-    HX::print::print(cache.get(2));
+    HX::print::println(cache.get(2));
     cache.emplace(2233, "nb Heng_Xin!!");
-    HX::print::print(cache.get(2233));
+    HX::print::println(cache.get(2233));
 
     // 支持从普通线程不安全的LFUCache移动构造出线程安全的ThreadSafeLFUCache
     HX::STL::cache::ThreadSafeLFUCache<int, std::string> ts(std::move(cache));
-    HX::print::print("size = ", ts.size());
-    HX::print::print(ts.get(2233));
+    HX::print::println("size = ", ts.size());
+    HX::print::println(ts.get(2233));
     ts.emplace(114514, "oh my god!");
-    HX::print::print(ts.get(114514));
-    HX::print::print(ts.get(114514));
+    HX::print::println(ts.get(114514));
+    HX::print::println(ts.get(114514));
     ts.clear();
-    HX::print::print("ts.clear() => size = ", ts.size());
+    HX::print::println("ts.clear() => size = ", ts.size());
 }
 
 int main() {
     LRUCacheTest();
-    HX::print::print("\n===============\n");
+    HX::print::println("\n===============\n");
     LFUCacheTest();
     return 0;
 }

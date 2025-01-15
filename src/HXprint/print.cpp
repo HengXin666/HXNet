@@ -3,7 +3,7 @@
 namespace HX { namespace print {
 
 #ifdef _HX_DEBUG_
-void _::logMessage(LogLevel level, const char* format, ...) {
+void internal::logMessage(LogLevel level, const char* format, ...) {
     va_list args;
     va_start(args, format);
     switch (level) {

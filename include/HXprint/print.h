@@ -21,25 +21,13 @@
 #define _HX_PRINT_H_
 
 #include <iostream>
-#include <format>
-#include <iomanip>
-#include <tuple>
-#include <map>
-#include <unordered_map>
-#include <optional>
-#include <span>
-#include <variant>
-#include <concepts>
 
 #ifdef _HX_DEBUG_
 #include <cstdio>
 #include <cstdarg>
 #endif // _HX_DEBUG_
 
-#include <HXSTL/concepts/KeyValueContainer.hpp>
-#include <HXSTL/concepts/PairContainer.hpp>
-#include <HXSTL/concepts/SingleElementContainer.hpp>
-#include <HXSTL/concepts/StringType.hpp>
+#include <HXSTL/utils/ToString.h>
 
 // 屏蔽未使用函数、变量和参数的警告
 #if defined(_MSC_VER) // MSVC
@@ -60,9 +48,13 @@
 
 namespace HX { namespace print { // C++20
 
-// 内部使用的命名空间啊喂!
-namespace _ {
-/////////////////////////////////////////////////////////
+namespace internal {
+
+// 概念: 鸭子类型: 只需要满足有一个成员函数是print的, 即可
+template <typename T>
+concept PrintClassType = requires(T t) {
+    t.print();
+};
 
 // === 仅DEBUG编译期(未发布)有的日志打印 ===
 
@@ -75,9 +67,9 @@ enum LogLevel {
 
 void logMessage(LogLevel level, const char* format, ...);
 
-#define LOG_ERROR(...) logMessage(HX::print::_::LOG_ERROR, __VA_ARGS__)
-#define LOG_WARNING(...) logMessage(HX::print::_::LOG_WARNING, __VA_ARGS__)
-#define LOG_INFO(...) logMessage(HX::print::_::LOG_INFO, __VA_ARGS__)
+#define LOG_ERROR(...) logMessage(HX::print::internal::LOG_ERROR, __VA_ARGS__)
+#define LOG_WARNING(...) logMessage(HX::print::internal::LOG_WARNING, __VA_ARGS__)
+#define LOG_INFO(...) logMessage(HX::print::internal::LOG_INFO, __VA_ARGS__)
 
 #else
 
@@ -87,202 +79,33 @@ void logMessage(LogLevel level, const char* format, ...);
 
 #endif // _HX_DEBUG_
 
-/////////////////////////////////////////////////////////
-
-// 概念: 鸭子类型: 只需要满足有一个成员函数是print的, 即可
-template <typename T>
-concept PrintClassType = requires(T t) {
-    t.print();
-};
-
-/////////////////////////////////////////////////////////
-
-// === 事先声明 ===
-
-// 显式重载
-inline void _HXprint(const std::nullptr_t& t);
-inline void _HXprint(const std::nullopt_t& t);
-inline void _HXprint(const std::monostate& t);
-inline void _HXprint(bool t);
-
-// 基础类型
-template <typename T>
-inline void _HXprint(const T& t);
-
-// span 视图
-template <typename T>
-inline void _HXprint(std::span<T> t);
-
-// std::optional
 template <typename... Ts>
-inline void _HXprint(const std::optional<Ts...>& t);
-
-// str相关的类型
-template <HX::STL::concepts::StringType ST>
-inline void _HXprint(const ST& t);
-
-// std::pair
-template <HX::STL::concepts::PairContainer Container>
-inline void _HXprint(const Container& p);
-
-// std::的常见的支持迭代器的单元素容器
-template <HX::STL::concepts::SingleElementContainer Container>
-inline void _HXprint(const Container& sc);
-
-// std::的常见的支持迭代器的键值对容器
-template <HX::STL::concepts::KeyValueContainer Container>
-inline void _HXprint(const Container& map);
-
-// std::variant 现代共用体
-template <typename... Ts>
-inline void _HXprint(const std::variant<Ts...>& t);
-
-template <PrintClassType T>
-inline void _HXprint(const T& t);
-
-/////////////////////////////////////////////////////////
-
-inline void _HXprint(const std::nullptr_t&) { // 普通指针不行
-    _HXprint("nullptr");
+inline void printImpl(Ts const&... ts) {
+    std::cout << HX::STL::utils::toString(ts...);
 }
 
-inline void _HXprint(const std::nullopt_t&) {
-    _HXprint("nullopt");
-}
-
-inline void _HXprint(const std::monostate&) {
-    _HXprint("monostate");
-}
-
-inline void _HXprint(bool t) {
-    if (t)
-        _HXprint("true");
-    else
-        _HXprint("false");
-}
-
-template <typename T>
-inline void _HXprint(const T& t) {
-    std::cout << t;
-}
-
-template <HX::STL::concepts::StringType ST>
-inline void _HXprint(const ST& t) {
-    std::cout << std::quoted(t);
-}
-
-template <typename T>
-inline void _HXprint(std::span<T> t) {
-    _HXprint('[');
-    bool once = false;
-    for (const auto& it : t) {
-        if (once)
-            _HXprint(", ");
-        else
-            once = true;
-        _HXprint(it);
-    }
-    _HXprint(']');
-}
-
-template <typename... Ts>
-inline void _HXprint(const std::optional<Ts...>& t) {
-    if (t.has_value())
-        _HXprint(*t);
-    else
-        _HXprint(std::nullopt);
-}
-
-template <typename... Ts>
-inline void _HXprint(const std::variant<Ts...>& t) {
-    std::visit([] (const auto &v) -> void { // 访问者模式
-        _HXprint(v);
-    }, t);
-}
-
-template <PrintClassType T>
-inline void _HXprint(const T& t) {
+template <PrintClassType PT>
+inline void printImpl(PT const& t) {
     t.print();
 }
 
-template <HX::STL::concepts::PairContainer Container>
-inline void _HXprint(const Container& p) {
-    _HXprint('(');
-    _HXprint(std::get<0>(p));
-    _HXprint(", ");
-    _HXprint(std::get<1>(p));
-    _HXprint(')');
-}
-
-// 递归打印tuple
-template <std::size_t I = 0, typename... Ts>
-inline void _print(const std::tuple<Ts...>& tup) {
-    if constexpr (I == sizeof...(Ts)) { // 因为 I 从 0 开始
-        return;
-    } else {
-        if constexpr (I > 0)
-            _HXprint(", ");
-        _HXprint(std::get<I>(tup));
-        _print<I + 1>(tup);
-    }
-}
-
-template <std::size_t I = 0, typename... Ts>
-inline void _HXprint(const std::tuple<Ts...>& tup) {
-    _HXprint('(');
-    _print(tup);
-    _HXprint(')');
-}
-
-template <HX::STL::concepts::KeyValueContainer Container>
-inline void _HXprint(const Container& map) {
-    _HXprint('{');
-    bool once = false;
-    for (const auto& [k, v] : map) {
-        if (once)
-            _HXprint(", ");
-        else
-            once = true;
-        _HXprint(k);
-        _HXprint(": ");
-        _HXprint(v);
-    }
-    _HXprint('}');
-}
-
-template <HX::STL::concepts::SingleElementContainer Container>
-inline void _HXprint(const Container& sc) {
-    _HXprint('[');
-    bool once = false;
-    for (const auto& it : sc) {
-        if (once)
-            _HXprint(", ");
-        else
-            once = true;
-        _HXprint(it);
-    }
-    _HXprint(']');
-}
-
-} // namespace _
-
-/**
- * @brief 打印带'\\n'的对象, 多个则使用 ' ' 空格分开.
- */
-template <class T0, class ...Ts>
-inline void print(T0 const &t0, Ts const &...ts) {
-    _::_HXprint(t0);
-    ((std::cout << " ", _::_HXprint(ts)), ...);
-    std::cout << "\n";
-}
+} // namespace internal
 
 /**
  * @brief 打印不带'\\n'的对象, 多个则使用 ' ' 空格分开.
  */
-template <class T0, class ...Ts>
-inline void printnl(T0 const &t0, Ts const &...ts) {
-    _::_HXprint(t0);
-    ((std::cout << " ", _::_HXprint(ts)), ...);
+template <typename... Ts>
+inline void print(Ts const&... ts) {
+    internal::printImpl(ts...);
+}
+
+/**
+ * @brief 打印带'\\n'的对象, 多个则使用 ' ' 空格分开.
+ */
+template <typename... Ts>
+inline void println(Ts const&... ts) {
+    print(ts...);
+    std::cout << '\n';
 }
 // 注: 建议鸭子类型使用printnl!
 
