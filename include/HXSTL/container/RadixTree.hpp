@@ -87,7 +87,7 @@ public:
      * @param findLink 查找链路, 如["home", "name", "{id}"], 即 <root> -> home -> name -> {id}
      * @return 查找结果的引用
      */
-    std::optional<T> find(const std::vector<std::string>& findLink) {
+    std::optional<T> find(const std::vector<std::string>& findLink) const {
         auto node = _root;
         for (const auto& it : findLink) {
             auto findIt = node->child.find(it);

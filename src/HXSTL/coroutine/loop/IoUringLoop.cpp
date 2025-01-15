@@ -49,7 +49,14 @@ bool IoUringLoop::run(std::optional<std::chrono::system_clock::duration> timeout
     std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&_ring, head, cqe) {
         ++numGot;
-        if (cqe->res < 0 && !(cqe->res == -ENOENT || cqe->res == -EACCES || cqe->res == -EAGAIN)) {
+        if (cqe->res < 0 
+            && !(cqe->res == -ENOENT 
+                || cqe->res == -EACCES 
+                || cqe->res == -EAGAIN 
+                || cqe->res == -ECONNRESET 
+                || cqe->res == -EPIPE
+            )
+        ) {
             // printf("任务已取消 (%p)\n", (void *)cqe->user_data);
             printf("Critical error: %s\n", strerror(-cqe->res));
 

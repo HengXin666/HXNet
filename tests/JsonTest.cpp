@@ -2,48 +2,6 @@
 #include <HXprint/print.h>
 #include <HXSTL/concepts/SingleElementContainer.hpp>
 
-#if 0
-#include <variant>
-#include <iostream>
-#include <memory>
-
-// 类型擦除接口
-class IValue {
-public:
-    virtual ~IValue() = default;
-    virtual void print() const = 0; // 用于展示值
-};
-
-// 类型擦除实现
-template <typename T>
-class ValueImpl : public IValue {
-public:
-    ValueImpl(T value) : value_(std::move(value)) {}
-    void print() const override {
-        std::cout << value_ << std::endl;
-    }
-private:
-    T value_;
-};
-
-// 获取 std::variant 的当前值
-std::unique_ptr<IValue> getVal(const std::variant<int, float, std::string>& v) {
-    return std::visit([](const auto& arg) -> std::unique_ptr<IValue> {
-        return std::make_unique<ValueImpl<decltype(arg)>>(arg);
-    }, v);
-}
-
-int main() { // 使用类型擦除, 从而输出 variant 的实时的值
-    std::variant<int, float, std::string> v = std::string("Hello World");
-    
-    auto valuePtr = getVal(v);
-    valuePtr->print(); // 输出: Hello World
-
-    return 0;
-}
-#endif
-
-
 // JSON解析示例
 void test_01() {
     auto json = HX::json::parse(R"(
@@ -96,13 +54,13 @@ struct Student {
         int age;
         int kawaiiCnt;
 
-        REFLECT_CONSTRUCTOR_ALL(Loli, name, age, kawaiiCnt) // 可以嵌套, 但是也需要进行静态反射(需要实现`toString`方法)
+        REFLECT_CONSTRUCTOR_ALL(Loli, name, age, kawaiiCnt) // 可以嵌套, 但是也需要进行静态反射(需要实现`toJson`方法)
     };
     std::vector<Loli> lolis;
     std::unordered_map<std::string, std::string> woc;
     std::unordered_map<std::string, Loli> awa;
 
-    // 静态反射, 到时候提供`toString`方法以序列化为JSON
+    // 静态反射, 到时候提供`toJson`方法以序列化为JSON
     // 提供 构造函数(从json字符串和json构造, 以及所有成员的默认构造函数)
     // 注: 如果不希望生成 [所有成员的默认构造函数], 可以使用 REFLECT_CONSTRUCTOR 宏
     REFLECT_CONSTRUCTOR_ALL(Student, name, age, lolis, woc, awa)
@@ -113,7 +71,7 @@ struct StudentConst {
     const Student stuConts;
     const int& abc;
 
-    // 这个只反射到toString函数(即序列化为json), 而不能从`jsonStr/jsonObj`构造
+    // 这个只反射到toJson函数(即序列化为json), 而不能从`jsonStr/jsonObj`构造
     // 你 const auto& 还怎么想从一个临时的jsonObj引用过来? 它本身就不安全, jsonStr就更不用说了!
     REFLECT(stuConts, abc)
 };
@@ -147,8 +105,8 @@ void test_02() {
         }
     };
     // 示例: 转化为json字符串(紧凑的)
-    HX::print::print(stu.toString());
-    auto json = HX::json::parse(stu.toString()).first;
+    HX::print::print(stu.toJson());
+    auto json = HX::json::parse(stu.toJson()).first;
     json.print();
     printf("\n\n");
 
@@ -157,11 +115,11 @@ void test_02() {
     json["age"] = HX::json::JsonObject {}; // 如果我们修改了它的类型 / 解析不到对应类型
 
     Student x(json);
-    HX::json::parse(x.toString()).first.print();
+    HX::json::parse(x.toJson()).first.print();
 
     printf("\n\n");
     // 即便是空的也无所谓, 不是json也无所谓, 只是解析到的是空josn对象
-    HX::json::parse(Student("Heng_Xin is nb!").toString()).first.print();
+    HX::json::parse(Student("Heng_Xin is nb!").toJson()).first.print();
 }
 
 void test_03() {
@@ -193,11 +151,11 @@ void test_03() {
     int abc = 123;
     StudentConst stdConst(stu, abc);
 
-    HX::json::parse(stdConst.toString()).first.print();
+    HX::json::parse(stdConst.toJson()).first.print();
 
     abc = 567; // 修改了它
     printf("\n修改了abc...\n");
-    HX::json::parse(stdConst.toString()).first.print();
+    HX::json::parse(stdConst.toJson()).first.print();
 }
 
 int main () {

@@ -36,7 +36,7 @@ class RouteMapPrefixTree : public HX::STL::container::RadixTree<T> {
         const std::vector<std::string>& findLink,
         std::shared_ptr<HX::STL::container::RadixTreeNode<T>> node,
         std::size_t index
-    ) {
+    ) const {
         std::size_t n = findLink.size();
         // 尝试{}开始的索引, 如果匹配不正确, 则回溯!
         for (std::size_t i = index + 1; i < n; ++i) {
@@ -65,7 +65,8 @@ class RouteMapPrefixTree : public HX::STL::container::RadixTree<T> {
 
     using HX::STL::container::RadixTree<T>::_root; // 避免找不到父类成员
 public:
-    explicit RouteMapPrefixTree() : HX::STL::container::RadixTree<T>()
+    explicit RouteMapPrefixTree() 
+        : HX::STL::container::RadixTree<T>()
     {}
 
     /**
@@ -83,7 +84,7 @@ public:
             }
             auto findIt = node->child.find(key);
             if (findIt == node->child.end()) {
-               node = node->child[key] = std::make_shared<HX::STL::container::RadixTreeNode<T>>();
+                node = node->child[key] = std::make_shared<HX::STL::container::RadixTreeNode<T>>();
             } else {
                 node = findIt->second;
             }
@@ -96,7 +97,7 @@ public:
      * @param findLink 查找链路, 如["home", "name", "{id}", "**"], 即 <root> -> home -> name -> * -> **
      * @return 查找结果的引用
      */
-    std::optional<T> find(const std::vector<std::string>& findLink) {
+    std::optional<T> find(const std::vector<std::string>& findLink) const {
         auto node = _root;
         std::size_t n = findLink.size();
         // 尝试{}开始的索引, 如果匹配不正确, 则回溯!

@@ -46,17 +46,12 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler<HX::web::protocol::http::H
             // === 路由解析 ===
             // 交给路由处理
             // LOG_INFO("路由解析中...");
-            auto&& fun = HX::web::router::Router::getSingleton().getEndpointFunc(
-                io._request->getRequesType(),
-                io._request->getRequesPath()
-            );
             try {
                 // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
-                if (fun) {
-                    endpointRes = co_await fun(io);
-                } else {
-                    endpointRes = co_await HX::web::router::Router::getSingleton().getErrorEndpointFunc()(io);
-                }
+                endpointRes = co_await HX::web::router::Router::getSingleton().getEndpointFunc(
+                    io._request->getRequesType(),
+                    io._request->getRequesPath()
+                )(io);
 
                 // === 响应 ===
                 // LOG_INFO("响应中...");
@@ -119,17 +114,12 @@ HX::STL::coroutine::task::TimerTask ConnectionHandler<HX::web::protocol::https::
             // === 路由解析 ===
             // 交给路由处理
             // LOG_INFO("路由解析中...");
-            auto&& fun = HX::web::router::Router::getSingleton().getEndpointFunc(
-                io._request->getRequesType(),
-                io._request->getRequesPath()
-            );
             try {
                 // printf("cli -> url: %s\n", _request.getRequesPath().c_str());
-                if (fun) {
-                    endpointRes = co_await fun(io);
-                } else {
-                    endpointRes = co_await HX::web::router::Router::getSingleton().getErrorEndpointFunc()(io);
-                }
+                endpointRes = co_await HX::web::router::Router::getSingleton().getEndpointFunc(
+                    io._request->getRequesType(),
+                    io._request->getRequesPath()
+                )(io);
 
                 // === 响应 ===
                 // LOG_INFO("响应中...");

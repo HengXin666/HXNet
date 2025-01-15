@@ -26,14 +26,15 @@ void Router::addEndpoint(
     _routerRadixTree.insert(HX::STL::utils::StringUtil::split(path, "/", {requestType}), func);
 }
 
-Router::EndpointFunc Router::getEndpointFunc(const std::string& requestType, const std::string& path) {
+Router::EndpointFunc Router::getEndpointFunc(const std::string& requestType, const std::string& path) const {
     // 如果path是`/home/?loli=imouto`这种, 先不要解析参数, 应该只做?之前的映射(没有必要, 因为用户可以乱传输后面的参数)
     std::size_t pos = path.find('?');
     if (auto res = _routerRadixTree.find(HX::STL::utils::StringUtil::split(
         pos == std::string::npos ? path : path.substr(0, pos), "/", {requestType}
-    )))
+    ))) {
         return *res;
-    return nullptr;
+    }
+    return _errorEndpointFunc;
 }
 
 }}} // namespace HX::web::router

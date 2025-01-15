@@ -100,61 +100,61 @@ concept PrintClassType = requires(T t) {
 // === 事先声明 ===
 
 // 显式重载
-static void _HXprint(const std::nullptr_t& t);
-static void _HXprint(const std::nullopt_t& t);
-static void _HXprint(const std::monostate& t);
-static void _HXprint(bool t);
+inline void _HXprint(const std::nullptr_t& t);
+inline void _HXprint(const std::nullopt_t& t);
+inline void _HXprint(const std::monostate& t);
+inline void _HXprint(bool t);
 
 // 基础类型
 template <typename T>
-static void _HXprint(const T& t);
+inline void _HXprint(const T& t);
 
 // span 视图
 template <typename T>
-static void _HXprint(std::span<T> t);
+inline void _HXprint(std::span<T> t);
 
 // std::optional
 template <typename... Ts>
-static void _HXprint(const std::optional<Ts...>& t);
+inline void _HXprint(const std::optional<Ts...>& t);
 
 // str相关的类型
 template <HX::STL::concepts::StringType ST>
-static void _HXprint(const ST& t);
+inline void _HXprint(const ST& t);
 
 // std::pair
 template <HX::STL::concepts::PairContainer Container>
-static void _HXprint(const Container& p);
+inline void _HXprint(const Container& p);
 
 // std::的常见的支持迭代器的单元素容器
 template <HX::STL::concepts::SingleElementContainer Container>
-static void _HXprint(const Container& sc);
+inline void _HXprint(const Container& sc);
 
 // std::的常见的支持迭代器的键值对容器
 template <HX::STL::concepts::KeyValueContainer Container>
-static void _HXprint(const Container& map);
+inline void _HXprint(const Container& map);
 
 // std::variant 现代共用体
 template <typename... Ts>
-static void _HXprint(const std::variant<Ts...>& t);
+inline void _HXprint(const std::variant<Ts...>& t);
 
 template <PrintClassType T>
-static void _HXprint(const T& t);
+inline void _HXprint(const T& t);
 
 /////////////////////////////////////////////////////////
 
-static void _HXprint(const std::nullptr_t&) { // 普通指针不行
+inline void _HXprint(const std::nullptr_t&) { // 普通指针不行
     _HXprint("nullptr");
 }
 
-static void _HXprint(const std::nullopt_t&) {
+inline void _HXprint(const std::nullopt_t&) {
     _HXprint("nullopt");
 }
 
-static void _HXprint(const std::monostate&) {
+inline void _HXprint(const std::monostate&) {
     _HXprint("monostate");
 }
 
-static void _HXprint(bool t) {
+inline void _HXprint(bool t) {
     if (t)
         _HXprint("true");
     else
@@ -162,17 +162,17 @@ static void _HXprint(bool t) {
 }
 
 template <typename T>
-static void _HXprint(const T& t) {
+inline void _HXprint(const T& t) {
     std::cout << t;
 }
 
 template <HX::STL::concepts::StringType ST>
-static void _HXprint(const ST& t) {
+inline void _HXprint(const ST& t) {
     std::cout << std::quoted(t);
 }
 
 template <typename T>
-static void _HXprint(std::span<T> t) {
+inline void _HXprint(std::span<T> t) {
     _HXprint('[');
     bool once = false;
     for (const auto& it : t) {
@@ -186,7 +186,7 @@ static void _HXprint(std::span<T> t) {
 }
 
 template <typename... Ts>
-static void _HXprint(const std::optional<Ts...>& t) {
+inline void _HXprint(const std::optional<Ts...>& t) {
     if (t.has_value())
         _HXprint(*t);
     else
@@ -194,19 +194,19 @@ static void _HXprint(const std::optional<Ts...>& t) {
 }
 
 template <typename... Ts>
-static void _HXprint(const std::variant<Ts...>& t) {
+inline void _HXprint(const std::variant<Ts...>& t) {
     std::visit([] (const auto &v) -> void { // 访问者模式
         _HXprint(v);
     }, t);
 }
 
 template <PrintClassType T>
-static void _HXprint(const T& t) {
+inline void _HXprint(const T& t) {
     t.print();
 }
 
 template <HX::STL::concepts::PairContainer Container>
-static void _HXprint(const Container& p) {
+inline void _HXprint(const Container& p) {
     _HXprint('(');
     _HXprint(std::get<0>(p));
     _HXprint(", ");
@@ -216,7 +216,7 @@ static void _HXprint(const Container& p) {
 
 // 递归打印tuple
 template <std::size_t I = 0, typename... Ts>
-static void _print(const std::tuple<Ts...>& tup) {
+inline void _print(const std::tuple<Ts...>& tup) {
     if constexpr (I == sizeof...(Ts)) { // 因为 I 从 0 开始
         return;
     } else {
@@ -228,14 +228,14 @@ static void _print(const std::tuple<Ts...>& tup) {
 }
 
 template <std::size_t I = 0, typename... Ts>
-static void _HXprint(const std::tuple<Ts...>& tup) {
+inline void _HXprint(const std::tuple<Ts...>& tup) {
     _HXprint('(');
     _print(tup);
     _HXprint(')');
 }
 
 template <HX::STL::concepts::KeyValueContainer Container>
-static void _HXprint(const Container& map) {
+inline void _HXprint(const Container& map) {
     _HXprint('{');
     bool once = false;
     for (const auto& [k, v] : map) {
@@ -251,7 +251,7 @@ static void _HXprint(const Container& map) {
 }
 
 template <HX::STL::concepts::SingleElementContainer Container>
-static void _HXprint(const Container& sc) {
+inline void _HXprint(const Container& sc) {
     _HXprint('[');
     bool once = false;
     for (const auto& it : sc) {
@@ -270,7 +270,7 @@ static void _HXprint(const Container& sc) {
  * @brief 打印带'\\n'的对象, 多个则使用 ' ' 空格分开.
  */
 template <class T0, class ...Ts>
-void print(T0 const &t0, Ts const &...ts) {
+inline void print(T0 const &t0, Ts const &...ts) {
     _::_HXprint(t0);
     ((std::cout << " ", _::_HXprint(ts)), ...);
     std::cout << "\n";
@@ -280,7 +280,7 @@ void print(T0 const &t0, Ts const &...ts) {
  * @brief 打印不带'\\n'的对象, 多个则使用 ' ' 空格分开.
  */
 template <class T0, class ...Ts>
-void printnl(T0 const &t0, Ts const &...ts) {
+inline void printnl(T0 const &t0, Ts const &...ts) {
     _::_HXprint(t0);
     ((std::cout << " ", _::_HXprint(ts)), ...);
 }

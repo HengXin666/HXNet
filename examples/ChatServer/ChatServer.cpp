@@ -58,6 +58,15 @@ class ChatController {
         );
     } ENDPOINT_END;
 
+    ENDPOINT_BEGIN(API_GET, "/index", index) {
+        RESPONSE_DATA(
+            200,
+            HX::STL::utils::DateTimeFormat::formatWithMilli(),
+            "text/html", "UTF-8"
+        );
+        co_return true;
+    } ENDPOINT_END;
+
     ENDPOINT_BEGIN(API_GET, "/end", end) {
         exit(0);
         co_return false;
@@ -104,7 +113,7 @@ class ChatController {
                     MsgArrConst(std::span<const MsgArr::Message> {
                         msgArr.arr.begin() + len, 
                         msgArr.arr.end()
-                    }).toString(),
+                    }).toJson(),
                     "text/plain", "UTF-8"
                 );
                 co_return true;
@@ -121,7 +130,7 @@ class ChatController {
                     MsgArrConst(std::span<const MsgArr::Message> {
                         msgArr.arr.begin() + std::min<std::size_t>(len, msgArr.arr.size()), 
                         msgArr.arr.end()
-                    }).toString(),
+                    }).toJson(),
                     "text/plain", "UTF-8"
                 );
                 co_return true;
@@ -149,6 +158,6 @@ int main() {
     ROUTER_BIND(ChatController);
     
     // 启动服务 (指定使用一个线程 (因为messageArr得同步, 多线程就需要上锁(我懒得写了qwq)))
-    HX::web::server::Server::startHttp("127.0.0.1", "28205", 1, 3s);
+    HX::web::server::Server::startHttp("127.0.0.1", "28205", 1, 10s);
     return 0;
 }

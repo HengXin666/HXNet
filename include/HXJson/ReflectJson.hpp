@@ -354,7 +354,7 @@ _REFLECT_PP_FOREACH(EndFun, _GET_LAST_ARG(__VA_ARGS__))
 
 // 反射: 将成员反射以序列化成JSON字符串, 支持`const auto&`成员
 #define REFLECT(...) \
-std::string toString() const { \
+std::string toJson() const { \
     std::string res; \
     res += '{'; \
     _REFLECT_PP_FOREACH(_REFLECT_TO_JSON, __VA_ARGS__) \
